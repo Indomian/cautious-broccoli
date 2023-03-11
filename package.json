@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "yarn parcel",
-    "build": "yarn parcel build"
+    "build": "yarn parcel build --public-url /cautious-broccoli/"
   },
   "author": "Egor Bolgov <e.bolgov@semrush.com>",
   "license": "UNLICENSED",
