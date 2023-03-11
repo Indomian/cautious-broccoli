@@ -6,8 +6,8 @@
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "yarn parcel",
-    "build": "yarn parcel build --public-url /cautious-broccoli/"
+    "start": "rm -rf .parcel-cache && yarn parcel",
+    "build": "rm -rf .parcel-cache && yarn parcel build --public-url /cautious-broccoli/"
   },
   "author": "Egor Bolgov <e.bolgov@semrush.com>",
   "license": "UNLICENSED",

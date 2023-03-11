@@ -38,8 +38,8 @@ export class Render {
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
 
-        this.timeRenderStart = Date.now();
-        this.timeRenderEnd = Date.now();
+        this.timeRenderStart = performance.now();
+        this.timeRenderEnd = performance.now();
         this.step = 0;
         this.gravity = Vec2.Zero();
 
@@ -93,8 +93,7 @@ export class Render {
         this.objects.forEach(obj => obj.update(time));
     }
 
-    nextFrame = (time) => {
-        this.step = time - this.timeRenderEnd;
+    tick() {
         if (this.step < 0) {
             this.step = 0;
         }
@@ -105,10 +104,31 @@ export class Render {
         this.renderItems();
 
         this.printFPS();
+    }
+
+    nextFrame = (time) => {
+        this.step = time - this.timeRenderEnd;
+        if (this.step < 0) {
+            this.step = 0;
+        }
+
+        this.tick();
 
         this.timeRenderEnd = time;
+        self.requestAnimationFrame(this.nextFrame);
+    }
 
-        self.requestAnimationFrame(this.nextFrame)
+    nextInterval = () => {
+        this.timeRenderStart = performance.now()
+        this.step = this.timeRenderStart - this.timeRenderEnd;
+
+        if (this.step < 0) {
+            this.step = 0;
+        }
+
+        this.tick();
+
+        this.timeRenderEnd = performance.now();
     }
 
     applyGravity() {
@@ -164,6 +184,10 @@ export class Render {
     }
 
     start() {
-        self.requestAnimationFrame(this.nextFrame);
+        if (self.requestAnimationFrame) {
+            self.requestAnimationFrame(this.nextFrame);
+        } else {
+            setInterval(this.nextInterval, 16)
+        }
     }
 }
