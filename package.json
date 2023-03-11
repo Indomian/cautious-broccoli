@@ -6,7 +6,8 @@
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "yarn parcel"
+    "start": "yarn parcel",
+    "build": "yarn parcel build"
   },
   "author": "Egor Bolgov <e.bolgov@semrush.com>",
   "license": "UNLICENSED",
