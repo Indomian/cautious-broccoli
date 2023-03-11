@@ -559,22 +559,31 @@ function hmrAccept(bundle, id) {
 },{}],"hb2Bw":[function(require,module,exports) {
 var _onReady = require("../utils/onReady");
 var _getElement = require("../utils/getElement");
+var _render = require("../render");
 function initApplication() {
     console.log("Init application");
     /**
      * @var {HTMLCanvasElement}
      */ const canvas = (0, _getElement.getElement)("#image_canvas");
-    const worker = new Worker(require("e6145b29720cd364"));
-    const offscreen = canvas.transferControlToOffscreen();
-    worker.postMessage({
-        canvas: offscreen
-    }, [
-        offscreen
-    ]);
+    if (canvas.transferControlToOffscreen) {
+        console.log("Render in worker");
+        const worker = new Worker(require("e6145b29720cd364"));
+        const offscreen = canvas.transferControlToOffscreen();
+        worker.postMessage({
+            canvas: offscreen
+        }, [
+            offscreen
+        ]);
+    } else {
+        // There is no support for offscreen render
+        console.log("Render in main thread");
+        const render = new (0, _render.Render)(canvas);
+        render.start();
+    }
 }
 (0, _onReady.onReady)(initApplication);
 
-},{"../utils/onReady":"8DDHo","../utils/getElement":"asMcw","e6145b29720cd364":"8su4m"}],"8DDHo":[function(require,module,exports) {
+},{"../utils/onReady":"8DDHo","../utils/getElement":"asMcw","../render":"5r7M3","e6145b29720cd364":"8su4m"}],"8DDHo":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**
@@ -630,7 +639,465 @@ function getElement(selector) {
     return element;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8su4m":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5r7M3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Render", ()=>Render);
+var _circle = require("./circle");
+var _vec2 = require("./vec2");
+var _object = require("./object");
+var _viewportConstrain = require("./viewportConstrain");
+var _circleConstrain = require("./circleConstrain");
+var _velocity = require("./velocity");
+var _mappedObjectsGenerator = require("./mappedObjectsGenerator");
+var _totalObjectsGenerator = require("./totalObjectsGenerator");
+const balls = [
+    new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(1, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10))),
+    new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(2, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10))),
+    new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(3, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10)))
+];
+class Render {
+    /**
+     * List of balls
+     * @type {BallsObject[]}
+     */ objects = [];
+    /**
+     * @type {Constrain}
+     */ constrains = null;
+    constructor(canvas){
+        this.canvas = canvas;
+        this.context = this.canvas.getContext("2d");
+        this.timeRenderStart = performance.now();
+        this.timeRenderEnd = performance.now();
+        this.step = 0;
+        this.gravity = (0, _vec2.Vec2).Zero();
+        this.items = [];
+        this.objects = [];
+        this.generator = null;
+        this.configure();
+    }
+    configure() {
+        this.context.font = "10px serif";
+        this.gravity = new (0, _vec2.Vec2)(0, 100);
+        //this.constrains = new ViewportConstrain(this.canvas.width, this.canvas.height)
+        this.constrains = new (0, _circleConstrain.CircleConstrain)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2), this.canvas.height / 2);
+        this.items.push(new (0, _circle.Circle)(this.context, this.canvas.width / 2, this.canvas.height / 2, this.canvas.height / 2, "#000000"));
+        //this.generator = new MappedObjectsGenerator(balls);
+        this.generator = new (0, _totalObjectsGenerator.TotalObjectsGenerator)(200, 0.2, ()=>{
+            const ball = new (0, _object.BallsObject)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2));
+            ball.velocity = new (0, _vec2.Vec2)(5, -1);
+            ball.radius = Math.random() * 20 + 5;
+            return ball;
+        });
+    }
+    update(time) {
+        const newBall = this.generator.getNextObject(time);
+        if (newBall) this.objects.push(newBall);
+        this.applyGravity();
+        this.applyConstrains();
+        this.processCollisions();
+        this.objects.forEach((obj)=>obj.update(time));
+    }
+    tick() {
+        if (this.step < 0) this.step = 0;
+        this.update(this.step / 1000);
+        this.clear();
+        this.renderItems();
+        this.printFPS();
+    }
+    nextFrame = (time)=>{
+        this.step = time - this.timeRenderEnd;
+        if (this.step < 0) this.step = 0;
+        this.tick();
+        this.timeRenderEnd = time;
+        self.requestAnimationFrame(this.nextFrame);
+    };
+    nextInterval = ()=>{
+        this.timeRenderStart = performance.now();
+        this.step = this.timeRenderStart - this.timeRenderEnd;
+        if (this.step < 0) this.step = 0;
+        this.tick();
+        this.timeRenderEnd = performance.now();
+    };
+    applyGravity() {
+        this.objects.forEach((obj)=>obj.accelerate(this.gravity));
+    }
+    applyConstrains() {
+        this.objects.forEach((obj)=>this.constrains.applyConstrain(obj));
+    }
+    processCollisions() {
+        this.objects.forEach((objA)=>{
+            this.objects.forEach((objB)=>{
+                if (objA === objB) return;
+                objA.collide(objB);
+            });
+        });
+    }
+    renderItems() {
+        this.items.forEach((item)=>item.render());
+        this.objects.forEach((obj)=>{
+            const img = new (0, _circle.Circle)(this.context, obj.currentPosition.x, obj.currentPosition.y, obj.radius);
+            img.render();
+        // const v = new Velocity(this.context, obj);
+        // v.render();
+        });
+    }
+    printText(text, x, y) {
+        this.context.fillStyle = "#000000";
+        this.context.fillText(text, x, y);
+    }
+    printFPS() {
+        this.printText(`${Math.round(this.step)} ms / ${Math.round(1000 / this.step)} FPS`, 0, 10);
+    }
+    clear() {
+        this.context.fillStyle = "#ffffff";
+        this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    start() {
+        if (self.requestAnimationFrame) self.requestAnimationFrame(this.nextFrame);
+        else setInterval(this.nextInterval, 16);
+    }
+}
+
+},{"./circle":"7o4Wi","./vec2":"lHAar","./object":"eznXH","./viewportConstrain":"8irrB","./circleConstrain":"gl4Cp","./velocity":"edbgo","./mappedObjectsGenerator":"b2JvE","./totalObjectsGenerator":"cB2D3","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7o4Wi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Circle", ()=>Circle);
+var _item = require("./item");
+class Circle extends (0, _item.Item) {
+    x = 0;
+    y = 0;
+    r = 0;
+    color = "#00ff00";
+    constructor(context, x, y, r, color){
+        super(context);
+        this.x = x;
+        this.y = y;
+        this.r = r;
+        if (color) this.color = color;
+    }
+    render() {
+        this.context.beginPath();
+        this.context.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        this.context.fillStyle = this.color;
+        this.context.fill();
+    }
+}
+
+},{"./item":"al1UV","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"al1UV":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Item", ()=>Item);
+class Item {
+    /**
+     *
+     * @param {CanvasRenderingContext2D} context
+     */ constructor(context){
+        this.context = context;
+    }
+    render() {}
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"lHAar":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Vec2", ()=>Vec2);
+parcelHelpers.export(exports, "Vec2Math", ()=>Vec2Math);
+class Vec2 {
+    x = 0;
+    y = 0;
+    constructor(x, y){
+        this.x = x;
+        this.y = y;
+    }
+    /**
+     * Adds vec2 to current vector
+     * @param {Vec2} vec2
+     * @returns {Vec2}
+     */ add(vec2) {
+        this.x += vec2.x;
+        this.y += vec2.y;
+        return this;
+    }
+    /**
+     * Subtract from current vector given vector
+     * @param {Vec2} vec2
+     * @returns {Vec2}
+     */ sub(vec2) {
+        this.x -= vec2.x;
+        this.y -= vec2.y;
+        return this;
+    }
+    /**
+     * Flips along X axis
+     * @returns {Vec2}
+     */ flipY() {
+        this.y = -this.y;
+        return this;
+    }
+    /**
+     * Sums current vector and given vector and returns new vector
+     * @param {Vec2} vec2
+     * @returns {Vec2}
+     */ sum(vec2) {
+        return new Vec2(this.x + vec2.x, this.y + vec2.y);
+    }
+    /**
+     * Calculate difference between current vector and given vector and returns
+     * new vector
+     *
+     * @param {Vec2} vec2
+     * @returns {Vec2}
+     */ diff(vec2) {
+        return new Vec2(this.x - vec2.x, this.y - vec2.y);
+    }
+    /**
+     * Multiplicates vector by numner
+     * @param {number} value
+     * @returns {Vec2}
+     */ mul(value) {
+        return new Vec2(this.x * value, this.y * value);
+    }
+    copy() {
+        return new Vec2(this.x, this.y);
+    }
+    get length() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    /**
+     * Returns normalized vector
+     * @returns {Vec2}
+     */ get normalized() {
+        const l = this.length;
+        return new Vec2(this.x / l, this.y / l);
+    }
+    static Zero() {
+        return new Vec2(0, 0);
+    }
+}
+class Vec2Math {
+    static diff(vec1, vec2) {
+        return new Vec2(vec1.x - vec2.x, vec1.y - vec2.y);
+    }
+    static mul(vec1, scalar) {
+        return new Vec2(vec1.x * scalar, vec1.y * scalar);
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eznXH":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "BallsObject", ()=>BallsObject);
+var _vec2 = require("./vec2");
+class BallsObject {
+    previousPosition = (0, _vec2.Vec2).Zero();
+    currentPosition = (0, _vec2.Vec2).Zero();
+    acc = (0, _vec2.Vec2).Zero();
+    radius = 10;
+    bounceValue = 1;
+    /**
+     * Creates balls object
+     * @param {Vec2} position
+     */ constructor(position){
+        this.previousPosition = position;
+        this.currentPosition = position;
+    }
+    /**
+     * Updates state of object
+     * @param {number} step
+     */ update(step) {
+        const velocity = this.currentPosition.diff(this.previousPosition);
+        this.previousPosition = this.currentPosition.copy();
+        this.currentPosition.add(velocity.add(this.acc.mul(step * step)));
+        this.acc = (0, _vec2.Vec2).Zero();
+    }
+    accelerate(acc) {
+        this.acc.add(acc);
+    }
+    /**
+     *
+     * @param {BallsObject} obj
+     */ collide(obj) {
+        const between = (0, _vec2.Vec2Math).diff(this.currentPosition, obj.currentPosition);
+        const distance = between.length;
+        const requiredDistance = this.radius + obj.radius;
+        if (distance < this.radius + obj.radius) {
+            const normalized = between.normalized;
+            const delta = requiredDistance - distance;
+            this.currentPosition.add((0, _vec2.Vec2Math).mul(normalized, this.radius / requiredDistance * delta * this.bounceValue));
+            obj.currentPosition.sub((0, _vec2.Vec2Math).mul(normalized, obj.radius / requiredDistance * delta * obj.bounceValue));
+        }
+    }
+    get velocity() {
+        return this.currentPosition.diff(this.previousPosition);
+    }
+    set velocity(v) {
+        this.previousPosition = (0, _vec2.Vec2Math).diff(this.currentPosition, v);
+    }
+}
+
+},{"./vec2":"lHAar","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8irrB":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
+var _constrain = require("./constrain");
+class ViewportConstrain extends (0, _constrain.Constrain) {
+    constructor(width, height){
+        super();
+        this.width = width;
+        this.height = height;
+    }
+    applyConstrain(obj) {
+        super.applyConstrain(obj);
+        const velocity = obj.velocity;
+        if (obj.currentPosition.x > this.width) ;
+        else obj.currentPosition;
+        if (obj.currentPosition.y > this.height - obj.radius) {
+            const distY = obj.currentPosition.y - this.height + obj.radius;
+            obj.currentPosition.add(velocity.flipY().mul(obj.bounceValue));
+        } else obj.currentPosition.y, obj.radius;
+    }
+}
+
+},{"./constrain":"22vFU","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"22vFU":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Constrain", ()=>Constrain);
+class Constrain {
+    constructor(){}
+    /**
+     *
+     * @param {BallsObject} obj
+     */ applyConstrain(obj) {}
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gl4Cp":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
+var _constrain = require("./constrain");
+var _vec2 = require("./vec2");
+class CircleConstrain extends (0, _constrain.Constrain) {
+    /**
+     *
+     * @type {Vec2}
+     */ center = (0, _vec2.Vec2).Zero();
+    radius = 0;
+    constructor(center, radius){
+        super();
+        this.center = center;
+        this.radius = radius;
+    }
+    applyConstrain(obj) {
+        super.applyConstrain(obj);
+        const toCenter = obj.currentPosition.diff(this.center);
+        const distance = toCenter.length;
+        const r = obj.radius;
+        if (distance > this.radius - r) {
+            const n = toCenter.normalized;
+            obj.currentPosition = this.center.sum(n.mul(this.radius - r * obj.bounceValue));
+        }
+    }
+}
+
+},{"./constrain":"22vFU","./vec2":"lHAar","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"edbgo":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Velocity", ()=>Velocity);
+var _item = require("./item");
+class Velocity extends (0, _item.Item) {
+    /**
+     * @type {BallsObject}
+     */ obj = null;
+    constructor(context, object){
+        super(context);
+        this.obj = object;
+    }
+    render() {
+        super.render();
+        this.context.strokeStyle = "#0000FF";
+        this.context.beginPath(); // Start a new path
+        this.context.moveTo(this.obj.previousPosition.x, this.obj.previousPosition.y); // Move the pen to (30, 50)
+        this.context.lineTo(this.obj.currentPosition.x, this.obj.currentPosition.y); // Draw a line to (150, 100)
+        this.context.stroke(); // Render the path
+    }
+}
+
+},{"./item":"al1UV","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"b2JvE":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MappedObjectGeneratorItem", ()=>MappedObjectGeneratorItem);
+parcelHelpers.export(exports, "MappedObjectsGenerator", ()=>MappedObjectsGenerator);
+var _objectsGenerator = require("./objectsGenerator");
+class MappedObjectGeneratorItem {
+    /**
+     * Delay before object appear
+     * @type {number}
+     */ timeout;
+    /**
+     * Object configuration
+     * @type {BallsObject}
+     */ object;
+    constructor(timeout, object){
+        this.timeout = timeout;
+        this.object = object;
+    }
+}
+class MappedObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
+    /**
+     * @param {MappedObjectGeneratorItem[]} map
+     */ constructor(map){
+        super();
+        this.items = map;
+        this.currentTime = 0;
+    }
+    getNextObject(step) {
+        this.currentTime += step;
+        console.log(this.currentTime);
+        const index = this.items.findIndex((item)=>item.timeout < this.currentTime);
+        if (index > -1) return this.items.splice(index, 1)[0].object;
+    }
+}
+
+},{"./objectsGenerator":"bnusS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bnusS":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ObjectsGenerator", ()=>ObjectsGenerator);
+class ObjectsGenerator {
+    constructor(){}
+    // TODO Make me iterator
+    getNextObject(step) {
+        return null;
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"cB2D3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "TotalObjectsGenerator", ()=>TotalObjectsGenerator);
+var _objectsGenerator = require("./objectsGenerator");
+class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
+    constructor(count, delay, createCallback){
+        super();
+        this.limit = count;
+        this.total = 0;
+        this.delay = delay;
+        this.create = createCallback;
+        this.lastCreateTime = 0;
+    }
+    getNextObject(step) {
+        if (this.total > this.limit) return;
+        this.lastCreateTime += step;
+        if (this.lastCreateTime > this.delay) {
+            const newItem = this.create();
+            this.lastCreateTime = 0;
+            this.total++;
+            return newItem;
+        }
+    }
+}
+
+},{"./objectsGenerator":"bnusS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8su4m":[function(require,module,exports) {
 let workerURL = require("1a7c63926215dcd");
 let bundleURL = require("4c586a91511337c8");
 let url = bundleURL.getBundleURL("cYOr9") + "main.d51771cf.js" + "?" + Date.now();

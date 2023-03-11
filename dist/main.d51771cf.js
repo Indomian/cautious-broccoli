@@ -679,7 +679,8 @@ class Render {
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
     start() {
-        setInterval(this.nextInterval, 16);
+        if (self.requestAnimationFrame) self.requestAnimationFrame(this.nextFrame);
+        else setInterval(this.nextInterval, 16);
     }
 }
 
