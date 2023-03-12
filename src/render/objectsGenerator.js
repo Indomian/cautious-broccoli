@@ -1,5 +1,7 @@
 export class ObjectsGenerator {
-    constructor() {
+    solver = null;
+    constructor(solver) {
+        this.solver = solver;
     }
 
     // TODO Make me iterator

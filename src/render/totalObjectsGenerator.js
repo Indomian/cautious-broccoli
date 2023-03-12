@@ -1,8 +1,8 @@
 import {ObjectsGenerator} from "./objectsGenerator";
 
 export class TotalObjectsGenerator extends ObjectsGenerator {
-    constructor(count, delay, createCallback) {
-        super();
+    constructor(solver, count, delay, createCallback) {
+        super(solver);
         this.limit = count;
         this.total = 0;
 

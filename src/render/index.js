@@ -6,6 +6,8 @@ import {CircleConstrain} from "./circleConstrain";
 import {Velocity} from "./velocity";
 import {MappedObjectGeneratorItem, MappedObjectsGenerator} from "./mappedObjectsGenerator";
 import {TotalObjectsGenerator} from "./totalObjectsGenerator";
+import {Solver} from "./solver";
+import {Rect} from "./rect";
 
 const balls = [
     new MappedObjectGeneratorItem(
@@ -34,6 +36,12 @@ export class Render {
      */
     constrains = null;
 
+    /**
+     * Solver for physics
+     * @type {Solver}
+     */
+    solver = null;
+
     constructor(canvas) {
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
@@ -41,42 +49,39 @@ export class Render {
         this.timeRenderStart = performance.now();
         this.timeRenderEnd = performance.now();
         this.step = 0;
-        this.gravity = Vec2.Zero();
 
         this.items = [];
 
-        this.objects = [];
-
         this.generator = null;
+        this.solver = null;
 
         this.configure();
     }
 
     configure() {
+        this.solver = new Solver();
+
         this.context.font = '10px serif';
 
-        this.gravity = new Vec2(0, 100);
-        //this.constrains = new ViewportConstrain(this.canvas.width, this.canvas.height)
-        this.constrains = new CircleConstrain(
-            new Vec2(this.canvas.width / 2, this.canvas.height / 2),
-            this.canvas.height / 2
-        )
+        this.switchToCircleConstrain();
+        //this.switchToViewportConstrain();
+        this.solver.constrains = this.constrains;
 
-        this.items.push(
-            new Circle(
-                this.context,
-                this.canvas.width / 2 ,
-                this.canvas.height / 2,
-                this.canvas.height / 2,
-                '#000000'
-            )
-        );
-
-        //this.generator = new MappedObjectsGenerator(balls);
-        this.generator = new TotalObjectsGenerator(200, 0.2, () => {
-            const ball = new BallsObject(new Vec2(this.canvas.width / 2, this.canvas.height / 2));
-            ball.velocity = new Vec2(5, -1);
-            ball.radius = Math.random() * 20 + 5;
+        this.generator = new TotalObjectsGenerator(
+            this.solver,
+            100,
+            0.2,
+            () => {
+            const ball = new BallsObject(
+                new Vec2(
+                    this.canvas.width / 2,
+                    this.canvas.height / 2
+                )
+            );
+            ball.velocity = new Vec2(
+                3,
+                -0.5
+            ).mul(1/this.solver.subSteps);
             return ball;
         })
     }
@@ -84,13 +89,10 @@ export class Render {
     update(time) {
         const newBall = this.generator.getNextObject(time);
         if (newBall) {
-            this.objects.push(newBall);
+            this.solver.objects.push(newBall);
         }
 
-        this.applyGravity();
-        this.applyConstrains();
-        this.processCollisions();
-        this.objects.forEach(obj => obj.update(time));
+        this.solver.update(time);
     }
 
     tick() {
@@ -131,30 +133,10 @@ export class Render {
         this.timeRenderEnd = performance.now();
     }
 
-    applyGravity() {
-        this.objects.forEach(obj => obj.accelerate(this.gravity))
-    }
-
-    applyConstrains() {
-        this.objects.forEach(obj => this.constrains.applyConstrain(obj))
-    }
-
-    processCollisions() {
-        this.objects.forEach(objA => {
-            this.objects.forEach(objB => {
-                if (objA === objB) {
-                    return;
-                }
-
-                objA.collide(objB);
-            })
-        })
-    }
-
     renderItems() {
         this.items.forEach(item => item.render());
 
-        this.objects.forEach(obj => {
+        this.solver.objects.forEach(obj => {
             const img = new Circle(
                 this.context,
                 obj.currentPosition.x,
@@ -163,8 +145,11 @@ export class Render {
             );
             img.render();
 
-            // const v = new Velocity(this.context, obj);
-            // v.render();
+            // this.context.strokeStyle = '#0000ff';
+            // this.context.beginPath();
+            // this.context.moveTo(obj.previousPosition.x, obj.previousPosition.y);
+            // this.context.lineTo(obj.currentPosition.x, obj.currentPosition.y);
+            // this.context.stroke();
         })
     }
 
@@ -189,5 +174,37 @@ export class Render {
         } else {
             setInterval(this.nextInterval, 16)
         }
+    }
+
+    switchToCircleConstrain() {
+        this.constrains = new CircleConstrain(
+            new Vec2(this.canvas.width / 2, this.canvas.height / 2),
+            this.canvas.height / 2
+        )
+
+        this.items.push(
+            new Circle(
+                this.context,
+                this.canvas.width / 2,
+                this.canvas.height / 2,
+                this.canvas.height / 2,
+                '#000000'
+            )
+        );
+    }
+
+    switchToViewportConstrain() {
+        this.constrains = new ViewportConstrain(this.canvas.width, this.canvas.height)
+        this.items.push(
+            new Rect(
+                this.context,
+                Vec2.Zero(),
+                new Vec2(
+                    this.canvas.width,
+                    this.canvas.height
+                ),
+                '#000000'
+            )
+        );
     }
 }

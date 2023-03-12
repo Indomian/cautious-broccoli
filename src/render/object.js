@@ -1,4 +1,4 @@
-import {Vec2, Vec2Math} from "./vec2";
+import {Vec2, Vec2Line, Vec2Math} from "./vec2";
 
 export class BallsObject {
     previousPosition = Vec2.Zero();
@@ -7,7 +7,7 @@ export class BallsObject {
     acc = Vec2.Zero();
 
     radius = 10;
-    bounceValue = 1;
+    bounceValue = 1.1;
 
     /**
      * Creates balls object
@@ -23,7 +23,7 @@ export class BallsObject {
      * @param {number} step
      */
     update(step) {
-        const velocity = this.currentPosition.diff(this.previousPosition);
+        const velocity = this.velocity;
         this.previousPosition = this.currentPosition.copy();
         this.currentPosition.add(
             velocity.add(
@@ -54,11 +54,28 @@ export class BallsObject {
         }
     }
 
+    flip() {
+        const position = this.currentPosition.copy();
+        this.currentPosition = this.previousPosition;
+        this.previousPosition = position;
+    }
+
     get velocity() {
-        return this.currentPosition.diff(this.previousPosition);
+        return Vec2Math.diff(
+            this.currentPosition,
+            this.previousPosition
+        );
     }
 
     set velocity(v) {
         this.previousPosition = Vec2Math.diff(this.currentPosition,v);
+    }
+
+    /**
+     *
+     * @returns {Vec2Line}
+     */
+    get movementVector() {
+        return new Vec2Line(this.previousPosition, this.currentPosition);
     }
 }

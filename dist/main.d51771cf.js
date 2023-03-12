@@ -576,6 +576,8 @@ var _circleConstrain = require("./circleConstrain");
 var _velocity = require("./velocity");
 var _mappedObjectsGenerator = require("./mappedObjectsGenerator");
 var _totalObjectsGenerator = require("./totalObjectsGenerator");
+var _solver = require("./solver");
+var _rect = require("./rect");
 const balls = [
     new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(1, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10))),
     new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(2, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10))),
@@ -589,39 +591,37 @@ class Render {
     /**
      * @type {Constrain}
      */ constrains = null;
+    /**
+     * Solver for physics
+     * @type {Solver}
+     */ solver = null;
     constructor(canvas){
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
         this.timeRenderStart = performance.now();
         this.timeRenderEnd = performance.now();
         this.step = 0;
-        this.gravity = (0, _vec2.Vec2).Zero();
         this.items = [];
-        this.objects = [];
         this.generator = null;
+        this.solver = null;
         this.configure();
     }
     configure() {
+        this.solver = new (0, _solver.Solver)();
         this.context.font = "10px serif";
-        this.gravity = new (0, _vec2.Vec2)(0, 100);
-        //this.constrains = new ViewportConstrain(this.canvas.width, this.canvas.height)
-        this.constrains = new (0, _circleConstrain.CircleConstrain)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2), this.canvas.height / 2);
-        this.items.push(new (0, _circle.Circle)(this.context, this.canvas.width / 2, this.canvas.height / 2, this.canvas.height / 2, "#000000"));
-        //this.generator = new MappedObjectsGenerator(balls);
-        this.generator = new (0, _totalObjectsGenerator.TotalObjectsGenerator)(200, 0.2, ()=>{
+        this.switchToCircleConstrain();
+        //this.switchToViewportConstrain();
+        this.solver.constrains = this.constrains;
+        this.generator = new (0, _totalObjectsGenerator.TotalObjectsGenerator)(this.solver, 100, 0.2, ()=>{
             const ball = new (0, _object.BallsObject)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2));
-            ball.velocity = new (0, _vec2.Vec2)(5, -1);
-            ball.radius = Math.random() * 20 + 5;
+            ball.velocity = new (0, _vec2.Vec2)(3, -0.5).mul(1 / this.solver.subSteps);
             return ball;
         });
     }
     update(time) {
         const newBall = this.generator.getNextObject(time);
-        if (newBall) this.objects.push(newBall);
-        this.applyGravity();
-        this.applyConstrains();
-        this.processCollisions();
-        this.objects.forEach((obj)=>obj.update(time));
+        if (newBall) this.solver.objects.push(newBall);
+        this.solver.update(time);
     }
     tick() {
         if (this.step < 0) this.step = 0;
@@ -644,27 +644,16 @@ class Render {
         this.tick();
         this.timeRenderEnd = performance.now();
     };
-    applyGravity() {
-        this.objects.forEach((obj)=>obj.accelerate(this.gravity));
-    }
-    applyConstrains() {
-        this.objects.forEach((obj)=>this.constrains.applyConstrain(obj));
-    }
-    processCollisions() {
-        this.objects.forEach((objA)=>{
-            this.objects.forEach((objB)=>{
-                if (objA === objB) return;
-                objA.collide(objB);
-            });
-        });
-    }
     renderItems() {
         this.items.forEach((item)=>item.render());
-        this.objects.forEach((obj)=>{
+        this.solver.objects.forEach((obj)=>{
             const img = new (0, _circle.Circle)(this.context, obj.currentPosition.x, obj.currentPosition.y, obj.radius);
             img.render();
-        // const v = new Velocity(this.context, obj);
-        // v.render();
+        // this.context.strokeStyle = '#0000ff';
+        // this.context.beginPath();
+        // this.context.moveTo(obj.previousPosition.x, obj.previousPosition.y);
+        // this.context.lineTo(obj.currentPosition.x, obj.currentPosition.y);
+        // this.context.stroke();
         });
     }
     printText(text, x, y) {
@@ -682,9 +671,17 @@ class Render {
         if (self.requestAnimationFrame) self.requestAnimationFrame(this.nextFrame);
         else setInterval(this.nextInterval, 16);
     }
+    switchToCircleConstrain() {
+        this.constrains = new (0, _circleConstrain.CircleConstrain)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2), this.canvas.height / 2);
+        this.items.push(new (0, _circle.Circle)(this.context, this.canvas.width / 2, this.canvas.height / 2, this.canvas.height / 2, "#000000"));
+    }
+    switchToViewportConstrain() {
+        this.constrains = new (0, _viewportConstrain.ViewportConstrain)(this.canvas.width, this.canvas.height);
+        this.items.push(new (0, _rect.Rect)(this.context, (0, _vec2.Vec2).Zero(), new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), "#000000"));
+    }
 }
 
-},{"./circle":"6xoxL","./vec2":"5Evqq","./object":"3lSNL","./viewportConstrain":"6P63O","./circleConstrain":"u2M21","./velocity":"hZg0J","./mappedObjectsGenerator":"1BFwT","./totalObjectsGenerator":"69602","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"6xoxL":[function(require,module,exports) {
+},{"./circle":"6xoxL","./vec2":"5Evqq","./object":"3lSNL","./viewportConstrain":"6P63O","./circleConstrain":"u2M21","./velocity":"hZg0J","./mappedObjectsGenerator":"1BFwT","./totalObjectsGenerator":"69602","./solver":"kbleD","./rect":"71FcN","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"6xoxL":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Circle", ()=>Circle);
@@ -756,8 +753,19 @@ exports.export = function(dest, destName, get) {
 },{}],"5Evqq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MATH_ERROR", ()=>MATH_ERROR);
+parcelHelpers.export(exports, "isEqual", ()=>isEqual);
+parcelHelpers.export(exports, "NoPerpendicularVectorToZeroVector", ()=>NoPerpendicularVectorToZeroVector);
 parcelHelpers.export(exports, "Vec2", ()=>Vec2);
+parcelHelpers.export(exports, "Vec2Line", ()=>Vec2Line);
+parcelHelpers.export(exports, "ExceptionParallel", ()=>ExceptionParallel);
 parcelHelpers.export(exports, "Vec2Math", ()=>Vec2Math);
+const MATH_ERROR = 0.000001;
+function isEqual(a, b, error) {
+    return Math.abs(a - b) < error;
+}
+class NoPerpendicularVectorToZeroVector extends Error {
+}
 class Vec2 {
     x = 0;
     y = 0;
@@ -789,6 +797,24 @@ class Vec2 {
      */ flipY() {
         this.y = -this.y;
         return this;
+    }
+    /**
+     * Flips along Y axis
+     * @returns {Vec2}
+     */ flipX() {
+        this.x = -this.x;
+        return this;
+    }
+    flip() {
+        this.x = -this.x;
+        this.y = -this.y;
+        return this;
+    }
+    /**
+     * Checks if this vector equals given vector using global MATH_ERROR const
+     * @param vec2
+     */ equals(vec2) {
+        return Vec2Math.distance(this, vec2) < MATH_ERROR;
     }
     /**
      * Sums current vector and given vector and returns new vector
@@ -826,9 +852,89 @@ class Vec2 {
         const l = this.length;
         return new Vec2(this.x / l, this.y / l);
     }
+    get perpendicular() {
+        if (this.x === 0) {
+            // Vertical
+            if (this.y > 0) return Vec2.Horizontal().normalized;
+            else if (this.y < 0) return Vec2.Horizontal().normalized.flip();
+            else throw new NoPerpendicularVectorToZeroVector();
+        } else if (this.y === 0) {
+            // Horizontal
+            if (this.x > 0) return Vec2.Vertical().normalized;
+            else if (this.x < 0) return Vec2.Vertical().normalized.flip();
+        }
+        return new Vec2(-this.y / this.x, 1).normalized;
+    }
     static Zero() {
         return new Vec2(0, 0);
     }
+    static Horizontal() {
+        return new Vec2(1, 0);
+    }
+    static Vertical() {
+        return new Vec2(0, 1);
+    }
+}
+class Vec2Line {
+    vec1 = Vec2.Zero();
+    vec2 = Vec2.Zero();
+    /**
+     * Y = K*X + B
+     * @type {number}
+     */ k = 0;
+    b = 0;
+    constructor(vec1, vec2){
+        this.vec1 = vec1;
+        this.vec2 = vec2;
+        this.calculateKB();
+    }
+    /**
+     * Determines if given point lays on the line
+     * @param vec
+     * @returns {boolean}
+     */ inBetween(vec) {
+        const l1 = Vec2Math.diff(vec, this.vec1).length;
+        const l2 = Vec2Math.diff(this.vec2, vec).length;
+        const l = Vec2Math.diff(this.vec1, this.vec2).length;
+        return isEqual(l, l1 + l2, MATH_ERROR);
+    }
+    calculateKB() {
+        if (this.vec1.y === this.vec2.y) {
+            // Horizontal line
+            this.b = this.vec1.y;
+            this.k = 0;
+        } else if (this.vec1.x === this.vec2.x) {
+            // Vertical line
+            this.b = NaN;
+            this.k = NaN;
+        } else {
+            this.b = (this.vec1.x * this.vec2.y - this.vec1.y * this.vec2.x) / (this.vec1.x - this.vec2.x);
+            this.k = (this.vec1.y - this.vec2.y) / (this.vec1.x - this.vec2.x);
+        }
+    }
+    makeVec2FromX(x) {
+        return new Vec2(x, this.k * x + this.b);
+    }
+    get B() {
+        return this.b;
+    }
+    get K() {
+        return this.k;
+    }
+    get length() {
+        return Vec2Math.distance(this.vec1, this.vec2);
+    }
+    get direction() {
+        return Vec2Math.diff(this.vec1, this.vec2);
+    }
+    static Vertical(x) {
+        return new Vec2Line(new Vec2(x, 0), new Vec2(x, Number.MAX_SAFE_INTEGER));
+    }
+    static Horizontal(y) {
+        return new Vec2Line(new Vec2(0, y), new Vec2(Number.MAX_SAFE_INTEGER, y));
+    }
+}
+class ExceptionParallel extends Error {
 }
 class Vec2Math {
     static diff(vec1, vec2) {
@@ -836,6 +942,47 @@ class Vec2Math {
     }
     static mul(vec1, scalar) {
         return new Vec2(vec1.x * scalar, vec1.y * scalar);
+    }
+    /**
+     * Calculates distance between 2 vectors
+     * @param {Vec2} vec1
+     * @param {Vec2} vec2
+     * @returns {number}
+     */ static distance(vec1, vec2) {
+        return Vec2Math.diff(vec1, vec2).length;
+    }
+    /**
+     * Finds intersection between 2 lines
+     * @param {Vec2Line} line1
+     * @param {Vec2Line} line2
+     * @returns {Vec2}
+     */ static intersect(line1, line2) {
+        if (line1.K === line2.K) throw new ExceptionParallel();
+        if (isNaN(line1.K) || isNaN(line2.K)) {
+            // One of two lines is vertical
+            if (isNaN(line1.K)) return line2.makeVec2FromX(line1.vec1.x);
+            else return line1.makeVec2FromX(line2.vec1.x);
+        } else {
+            const x = (line1.B - line2.B) / (line2.K - line1.K);
+            return line1.makeVec2FromX(x);
+        }
+    }
+    /**
+     * Dot product of 2 vectors
+     * @param {Vec2} vec1
+     * @param {Vec2} vec2
+     * @returns {number}
+     */ static dot(vec1, vec2) {
+        return vec1.x * vec2.x + vec1.y * vec2.y;
+    }
+    /**
+     *
+     * @param {Vec2} vec
+     * @param {Vec2Line} line
+     * @returns {Vec2}
+     */ static mirror(vec, line) {
+        const normal = line.direction.perpendicular.normalized;
+        return vec.copy().sub(normal.mul(2 * Vec2Math.dot(vec, normal)));
     }
 }
 
@@ -849,7 +996,7 @@ class BallsObject {
     currentPosition = (0, _vec2.Vec2).Zero();
     acc = (0, _vec2.Vec2).Zero();
     radius = 10;
-    bounceValue = 1;
+    bounceValue = 1.1;
     /**
      * Creates balls object
      * @param {Vec2} position
@@ -861,7 +1008,7 @@ class BallsObject {
      * Updates state of object
      * @param {number} step
      */ update(step) {
-        const velocity = this.currentPosition.diff(this.previousPosition);
+        const velocity = this.velocity;
         this.previousPosition = this.currentPosition.copy();
         this.currentPosition.add(velocity.add(this.acc.mul(step * step)));
         this.acc = (0, _vec2.Vec2).Zero();
@@ -883,11 +1030,22 @@ class BallsObject {
             obj.currentPosition.sub((0, _vec2.Vec2Math).mul(normalized, obj.radius / requiredDistance * delta * obj.bounceValue));
         }
     }
+    flip() {
+        const position = this.currentPosition.copy();
+        this.currentPosition = this.previousPosition;
+        this.previousPosition = position;
+    }
     get velocity() {
-        return this.currentPosition.diff(this.previousPosition);
+        return (0, _vec2.Vec2Math).diff(this.currentPosition, this.previousPosition);
     }
     set velocity(v) {
         this.previousPosition = (0, _vec2.Vec2Math).diff(this.currentPosition, v);
+    }
+    /**
+     *
+     * @returns {Vec2Line}
+     */ get movementVector() {
+        return new (0, _vec2.Vec2Line)(this.previousPosition, this.currentPosition);
     }
 }
 
@@ -896,25 +1054,71 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
 var _constrain = require("./constrain");
+var _vec2 = require("./vec2");
 class ViewportConstrain extends (0, _constrain.Constrain) {
+    _width = 0;
+    _height = 0;
+    left = (0, _vec2.Vec2Line).Vertical(0);
+    top = (0, _vec2.Vec2Line).Horizontal(0);
+    right = (0, _vec2.Vec2Line).Vertical(0);
+    bottom = (0, _vec2.Vec2Line).Horizontal(0);
     constructor(width, height){
         super();
         this.width = width;
         this.height = height;
     }
+    get width() {
+        return this._width;
+    }
+    set width(width) {
+        this._width = width;
+        this.recalculateSides();
+    }
+    get height() {
+        return this._height;
+    }
+    set height(height) {
+        this._height = height;
+        this.recalculateSides();
+    }
+    recalculateSides() {
+        this.top = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(this._width, 0), new (0, _vec2.Vec2)(0, 0));
+        this.right = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(this._width, 0), new (0, _vec2.Vec2)(this._width, this._height));
+        this.bottom = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(0, this._height), new (0, _vec2.Vec2)(this._width, this._height));
+        this.left = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(0, this._height), new (0, _vec2.Vec2)(0, 0));
+    }
     applyConstrain(obj) {
         super.applyConstrain(obj);
+        this.checkConstrainWithSide(obj, this.right);
+        this.checkConstrainWithSide(obj, this.left);
+        this.checkConstrainWithSide(obj, this.bottom);
+        this.checkConstrainWithSide(obj, this.top);
+    }
+    /**
+     *
+     * @param {BallsObject} obj
+     * @param {Vec2Line} side
+     */ checkConstrainWithSide(obj, side) {
         const velocity = obj.velocity;
-        if (obj.currentPosition.x > this.width) ;
-        else obj.currentPosition;
-        if (obj.currentPosition.y > this.height - obj.radius) {
-            const distY = obj.currentPosition.y - this.height + obj.radius;
-            obj.currentPosition.add(velocity.flipY().mul(obj.bounceValue));
-        } else obj.currentPosition.y, obj.radius;
+        const movementVector = obj.movementVector;
+        const direction = velocity.copy().flip();
+        try {
+            const intersectionPoint = (0, _vec2.Vec2Math).intersect(side, movementVector);
+            const distance = (0, _vec2.Vec2Math).distance(intersectionPoint, obj.currentPosition);
+            if (distance < obj.radius) {
+                console.log(distance);
+                const normal = side.direction.perpendicular.normalized;
+                console.log(intersectionPoint, normal);
+                obj.currentPosition = intersectionPoint.sum(normal.mul(obj.radius * obj.bounceValue));
+                console.log(obj.currentPosition);
+            }
+        } catch (e) {
+        // Movement is parallel with given side
+        }
     }
 }
 
-},{"./constrain":"lyXo1","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lyXo1":[function(require,module,exports) {
+},{"./constrain":"lyXo1","./vec2":"5Evqq","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lyXo1":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Constrain", ()=>Constrain);
@@ -950,7 +1154,7 @@ class CircleConstrain extends (0, _constrain.Constrain) {
         const r = obj.radius;
         if (distance > this.radius - r) {
             const n = toCenter.normalized;
-            obj.currentPosition = this.center.sum(n.mul(this.radius - r * obj.bounceValue));
+            obj.currentPosition = this.center.sum(n.mul(this.radius - r));
         }
     }
 }
@@ -1001,8 +1205,8 @@ class MappedObjectGeneratorItem {
 class MappedObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
     /**
      * @param {MappedObjectGeneratorItem[]} map
-     */ constructor(map){
-        super();
+     */ constructor(solver, map){
+        super(solver);
         this.items = map;
         this.currentTime = 0;
     }
@@ -1019,7 +1223,10 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ObjectsGenerator", ()=>ObjectsGenerator);
 class ObjectsGenerator {
-    constructor(){}
+    solver = null;
+    constructor(solver){
+        this.solver = solver;
+    }
     // TODO Make me iterator
     getNextObject(step) {
         return null;
@@ -1032,8 +1239,8 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "TotalObjectsGenerator", ()=>TotalObjectsGenerator);
 var _objectsGenerator = require("./objectsGenerator");
 class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
-    constructor(count, delay, createCallback){
-        super();
+    constructor(solver, count, delay, createCallback){
+        super(solver);
         this.limit = count;
         this.total = 0;
         this.delay = delay;
@@ -1052,6 +1259,85 @@ class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
     }
 }
 
-},{"./objectsGenerator":"c30C4","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ksKUl","3mV1H"], "3mV1H", "parcelRequire62ee")
+},{"./objectsGenerator":"c30C4","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"kbleD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Solver", ()=>Solver);
+var _vec2 = require("./vec2");
+var _object = require("./object");
+class Solver {
+    /**
+     * List of balls
+     * @type {BallsObject[]}
+     */ objects = [];
+    /**
+     * @type {Constrain}
+     */ constrains = null;
+    constructor(){
+        this.gravity = (0, _vec2.Vec2).Zero();
+        this.objects = [];
+        this.subSteps = 8;
+        this.configure();
+    }
+    configure() {
+        this.gravity = new (0, _vec2.Vec2)(0, 100);
+    }
+    /**
+     * Update the simulation by given step.
+     * @param {number} time amount of seconds passed since last update.
+     */ update(time) {
+        const subTime = time / this.subSteps;
+        for(let i = 0; i < this.subSteps; i++){
+            this.applyGravity();
+            this.applyConstrains();
+            this.processCollisions();
+            this.updateObjects(subTime);
+        }
+    }
+    /**
+     * Update objects state
+     * @param {number} time amount of seconds passed since last update
+     */ updateObjects(time) {
+        this.objects.forEach((obj)=>obj.update(time));
+    }
+    applyGravity() {
+        this.objects.forEach((obj)=>obj.accelerate(this.gravity));
+    }
+    applyConstrains() {
+        this.objects.forEach((obj)=>this.constrains.applyConstrain(obj));
+    }
+    processCollisions() {
+        this.objects.forEach((objA)=>{
+            this.objects.forEach((objB)=>{
+                if (objA === objB) return;
+                objA.collide(objB);
+            });
+        });
+    }
+}
+
+},{"./vec2":"5Evqq","./object":"3lSNL","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"71FcN":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Rect", ()=>Rect);
+var _item = require("./item");
+var _vec2 = require("./vec2");
+class Rect extends (0, _item.Item) {
+    leftTop = (0, _vec2.Vec2).Zero();
+    size = (0, _vec2.Vec2).Zero();
+    color = "#00ff00";
+    constructor(context, leftTop, size, color){
+        super(context);
+        this.leftTop = leftTop;
+        this.size = size;
+        if (color) this.color = color;
+    }
+    render() {
+        this.context.fillStyle = this.color;
+        this.context.fillRect(this.leftTop.x, this.leftTop.y, this.size.x, this.size.y);
+    }
+}
+
+},{"./item":"knqw5","./vec2":"5Evqq","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ksKUl","3mV1H"], "3mV1H", "parcelRequire62ee")
 
 //# sourceMappingURL=main.d51771cf.js.map

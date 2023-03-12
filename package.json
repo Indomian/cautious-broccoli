@@ -5,13 +5,17 @@
   "source": "src/index.html",
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "rm -rf .parcel-cache && yarn parcel",
     "build": "rm -rf .parcel-cache && yarn parcel build --public-url /cautious-broccoli/"
   },
   "author": "Egor Bolgov <e.bolgov@semrush.com>",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@babel/core": "^7.21.0",
+    "@babel/preset-env": "^7.20.2",
+    "babel-jest": "^29.5.0",
+    "jest": "^29.5.0",
     "parcel": "^2.8.3"
   }
 }

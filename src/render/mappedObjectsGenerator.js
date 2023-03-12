@@ -25,8 +25,8 @@ export class MappedObjectsGenerator extends ObjectsGenerator {
     /**
      * @param {MappedObjectGeneratorItem[]} map
      */
-    constructor(map) {
-        super();
+    constructor(solver, map) {
+        super(solver);
 
         this.items = map;
         this.currentTime = 0;
