@@ -1,5 +1,5 @@
-import {Vec2} from "./vec2";
-import {BallsObject} from "./object";
+import {Vec2} from "./vector/vec2";
+import {BallsObject} from "./objects/object";
 
 export class Solver {
     /**
@@ -18,13 +18,24 @@ export class Solver {
 
         this.objects = [];
 
-        this.subSteps = 8;
+        this.subSteps = 4;
 
         this.configure();
     }
 
     configure() {
         this.gravity = new Vec2(0, 100);
+
+        this.useFixedTime = true;
+        this.step = 0.017 / this.subSteps;
+    }
+
+    /**
+     *
+     * @param {BallsObject} obj
+     */
+    addObject(obj) {
+        this.objects.push(obj);
     }
 
     /**
@@ -32,7 +43,7 @@ export class Solver {
      * @param {number} time amount of seconds passed since last update.
      */
     update(time) {
-        const subTime = time / this.subSteps;
+        const subTime = this.useFixedTime ? this.step : time / this.subSteps;
         for (let i = 0; i < this.subSteps; i++) {
             this.applyGravity();
             this.applyConstrains();

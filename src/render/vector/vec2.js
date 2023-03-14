@@ -154,8 +154,11 @@ export class Vec2 {
 }
 
 export class Vec2Line {
-    vec1 = Vec2.Zero();
-    vec2 = Vec2.Zero();
+    _vec1 = Vec2.Zero();
+    _vec2 = Vec2.Zero();
+
+    _direction = null;
+    _length = 0;
 
     /**
      * Y = K*X + B
@@ -165,8 +168,12 @@ export class Vec2Line {
     b = 0;
 
     constructor(vec1, vec2) {
-        this.vec1 = vec1;
-        this.vec2 = vec2;
+        this._vec1 = vec1;
+        this._vec2 = vec2;
+
+        this._direction = Vec2Math.diff(this._vec1, this._vec2);
+        this._length = this._direction.length;
+        this._normalized = this._direction.normalized;
 
         this.calculateKB();
     }
@@ -177,29 +184,53 @@ export class Vec2Line {
      * @returns {boolean}
      */
     inBetween(vec) {
-        const l1 = Vec2Math.diff(vec, this.vec1).length;
-        const l2 = Vec2Math.diff(this.vec2, vec).length;
-        const l = Vec2Math.diff(this.vec1, this.vec2).length;
+        const l1 = Vec2Math.diff(vec, this._vec1).length;
+        const l2 = Vec2Math.diff(this._vec2, vec).length;
+        const l = Vec2Math.diff(this._vec1, this._vec2).length;
         return isEqual(l, l1 + l2, MATH_ERROR);
     }
 
     calculateKB() {
-        if (this.vec1.y === this.vec2.y) {
+        if (this._vec1.y === this._vec2.y) {
             // Horizontal line
-            this.b = this.vec1.y;
+            this.b = this._vec1.y;
             this.k = 0;
-        } else if (this.vec1.x === this.vec2.x) {
+        } else if (this._vec1.x === this._vec2.x) {
             // Vertical line
             this.b = NaN;
             this.k = NaN;
         } else {
-            this.b = (this.vec1.x * this.vec2.y - this.vec1.y * this.vec2.x) / (this.vec1.x - this.vec2.x)
-            this.k = (this.vec1.y - this.vec2.y) / (this.vec1.x - this.vec2.x);
+            this.b = (this._vec1.x * this._vec2.y - this._vec1.y * this._vec2.x) / (this._vec1.x - this._vec2.x)
+            this.k = (this._vec1.y - this._vec2.y) / (this._vec1.x - this._vec2.x);
         }
     }
 
     makeVec2FromX(x) {
         return new Vec2(x, this.k * x + this.b);
+    }
+
+    copy() {
+        return new Vec2Line(
+            this._vec1,
+            this._vec2
+        )
+    }
+
+    moveBy(vec) {
+        this._vec1.add(vec);
+        this._vec2.add(vec);
+        this.calculateKB();
+    }
+
+    getPointProjection(vec) {
+        const a = this.direction;
+        const b = Vec2Math.diff(vec, this._vec1);
+        const distance = b.length;
+        const cosabD = Vec2Math.dot(a, b) / (this.length);
+
+        return this._vec1.sum(
+            this.ort.copy().mul(cosabD)
+        );
     }
 
     get B() {
@@ -211,11 +242,23 @@ export class Vec2Line {
     }
 
     get length() {
-        return Vec2Math.distance(this.vec1, this.vec2);
+        return this._length;
     }
 
     get direction() {
-        return Vec2Math.diff(this.vec1, this.vec2);
+        return this._direction;
+    }
+
+    get ort() {
+        return this._normalized;
+    }
+
+    get vec1() {
+        return this._vec1;
+    }
+
+    get vec2() {
+        return this._vec2;
     }
 
     static Vertical(x) {
@@ -268,9 +311,9 @@ export class Vec2Math {
         if (isNaN(line1.K) || isNaN(line2.K)) {
             // One of two lines is vertical
             if (isNaN(line1.K)) {
-                return line2.makeVec2FromX(line1.vec1.x);
+                return line2.makeVec2FromX(line1._vec1.x);
             } else {
-                return line1.makeVec2FromX(line2.vec1.x);
+                return line1.makeVec2FromX(line2._vec1.x);
             }
         } else {
             const x = (line1.B - line2.B) / (line2.K - line1.K);

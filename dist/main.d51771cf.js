@@ -568,25 +568,60 @@ onmessage = function(event) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
-var _circle = require("./circle");
-var _vec2 = require("./vec2");
-var _object = require("./object");
-var _viewportConstrain = require("./viewportConstrain");
-var _circleConstrain = require("./circleConstrain");
-var _velocity = require("./velocity");
+var _circle = require("./items/circle");
+var _vec2 = require("./vector/vec2");
+var _object = require("./objects/object");
+var _viewport = require("./constrains/viewport");
+var _circle1 = require("./constrains/circle");
+var _velocity = require("./items/velocity");
 var _mappedObjectsGenerator = require("./mappedObjectsGenerator");
 var _totalObjectsGenerator = require("./totalObjectsGenerator");
 var _solver = require("./solver");
-var _rect = require("./rect");
+var _rect = require("./items/rect");
+var _object1 = require("./renderableObjects/object");
+var _immovable = require("./objects/immovable");
+var _immovableLine = require("./renderableObjects/immovableLine");
+var _immovableLine1 = require("./objects/immovableLine");
+var _line = require("./items/line");
+var _circleWithText = require("./items/circleWithText");
 const balls = [
     new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(1, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10))),
     new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(2, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10))),
     new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(3, new (0, _object.BallsObject)(new (0, _vec2.Vec2)(10, 10)))
 ];
+const milkShakePoints = [
+    new (0, _vec2.Vec2)(60, 110),
+    new (0, _vec2.Vec2)(130, 490),
+    new (0, _vec2.Vec2)(330, 490),
+    new (0, _vec2.Vec2)(400, 110)
+];
+const milkShakeLines = [
+    [
+        milkShakePoints[0],
+        (0, _vec2.Vec2Math).diff(milkShakePoints[0], milkShakePoints[1]).flip()
+    ],
+    [
+        milkShakePoints[1],
+        (0, _vec2.Vec2Math).diff(milkShakePoints[1], milkShakePoints[2]).flip()
+    ],
+    [
+        milkShakePoints[2],
+        (0, _vec2.Vec2Math).diff(milkShakePoints[2], milkShakePoints[3]).flip()
+    ]
+];
+const ballsColors = {
+    57: "#ffffff",
+    78: "#ffffff",
+    71: "#ffffff",
+    86: "#ffffff",
+    200: "#ffffff",
+    202: "#ffffff",
+    218: "#ffffff"
+};
 class Render {
     /**
      * List of balls
-     * @type {BallsObject[]}
+     * @type {RenderableObject[]}
      */ objects = [];
     /**
      * @type {Constrain}
@@ -601,6 +636,9 @@ class Render {
         this.timeRenderStart = performance.now();
         this.timeRenderEnd = performance.now();
         this.step = 0;
+        /**
+         * @type {RenderableObject[]}
+         */ this.objects = [];
         this.items = [];
         this.generator = null;
         this.solver = null;
@@ -609,22 +647,37 @@ class Render {
     configure() {
         this.solver = new (0, _solver.Solver)();
         this.context.font = "10px serif";
-        this.switchToCircleConstrain();
-        //this.switchToViewportConstrain();
+        //this.switchToCircleConstrain();
+        this.switchToViewportConstrain();
         this.solver.constrains = this.constrains;
-        this.generator = new (0, _totalObjectsGenerator.TotalObjectsGenerator)(this.solver, 100, 0.2, ()=>{
-            const ball = new (0, _object.BallsObject)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2));
-            ball.velocity = new (0, _vec2.Vec2)(3, -0.5).mul(1 / this.solver.subSteps);
-            return ball;
+        const canvasCenter = new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2);
+        const ballGeneratorPoint = new (0, _vec2.Vec2)(10, 10);
+        const ballVelocity = new (0, _vec2.Vec2)(3, -3).mul(1 / this.solver.subSteps);
+        this.generator = new (0, _totalObjectsGenerator.TotalObjectsGenerator)(this.solver, 300, 10, (index)=>{
+            const obj = new (0, _object1.RenderableObject)(new (0, _object.BallsObject)(ballGeneratorPoint, 10).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.context, (0, _vec2.Vec2).Zero(), 10, ballsColors[index], index, "#000000"));
+            return obj;
+        });
+        this.addObject(new (0, _object1.RenderableObject)(new (0, _immovable.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000")));
+        milkShakeLines.forEach((line)=>{
+            this.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line[0], line[1]), new (0, _line.Line)(this.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
         });
     }
+    /**
+     * @param {RenderableObject} obj
+     */ addObject(obj) {
+        this.objects.push(obj);
+        this.solver.addObject(obj.ballsObject);
+    }
     update(time) {
-        const newBall = this.generator.getNextObject(time);
-        if (newBall) this.solver.objects.push(newBall);
         this.solver.update(time);
+    }
+    generatorsTick(time) {
+        const newBall = this.generator.getNextObject(time);
+        if (newBall) this.addObject(newBall);
     }
     tick() {
         if (this.step < 0) this.step = 0;
+        this.generatorsTick(this.step / 1000);
         this.update(this.step / 1000);
         this.clear();
         this.renderItems();
@@ -646,18 +699,11 @@ class Render {
     };
     renderItems() {
         this.items.forEach((item)=>item.render());
-        this.solver.objects.forEach((obj)=>{
-            const img = new (0, _circle.Circle)(this.context, obj.currentPosition.x, obj.currentPosition.y, obj.radius);
-            img.render();
-        // this.context.strokeStyle = '#0000ff';
-        // this.context.beginPath();
-        // this.context.moveTo(obj.previousPosition.x, obj.previousPosition.y);
-        // this.context.lineTo(obj.currentPosition.x, obj.currentPosition.y);
-        // this.context.stroke();
-        });
+        this.objects.forEach((obj)=>obj.render());
     }
     printText(text, x, y) {
-        this.context.fillStyle = "#000000";
+        this.context.fillStyle = "#ffffff";
+        this.context.textAlign = "start";
         this.context.fillText(text, x, y);
     }
     printFPS() {
@@ -672,85 +718,54 @@ class Render {
         else setInterval(this.nextInterval, 16);
     }
     switchToCircleConstrain() {
-        this.constrains = new (0, _circleConstrain.CircleConstrain)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2), this.canvas.height / 2);
+        this.constrains = new (0, _circle1.CircleConstrain)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2), this.canvas.height / 2);
         this.items.push(new (0, _circle.Circle)(this.context, this.canvas.width / 2, this.canvas.height / 2, this.canvas.height / 2, "#000000"));
     }
     switchToViewportConstrain() {
-        this.constrains = new (0, _viewportConstrain.ViewportConstrain)(this.canvas.width, this.canvas.height);
+        this.constrains = new (0, _viewport.ViewportConstrain)(this.canvas.width, this.canvas.height);
         this.items.push(new (0, _rect.Rect)(this.context, (0, _vec2.Vec2).Zero(), new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), "#000000"));
     }
 }
 
-},{"./circle":"6xoxL","./vec2":"5Evqq","./object":"3lSNL","./viewportConstrain":"6P63O","./circleConstrain":"u2M21","./velocity":"hZg0J","./mappedObjectsGenerator":"1BFwT","./totalObjectsGenerator":"69602","./solver":"kbleD","./rect":"71FcN","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"6xoxL":[function(require,module,exports) {
+},{"./items/circle":"1t8sT","./vector/vec2":"2KFFG","./objects/object":"3RsdY","./constrains/viewport":"j2D16","./constrains/circle":"if6MS","./items/velocity":"8QIvd","./mappedObjectsGenerator":"1BFwT","./totalObjectsGenerator":"69602","./solver":"kbleD","./items/rect":"d4B3G","./renderableObjects/object":"lW37O","./objects/immovable":"2rlqA","./renderableObjects/immovableLine":"ah7D5","./objects/immovableLine":"gY0bU","./items/line":"bcihL","./items/circleWithText":"2IXVz","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1t8sT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Circle", ()=>Circle);
 var _item = require("./item");
 class Circle extends (0, _item.Item) {
-    x = 0;
-    y = 0;
     r = 0;
     color = "#00ff00";
-    constructor(context, x, y, r, color){
-        super(context);
-        this.x = x;
-        this.y = y;
-        this.r = r;
+    constructor(context, position, r, color){
+        super(context, position);
+        if (r) this.r = r;
         if (color) this.color = color;
     }
     render() {
         this.context.beginPath();
-        this.context.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        this.context.arc(this.position.x, this.position.y, this.r, 0, 2 * Math.PI);
         this.context.fillStyle = this.color;
         this.context.fill();
     }
 }
 
-},{"./item":"knqw5","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"knqw5":[function(require,module,exports) {
+},{"./item":"aIQJw","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"aIQJw":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Item", ()=>Item);
+var _vec2 = require("../vector/vec2");
 class Item {
+    position = (0, _vec2.Vec2).Zero();
     /**
      *
      * @param {CanvasRenderingContext2D} context
-     */ constructor(context){
+     */ constructor(context, position){
         this.context = context;
+        this.position = position;
     }
     render() {}
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fn8Fk":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"5Evqq":[function(require,module,exports) {
+},{"../vector/vec2":"2KFFG","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2KFFG":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "MATH_ERROR", ()=>MATH_ERROR);
@@ -876,16 +891,21 @@ class Vec2 {
     }
 }
 class Vec2Line {
-    vec1 = Vec2.Zero();
-    vec2 = Vec2.Zero();
+    _vec1 = Vec2.Zero();
+    _vec2 = Vec2.Zero();
+    _direction = null;
+    _length = 0;
     /**
      * Y = K*X + B
      * @type {number}
      */ k = 0;
     b = 0;
     constructor(vec1, vec2){
-        this.vec1 = vec1;
-        this.vec2 = vec2;
+        this._vec1 = vec1;
+        this._vec2 = vec2;
+        this._direction = Vec2Math.diff(this._vec1, this._vec2);
+        this._length = this._direction.length;
+        this._normalized = this._direction.normalized;
         this.calculateKB();
     }
     /**
@@ -893,27 +913,42 @@ class Vec2Line {
      * @param vec
      * @returns {boolean}
      */ inBetween(vec) {
-        const l1 = Vec2Math.diff(vec, this.vec1).length;
-        const l2 = Vec2Math.diff(this.vec2, vec).length;
-        const l = Vec2Math.diff(this.vec1, this.vec2).length;
+        const l1 = Vec2Math.diff(vec, this._vec1).length;
+        const l2 = Vec2Math.diff(this._vec2, vec).length;
+        const l = Vec2Math.diff(this._vec1, this._vec2).length;
         return isEqual(l, l1 + l2, MATH_ERROR);
     }
     calculateKB() {
-        if (this.vec1.y === this.vec2.y) {
+        if (this._vec1.y === this._vec2.y) {
             // Horizontal line
-            this.b = this.vec1.y;
+            this.b = this._vec1.y;
             this.k = 0;
-        } else if (this.vec1.x === this.vec2.x) {
+        } else if (this._vec1.x === this._vec2.x) {
             // Vertical line
             this.b = NaN;
             this.k = NaN;
         } else {
-            this.b = (this.vec1.x * this.vec2.y - this.vec1.y * this.vec2.x) / (this.vec1.x - this.vec2.x);
-            this.k = (this.vec1.y - this.vec2.y) / (this.vec1.x - this.vec2.x);
+            this.b = (this._vec1.x * this._vec2.y - this._vec1.y * this._vec2.x) / (this._vec1.x - this._vec2.x);
+            this.k = (this._vec1.y - this._vec2.y) / (this._vec1.x - this._vec2.x);
         }
     }
     makeVec2FromX(x) {
         return new Vec2(x, this.k * x + this.b);
+    }
+    copy() {
+        return new Vec2Line(this._vec1, this._vec2);
+    }
+    moveBy(vec) {
+        this._vec1.add(vec);
+        this._vec2.add(vec);
+        this.calculateKB();
+    }
+    getPointProjection(vec) {
+        const a = this.direction;
+        const b = Vec2Math.diff(vec, this._vec1);
+        const distance = b.length;
+        const cosabD = Vec2Math.dot(a, b) / this.length;
+        return this._vec1.sum(this.ort.copy().mul(cosabD));
     }
     get B() {
         return this.b;
@@ -922,10 +957,19 @@ class Vec2Line {
         return this.k;
     }
     get length() {
-        return Vec2Math.distance(this.vec1, this.vec2);
+        return this._length;
     }
     get direction() {
-        return Vec2Math.diff(this.vec1, this.vec2);
+        return this._direction;
+    }
+    get ort() {
+        return this._normalized;
+    }
+    get vec1() {
+        return this._vec1;
+    }
+    get vec2() {
+        return this._vec2;
     }
     static Vertical(x) {
         return new Vec2Line(new Vec2(x, 0), new Vec2(x, Number.MAX_SAFE_INTEGER));
@@ -960,8 +1004,8 @@ class Vec2Math {
         if (line1.K === line2.K) throw new ExceptionParallel();
         if (isNaN(line1.K) || isNaN(line2.K)) {
             // One of two lines is vertical
-            if (isNaN(line1.K)) return line2.makeVec2FromX(line1.vec1.x);
-            else return line1.makeVec2FromX(line2.vec1.x);
+            if (isNaN(line1.K)) return line2.makeVec2FromX(line1._vec1.x);
+            else return line1.makeVec2FromX(line2._vec1.x);
         } else {
             const x = (line1.B - line2.B) / (line2.K - line1.K);
             return line1.makeVec2FromX(x);
@@ -986,23 +1030,58 @@ class Vec2Math {
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"3lSNL":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fn8Fk":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"3RsdY":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BallsObject", ()=>BallsObject);
-var _vec2 = require("./vec2");
+var _vec2 = require("../vector/vec2");
+var _types = require("./types");
+var _collisionModels = require("./collisionModels");
 class BallsObject {
     previousPosition = (0, _vec2.Vec2).Zero();
     currentPosition = (0, _vec2.Vec2).Zero();
     acc = (0, _vec2.Vec2).Zero();
     radius = 10;
     bounceValue = 1.1;
+    type = (0, _types.TYPE_BALL);
     /**
      * Creates balls object
      * @param {Vec2} position
-     */ constructor(position){
-        this.previousPosition = position;
-        this.currentPosition = position;
+     * @param {number} [radius]
+     */ constructor(position, radius){
+        this.previousPosition = position.copy();
+        this.currentPosition = position.copy();
+        if (radius !== undefined) this.radius = radius;
     }
     /**
      * Updates state of object
@@ -1015,20 +1094,17 @@ class BallsObject {
     }
     accelerate(acc) {
         this.acc.add(acc);
+        return this;
+    }
+    setVelocity(vel) {
+        this.velocity = vel;
+        return this;
     }
     /**
      *
      * @param {BallsObject} obj
      */ collide(obj) {
-        const between = (0, _vec2.Vec2Math).diff(this.currentPosition, obj.currentPosition);
-        const distance = between.length;
-        const requiredDistance = this.radius + obj.radius;
-        if (distance < this.radius + obj.radius) {
-            const normalized = between.normalized;
-            const delta = requiredDistance - distance;
-            this.currentPosition.add((0, _vec2.Vec2Math).mul(normalized, this.radius / requiredDistance * delta * this.bounceValue));
-            obj.currentPosition.sub((0, _vec2.Vec2Math).mul(normalized, obj.radius / requiredDistance * delta * obj.bounceValue));
-        }
+        (0, _collisionModels.collide)(this, obj);
     }
     flip() {
         const position = this.currentPosition.copy();
@@ -1049,19 +1125,98 @@ class BallsObject {
     }
 }
 
-},{"./vec2":"5Evqq","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"6P63O":[function(require,module,exports) {
+},{"../vector/vec2":"2KFFG","./types":"13hLl","./collisionModels":"gMuci","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"13hLl":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "TYPE_BALL", ()=>TYPE_BALL);
+parcelHelpers.export(exports, "TYPE_IMMOVABLE_BALL", ()=>TYPE_IMMOVABLE_BALL);
+parcelHelpers.export(exports, "TYPE_IMMOVABLE_LINE", ()=>TYPE_IMMOVABLE_LINE);
+const TYPE_BALL = 1;
+const TYPE_IMMOVABLE_BALL = 2;
+const TYPE_IMMOVABLE_LINE = 3;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"gMuci":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/**
+ * Collision between 2 balls objects
+ * @param {BallsObject} obj1
+ * @param {BallsObject} obj2
+ */ parcelHelpers.export(exports, "collideBallAndBall", ()=>collideBallAndBall);
+/**
+ * Collision between ball and immovable ball
+ * @param {BallsObject} ball
+ * @param {ImmovableBallsObject} immovable
+ */ parcelHelpers.export(exports, "collideBallAndImmovableBall", ()=>collideBallAndImmovableBall);
+/**
+ * Collision between ball and immovable line
+ * @param {BallsObject} ball
+ * @param {ImmovableLineObject} line
+ */ parcelHelpers.export(exports, "collideBallAndImmovableLine", ()=>collideBallAndImmovableLine);
+parcelHelpers.export(exports, "collide", ()=>collide);
+var _vec2 = require("../vector/vec2");
+var _object = require("./object");
+var _types = require("./types");
+function collideBallAndBall(obj1, obj2) {
+    const between = (0, _vec2.Vec2Math).diff(obj1.currentPosition, obj2.currentPosition);
+    const distance = between.length;
+    const requiredDistance = obj1.radius + obj2.radius;
+    if (distance < requiredDistance) {
+        const normalized = between.normalized;
+        const delta = requiredDistance - distance;
+        obj1.currentPosition.add((0, _vec2.Vec2Math).mul(normalized, obj1.radius / requiredDistance * delta * obj1.bounceValue));
+        obj2.currentPosition.sub((0, _vec2.Vec2Math).mul(normalized, obj2.radius / requiredDistance * delta * obj2.bounceValue));
+    }
+}
+function collideBallAndImmovableBall(ball, immovable) {
+    const between = (0, _vec2.Vec2Math).diff(ball.currentPosition, immovable.currentPosition);
+    const distance = between.length;
+    const requiredDistance = ball.radius + immovable.radius;
+    if (distance < requiredDistance) {
+        const normalized = between.normalized;
+        const delta = requiredDistance - distance;
+        ball.currentPosition.add((0, _vec2.Vec2Math).mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue));
+    }
+}
+function collideBallAndImmovableLine(ball, line) {
+    try {
+        const projectionPoint = line._line.getPointProjection(ball.currentPosition);
+        if (line._line.inBetween(projectionPoint)) {
+            const between = (0, _vec2.Vec2Math).diff(projectionPoint, ball.currentPosition);
+            if (between.length < ball.radius) {
+                const normalized = between.normalized;
+                const delta = ball.radius - between.length;
+                ball.currentPosition.sub((0, _vec2.Vec2Math).mul(normalized, delta * ball.bounceValue));
+            }
+        }
+    } catch (e) {}
+}
+function collide(obj1, obj2) {
+    if (obj1.type > obj2.type) [obj2, obj1] = [
+        obj1,
+        obj2
+    ];
+    switch(true){
+        case obj1.type === (0, _types.TYPE_BALL) && obj2.type === (0, _types.TYPE_BALL):
+            return collideBallAndBall(obj1, obj2);
+        case obj1.type === (0, _types.TYPE_BALL) && obj2.type === (0, _types.TYPE_IMMOVABLE_BALL):
+            return collideBallAndImmovableBall(obj1, obj2);
+        case obj1.type === (0, _types.TYPE_BALL) && obj2.type === (0, _types.TYPE_IMMOVABLE_LINE):
+            return collideBallAndImmovableLine(obj1, obj2);
+        default:
+            return;
+    }
+}
+
+},{"../vector/vec2":"2KFFG","./object":"3RsdY","./types":"13hLl","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"j2D16":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
 var _constrain = require("./constrain");
-var _vec2 = require("./vec2");
+var _vec2 = require("../vector/vec2");
 class ViewportConstrain extends (0, _constrain.Constrain) {
     _width = 0;
     _height = 0;
-    left = (0, _vec2.Vec2Line).Vertical(0);
-    top = (0, _vec2.Vec2Line).Horizontal(0);
-    right = (0, _vec2.Vec2Line).Vertical(0);
-    bottom = (0, _vec2.Vec2Line).Horizontal(0);
     constructor(width, height){
         super();
         this.width = width;
@@ -1072,53 +1227,23 @@ class ViewportConstrain extends (0, _constrain.Constrain) {
     }
     set width(width) {
         this._width = width;
-        this.recalculateSides();
     }
     get height() {
         return this._height;
     }
     set height(height) {
         this._height = height;
-        this.recalculateSides();
-    }
-    recalculateSides() {
-        this.top = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(this._width, 0), new (0, _vec2.Vec2)(0, 0));
-        this.right = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(this._width, 0), new (0, _vec2.Vec2)(this._width, this._height));
-        this.bottom = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(0, this._height), new (0, _vec2.Vec2)(this._width, this._height));
-        this.left = new (0, _vec2.Vec2Line)(new (0, _vec2.Vec2)(0, this._height), new (0, _vec2.Vec2)(0, 0));
     }
     applyConstrain(obj) {
         super.applyConstrain(obj);
-        this.checkConstrainWithSide(obj, this.right);
-        this.checkConstrainWithSide(obj, this.left);
-        this.checkConstrainWithSide(obj, this.bottom);
-        this.checkConstrainWithSide(obj, this.top);
-    }
-    /**
-     *
-     * @param {BallsObject} obj
-     * @param {Vec2Line} side
-     */ checkConstrainWithSide(obj, side) {
-        const velocity = obj.velocity;
-        const movementVector = obj.movementVector;
-        const direction = velocity.copy().flip();
-        try {
-            const intersectionPoint = (0, _vec2.Vec2Math).intersect(side, movementVector);
-            const distance = (0, _vec2.Vec2Math).distance(intersectionPoint, obj.currentPosition);
-            if (distance < obj.radius) {
-                console.log(distance);
-                const normal = side.direction.perpendicular.normalized;
-                console.log(intersectionPoint, normal);
-                obj.currentPosition = intersectionPoint.sum(normal.mul(obj.radius * obj.bounceValue));
-                console.log(obj.currentPosition);
-            }
-        } catch (e) {
-        // Movement is parallel with given side
-        }
+        if (obj.currentPosition.x - obj.radius < 0) obj.currentPosition.x = obj.radius;
+        if (obj.currentPosition.x + obj.radius > this._width) obj.currentPosition.x = this._width - obj.radius;
+        if (obj.currentPosition.y - obj.radius < 0) obj.currentPosition.y = obj.radius;
+        if (obj.currentPosition.y + obj.radius > this._height) obj.currentPosition.y = this._height - obj.radius;
     }
 }
 
-},{"./constrain":"lyXo1","./vec2":"5Evqq","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lyXo1":[function(require,module,exports) {
+},{"./constrain":"hb3g5","../vector/vec2":"2KFFG","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"hb3g5":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Constrain", ()=>Constrain);
@@ -1130,12 +1255,12 @@ class Constrain {
      */ applyConstrain(obj) {}
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"u2M21":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"if6MS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
 var _constrain = require("./constrain");
-var _vec2 = require("./vec2");
+var _vec2 = require("../vector/vec2");
 class CircleConstrain extends (0, _constrain.Constrain) {
     /**
      *
@@ -1159,7 +1284,7 @@ class CircleConstrain extends (0, _constrain.Constrain) {
     }
 }
 
-},{"./constrain":"lyXo1","./vec2":"5Evqq","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"hZg0J":[function(require,module,exports) {
+},{"./constrain":"hb3g5","../vector/vec2":"2KFFG","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8QIvd":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Velocity", ()=>Velocity);
@@ -1182,7 +1307,7 @@ class Velocity extends (0, _item.Item) {
     }
 }
 
-},{"./item":"knqw5","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1BFwT":[function(require,module,exports) {
+},{"./item":"aIQJw","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1BFwT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "MappedObjectGeneratorItem", ()=>MappedObjectGeneratorItem);
@@ -1249,9 +1374,9 @@ class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
     }
     getNextObject(step) {
         if (this.total > this.limit) return;
-        this.lastCreateTime += step;
+        this.lastCreateTime += 1;
         if (this.lastCreateTime > this.delay) {
-            const newItem = this.create();
+            const newItem = this.create(this.total);
             this.lastCreateTime = 0;
             this.total++;
             return newItem;
@@ -1263,8 +1388,8 @@ class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Solver", ()=>Solver);
-var _vec2 = require("./vec2");
-var _object = require("./object");
+var _vec2 = require("./vector/vec2");
+var _object = require("./objects/object");
 class Solver {
     /**
      * List of balls
@@ -1276,17 +1401,25 @@ class Solver {
     constructor(){
         this.gravity = (0, _vec2.Vec2).Zero();
         this.objects = [];
-        this.subSteps = 8;
+        this.subSteps = 4;
         this.configure();
     }
     configure() {
         this.gravity = new (0, _vec2.Vec2)(0, 100);
+        this.useFixedTime = true;
+        this.step = 0.017 / this.subSteps;
+    }
+    /**
+     *
+     * @param {BallsObject} obj
+     */ addObject(obj) {
+        this.objects.push(obj);
     }
     /**
      * Update the simulation by given step.
      * @param {number} time amount of seconds passed since last update.
      */ update(time) {
-        const subTime = time / this.subSteps;
+        const subTime = this.useFixedTime ? this.step : time / this.subSteps;
         for(let i = 0; i < this.subSteps; i++){
             this.applyGravity();
             this.applyConstrains();
@@ -1316,28 +1449,162 @@ class Solver {
     }
 }
 
-},{"./vec2":"5Evqq","./object":"3lSNL","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"71FcN":[function(require,module,exports) {
+},{"./vector/vec2":"2KFFG","./objects/object":"3RsdY","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"d4B3G":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Rect", ()=>Rect);
 var _item = require("./item");
-var _vec2 = require("./vec2");
+var _vec2 = require("../vector/vec2");
 class Rect extends (0, _item.Item) {
-    leftTop = (0, _vec2.Vec2).Zero();
     size = (0, _vec2.Vec2).Zero();
     color = "#00ff00";
-    constructor(context, leftTop, size, color){
-        super(context);
-        this.leftTop = leftTop;
+    constructor(context, position, size, color){
+        super(context, position);
         this.size = size;
         if (color) this.color = color;
     }
     render() {
         this.context.fillStyle = this.color;
-        this.context.fillRect(this.leftTop.x, this.leftTop.y, this.size.x, this.size.y);
+        this.context.fillRect(this.position.x, this.position.y, this.position.x + this.size.x, this.position.y + this.size.y);
     }
 }
 
-},{"./item":"knqw5","./vec2":"5Evqq","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ksKUl","3mV1H"], "3mV1H", "parcelRequire62ee")
+},{"./item":"aIQJw","../vector/vec2":"2KFFG","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lW37O":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "RenderableObject", ()=>RenderableObject);
+class RenderableObject {
+    /**
+     * @type {BallsObject}
+     */ ballsObject = null;
+    /**
+     * @type {Item}
+     */ renderItem = null;
+    constructor(ballsObject, renderItem){
+        this.ballsObject = ballsObject;
+        this.renderItem = renderItem;
+    }
+    update() {
+        this.renderItem.position = this.ballsObject.currentPosition;
+    }
+    render() {
+        this.update();
+        this.renderItem.render();
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2rlqA":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ImmovableBallsObject", ()=>ImmovableBallsObject);
+var _object = require("./object");
+var _types = require("./types");
+class ImmovableBallsObject extends (0, _object.BallsObject) {
+    type = (0, _types.TYPE_IMMOVABLE_BALL);
+    /**
+     * @type {Vec2}
+     * @private
+     */ _fixedPosition = null;
+    /**
+     * @param {Vec2} position
+     * @param {number} [radius]
+     */ constructor(position, radius){
+        super(position, radius);
+        this._fixedPosition = position.copy();
+    }
+    update(step) {
+        this.currentPosition = this._fixedPosition;
+        this.previousPosition = this._fixedPosition;
+    }
+}
+
+},{"./object":"3RsdY","./types":"13hLl","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ah7D5":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ImmovableLineRenderableObject", ()=>ImmovableLineRenderableObject);
+var _object = require("./object");
+class ImmovableLineRenderableObject extends (0, _object.RenderableObject) {
+    /**
+     * @type {ImmovableLineObject}
+     */ ballsObject = null;
+    constructor(ballsObject, renderItem){
+        super(ballsObject);
+        this.ballsObject = ballsObject;
+        this.renderItem = renderItem;
+    }
+    update() {
+        super.update();
+        this.renderItem.direction = this.ballsObject._direction;
+    }
+}
+
+},{"./object":"lW37O","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"gY0bU":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ImmovableLineObject", ()=>ImmovableLineObject);
+var _object = require("./object");
+var _vec2 = require("../vector/vec2");
+var _types = require("./types");
+class ImmovableLineObject extends (0, _object.BallsObject) {
+    _direction;
+    _line;
+    type = (0, _types.TYPE_IMMOVABLE_LINE);
+    constructor(position, direction){
+        super(position, 0);
+        this._direction = direction;
+        this._line = new (0, _vec2.Vec2Line)(this.currentPosition.copy(), this.currentPosition.copy().sum(this._direction));
+    }
+    update(step) {
+        this.currentPosition = this._line._vec1;
+        this.previousPosition = this._line._vec2;
+    }
+}
+
+},{"./object":"3RsdY","../vector/vec2":"2KFFG","./types":"13hLl","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"bcihL":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Line", ()=>Line);
+var _item = require("./item");
+var _vec2 = require("../vector/vec2");
+class Line extends (0, _item.Item) {
+    direction = (0, _vec2.Vec2).Zero();
+    color = "#00ff00";
+    constructor(context, position, direction, color){
+        super(context, position);
+        this.direction = direction;
+        if (color) this.color = color;
+    }
+    render() {
+        this.context.strokeStyle = this.color;
+        this.context.beginPath(); // Start a new path
+        this.context.moveTo(this.position.x, this.position.y);
+        this.context.lineTo(this.position.x + this.direction.x, this.position.y + this.direction.y);
+        this.context.stroke(); // Render the path
+    }
+}
+
+},{"./item":"aIQJw","../vector/vec2":"2KFFG","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2IXVz":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "CircleWithText", ()=>CircleWithText);
+var _circle = require("./circle");
+class CircleWithText extends (0, _circle.Circle) {
+    text = "";
+    textColor = "#ffffff";
+    constructor(context, position, r, color, text, textColor){
+        super(context, position, r, color);
+        this.text = text;
+        if (textColor) this.textColor = textColor;
+    }
+    render() {
+        super.render();
+        this.context.fillStyle = this.textColor;
+        this.context.textBaseline = "middle";
+        this.context.textAlign = "center";
+        this.context.fillText(this.text, this.position.x, this.position.y);
+    }
+}
+
+},{"./circle":"1t8sT","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ksKUl","3mV1H"], "3mV1H", "parcelRequire62ee")
 
 //# sourceMappingURL=main.d51771cf.js.map

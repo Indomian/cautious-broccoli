@@ -100,6 +100,15 @@ describe('Test vec2 perpendicular', () => {
     test('Should make perpendicular for any', () => {
         const vec = new Vec2(1, 1);
         const p = vec.perpendicular;
+
+
+
+
+
+
+
+
+
         expect(p.equals(new Vec2(-0.7071067811865475, 0.7071067811865475))).toBeTruthy()
     })
 
@@ -138,6 +147,28 @@ describe('Test mirror', () => {
 
         const mirrored = Vec2Math.mirror(vec, line);
         expect(expected.equals(mirrored)).toBeTruthy();
+    })
+})
+
+describe('Test point projections', () => {
+    test('It should work', () => {
+        const s3 = Math.sqrt(3);
+
+        const line = new Vec2Line(
+            new Vec2(0, 0),
+            new Vec2(10, 0)
+        );
+
+        const point = new Vec2(
+            s3, 1
+        );
+
+        const expectedPoint = new Vec2(
+            s3, 0
+        )
+
+        expect(line.getPointProjection(point).equals(expectedPoint)).toBeTruthy();
+
     })
 })
 

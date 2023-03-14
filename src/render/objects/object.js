@@ -1,4 +1,6 @@
-import {Vec2, Vec2Line, Vec2Math} from "./vec2";
+import {Vec2, Vec2Line, Vec2Math} from "../vector/vec2";
+import {TYPE_BALL} from "./types";
+import {collide} from "./collisionModels";
 
 export class BallsObject {
     previousPosition = Vec2.Zero();
@@ -9,13 +11,19 @@ export class BallsObject {
     radius = 10;
     bounceValue = 1.1;
 
+    type = TYPE_BALL;
+
     /**
      * Creates balls object
      * @param {Vec2} position
+     * @param {number} [radius]
      */
-    constructor(position) {
-        this.previousPosition = position;
-        this.currentPosition = position;
+    constructor(position, radius) {
+        this.previousPosition = position.copy();
+        this.currentPosition = position.copy();
+        if (radius !== undefined) {
+            this.radius = radius
+        }
     }
 
     /**
@@ -35,6 +43,12 @@ export class BallsObject {
 
     accelerate(acc) {
         this.acc.add(acc);
+        return this;
+    }
+
+    setVelocity(vel) {
+        this.velocity = vel;
+        return this;
     }
 
     /**
@@ -42,16 +56,7 @@ export class BallsObject {
      * @param {BallsObject} obj
      */
     collide(obj) {
-        const between = Vec2Math.diff(this.currentPosition, obj.currentPosition);
-        const distance = between.length;
-        const requiredDistance = this.radius + obj.radius;
-
-        if (distance < this.radius + obj.radius) {
-            const normalized = between.normalized;
-            const delta = requiredDistance - distance;
-            this.currentPosition.add(Vec2Math.mul(normalized, this.radius / requiredDistance * delta * this.bounceValue));
-            obj.currentPosition.sub(Vec2Math.mul(normalized, obj.radius / requiredDistance * delta * obj.bounceValue))
-        }
+        collide(this, obj)
     }
 
     flip() {

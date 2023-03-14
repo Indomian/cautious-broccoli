@@ -1,13 +1,19 @@
-import {Circle} from "./circle";
-import {Vec2} from "./vec2";
-import {BallsObject} from "./object";
-import {ViewportConstrain} from "./viewportConstrain";
-import {CircleConstrain} from "./circleConstrain";
-import {Velocity} from "./velocity";
+import {Circle} from "./items/circle";
+import {Vec2, Vec2Math} from "./vector/vec2";
+import {BallsObject} from "./objects/object";
+import {ViewportConstrain} from "./constrains/viewport";
+import {CircleConstrain} from "./constrains/circle";
+import {Velocity} from "./items/velocity";
 import {MappedObjectGeneratorItem, MappedObjectsGenerator} from "./mappedObjectsGenerator";
 import {TotalObjectsGenerator} from "./totalObjectsGenerator";
 import {Solver} from "./solver";
-import {Rect} from "./rect";
+import {Rect} from "./items/rect";
+import {RenderableObject} from "./renderableObjects/object";
+import {ImmovableBallsObject} from "./objects/immovable";
+import {ImmovableLineRenderableObject} from "./renderableObjects/immovableLine";
+import {ImmovableLineObject} from "./objects/immovableLine";
+import {Line} from "./items/line";
+import {CircleWithText} from "./items/circleWithText";
 
 const balls = [
     new MappedObjectGeneratorItem(
@@ -24,10 +30,33 @@ const balls = [
     ),
 ]
 
+const milkShakePoints = [
+    new Vec2(60, 110),
+    new Vec2(130, 490),
+    new Vec2(330, 490),
+    new Vec2(400, 110)
+]
+
+const milkShakeLines = [
+    [milkShakePoints[0], Vec2Math.diff(milkShakePoints[0], milkShakePoints[1]).flip()],
+    [milkShakePoints[1], Vec2Math.diff(milkShakePoints[1], milkShakePoints[2]).flip()],
+    [milkShakePoints[2], Vec2Math.diff(milkShakePoints[2], milkShakePoints[3]).flip()]
+]
+
+const ballsColors = {
+    57: '#ffffff',
+    78: '#ffffff',
+    71: '#ffffff',
+    86: '#ffffff',
+    200: '#ffffff',
+    202: '#ffffff',
+    218: '#ffffff',
+}
+
 export class Render {
     /**
      * List of balls
-     * @type {BallsObject[]}
+     * @type {RenderableObject[]}
      */
     objects = []
 
@@ -50,6 +79,11 @@ export class Render {
         this.timeRenderEnd = performance.now();
         this.step = 0;
 
+        /**
+         * @type {RenderableObject[]}
+         */
+        this.objects = [];
+
         this.items = [];
 
         this.generator = null;
@@ -63,36 +97,84 @@ export class Render {
 
         this.context.font = '10px serif';
 
-        this.switchToCircleConstrain();
-        //this.switchToViewportConstrain();
+        //this.switchToCircleConstrain();
+        this.switchToViewportConstrain();
         this.solver.constrains = this.constrains;
+
+        const canvasCenter = new Vec2(
+            this.canvas.width / 2,
+            this.canvas.height / 2
+        );
+
+        const ballGeneratorPoint = new Vec2(
+            10, 10
+        );
+        const ballVelocity = new Vec2(
+            3, -3
+        ).mul(1/this.solver.subSteps);
 
         this.generator = new TotalObjectsGenerator(
             this.solver,
-            100,
-            0.2,
-            () => {
-            const ball = new BallsObject(
-                new Vec2(
-                    this.canvas.width / 2,
-                    this.canvas.height / 2
+            300,
+            10,
+            (index) => {
+                const obj = new RenderableObject(
+                    (new BallsObject(
+                        ballGeneratorPoint,
+                        10
+                    )).setVelocity(ballVelocity),
+                    new CircleWithText(
+                        this.context,
+                        Vec2.Zero(),
+                        10,
+                        ballsColors[index],
+                        index,
+                        '#000000'
+                    )
                 )
-            );
-            ball.velocity = new Vec2(
-                3,
-                -0.5
-            ).mul(1/this.solver.subSteps);
-            return ball;
-        })
+
+                return obj;
+            }
+        );
+
+        this.addObject(new RenderableObject(
+            new ImmovableBallsObject(new Vec2(230, 50), 30),
+            new Circle(this.context, Vec2.Zero(), 30, '#ff0000')
+        ));
+
+        milkShakeLines.forEach(line => {
+            this.addObject(new ImmovableLineRenderableObject(
+                new ImmovableLineObject(
+                    line[0],
+                    line[1]
+                ),
+                new Line(
+                    this.context,
+                    Vec2.Zero(),
+                    Vec2.Zero(),
+                    '#ffffff'
+                )
+            ));
+        });
+    }
+
+    /**
+     * @param {RenderableObject} obj
+     */
+    addObject(obj) {
+        this.objects.push(obj);
+        this.solver.addObject(obj.ballsObject);
     }
 
     update(time) {
+        this.solver.update(time);
+    }
+
+    generatorsTick(time) {
         const newBall = this.generator.getNextObject(time);
         if (newBall) {
-            this.solver.objects.push(newBall);
+            this.addObject(newBall)
         }
-
-        this.solver.update(time);
     }
 
     tick() {
@@ -100,6 +182,7 @@ export class Render {
             this.step = 0;
         }
 
+        this.generatorsTick(this.step / 1000);
         this.update(this.step / 1000);
 
         this.clear();
@@ -135,26 +218,12 @@ export class Render {
 
     renderItems() {
         this.items.forEach(item => item.render());
-
-        this.solver.objects.forEach(obj => {
-            const img = new Circle(
-                this.context,
-                obj.currentPosition.x,
-                obj.currentPosition.y,
-                obj.radius
-            );
-            img.render();
-
-            // this.context.strokeStyle = '#0000ff';
-            // this.context.beginPath();
-            // this.context.moveTo(obj.previousPosition.x, obj.previousPosition.y);
-            // this.context.lineTo(obj.currentPosition.x, obj.currentPosition.y);
-            // this.context.stroke();
-        })
+        this.objects.forEach(obj => obj.render());
     }
 
     printText(text, x, y) {
-        this.context.fillStyle = "#000000";
+        this.context.fillStyle = "#ffffff";
+        this.context.textAlign = "start";
         this.context.fillText(text, x, y);
     }
 

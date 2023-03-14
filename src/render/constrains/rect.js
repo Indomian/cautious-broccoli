@@ -1,5 +1,5 @@
 import {Constrain} from "./constrain";
-import {Vec2, Vec2Line, Vec2Math} from "./vec2";
+import {Vec2, Vec2Line, Vec2Math} from "../vector/vec2";
 
 export class ViewportConstrain extends Constrain {
     _width = 0;

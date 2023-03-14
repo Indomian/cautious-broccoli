@@ -16,9 +16,9 @@ export class TotalObjectsGenerator extends ObjectsGenerator {
             return;
         }
 
-        this.lastCreateTime += step;
+        this.lastCreateTime += 1;
         if (this.lastCreateTime > this.delay) {
-            const newItem = this.create();
+            const newItem = this.create(this.total);
             this.lastCreateTime = 0;
             this.total++;
 
