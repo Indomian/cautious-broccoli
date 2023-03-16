@@ -1,17 +1,19 @@
-import {Vec2, Vec2Line, Vec2Math} from "../vector/vec2";
-import {TYPE_BALL} from "./types";
-import {collide} from "./collisionModels";
+import { Vec2 } from "../vector/vec2";
+import { Vec2Line } from "../vector/vec2Line";
+import { Vec2Math } from "../vector/vec2Math";
+import {SolverObjectTypes} from "./types";
+import { collide } from "./collisionModels";
+import {BaseSolverObject} from "./object";
+import {CollisionGrid} from "../grid";
 
-export class BallsObject {
-    previousPosition = Vec2.Zero();
-    currentPosition = Vec2.Zero();
-
+export class BallsObject extends BaseSolverObject {
     acc = Vec2.Zero();
 
     radius = 10;
     bounceValue = 1.1;
 
-    type = TYPE_BALL;
+    type = SolverObjectTypes.TypeBall;
+    immovable = false;
 
     /**
      * Creates balls object
@@ -19,6 +21,7 @@ export class BallsObject {
      * @param {number} [radius]
      */
     constructor(position, radius) {
+        super();
         this.previousPosition = position.copy();
         this.currentPosition = position.copy();
         if (radius !== undefined) {
@@ -33,8 +36,8 @@ export class BallsObject {
     update(step) {
         const velocity = this.velocity;
         this.previousPosition = this.currentPosition.copy();
-        this.currentPosition.add(
-            velocity.add(
+        this.currentPosition.addSelf(
+            velocity.addSelf(
                 this.acc.mul(step * step)
             )
         )
@@ -42,7 +45,7 @@ export class BallsObject {
     }
 
     accelerate(acc) {
-        this.acc.add(acc);
+        this.acc.addSelf(acc);
         return this;
     }
 
@@ -59,10 +62,12 @@ export class BallsObject {
         collide(this, obj)
     }
 
-    flip() {
-        const position = this.currentPosition.copy();
-        this.currentPosition = this.previousPosition;
-        this.previousPosition = position;
+    addToGrid(collisionGrid: CollisionGrid) {
+        collisionGrid.addObject(
+            Math.floor(this.currentPosition.x),
+            Math.floor(this.currentPosition.y),
+            this
+        )
     }
 
     get velocity() {

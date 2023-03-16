@@ -1,5 +1,7 @@
-import {Constrain} from "./constrain";
-import {Vec2, Vec2Line, Vec2Math} from "../vector/vec2";
+import { Constrain } from "./constrain";
+import { Vec2 } from "../vector/vec2";
+import { Vec2Line } from "../vector/vec2Line";
+import { Vec2Math } from "../vector/vec2Math"
 
 export class ViewportConstrain extends Constrain {
     _width = 0;
@@ -71,7 +73,7 @@ export class ViewportConstrain extends Constrain {
     checkConstrainWithSide(obj, side) {
         const velocity = obj.velocity;
         const movementVector = obj.movementVector;
-        const direction = velocity.copy().flip();
+        const direction = velocity.copy().flipSelf();
 
         try {
             const intersectionPoint = Vec2Math.intersect(
@@ -82,7 +84,7 @@ export class ViewportConstrain extends Constrain {
             const distance = Vec2Math.distance(intersectionPoint, obj.currentPosition);
             if (distance < obj.radius) {
                 console.log(distance)
-                const normal = side.direction.perpendicular.normalized;
+                const normal = side.direction.perpendicular.ort;
                 console.log(intersectionPoint, normal)
                 obj.currentPosition = intersectionPoint.sum(normal.mul(obj.radius * obj.bounceValue))
                 console.log(obj.currentPosition)

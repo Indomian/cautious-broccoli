@@ -1,19 +1,20 @@
 import {Circle} from "./items/circle";
-import {Vec2, Vec2Math} from "./vector/vec2";
-import {BallsObject} from "./objects/object";
+import {Vec2} from "./vector/vec2";
+import {Vec2Math} from "./vector/vec2Math";
+import {BallsObject} from "./objects/ball";
 import {ViewportConstrain} from "./constrains/viewport";
 import {CircleConstrain} from "./constrains/circle";
-import {Velocity} from "./items/velocity";
 import {MappedObjectGeneratorItem, MappedObjectsGenerator} from "./mappedObjectsGenerator";
 import {TotalObjectsGenerator} from "./totalObjectsGenerator";
 import {Solver} from "./solver";
 import {Rect} from "./items/rect";
 import {RenderableObject} from "./renderableObjects/object";
-import {ImmovableBallsObject} from "./objects/immovable";
+import {ImmovableBallsObject} from "./objects/immovableBall";
 import {ImmovableLineRenderableObject} from "./renderableObjects/immovableLine";
 import {ImmovableLineObject} from "./objects/immovableLine";
 import {Line} from "./items/line";
 import {CircleWithText} from "./items/circleWithText";
+import {Frame} from "./items/frame";
 
 const balls = [
     new MappedObjectGeneratorItem(
@@ -38,9 +39,9 @@ const milkShakePoints = [
 ]
 
 const milkShakeLines = [
-    [milkShakePoints[0], Vec2Math.diff(milkShakePoints[0], milkShakePoints[1]).flip()],
-    [milkShakePoints[1], Vec2Math.diff(milkShakePoints[1], milkShakePoints[2]).flip()],
-    [milkShakePoints[2], Vec2Math.diff(milkShakePoints[2], milkShakePoints[3]).flip()]
+    [milkShakePoints[0], Vec2Math.diff(milkShakePoints[0], milkShakePoints[1]).flipSelf()],
+    [milkShakePoints[1], Vec2Math.diff(milkShakePoints[1], milkShakePoints[2]).flipSelf()],
+    [milkShakePoints[2], Vec2Math.diff(milkShakePoints[2], milkShakePoints[3]).flipSelf()]
 ]
 
 const ballsColors = {
@@ -93,7 +94,12 @@ export class Render {
     }
 
     configure() {
-        this.solver = new Solver();
+        this.solver = new Solver(
+            new Vec2(
+                this.canvas.width,
+                this.canvas.height
+            )
+        );
 
         this.context.font = '10px serif';
 
@@ -115,20 +121,20 @@ export class Render {
 
         this.generator = new TotalObjectsGenerator(
             this.solver,
-            300,
-            10,
+            600,
+            7,
             (index) => {
                 const obj = new RenderableObject(
                     (new BallsObject(
                         ballGeneratorPoint,
-                        10
+                        5
                     )).setVelocity(ballVelocity),
                     new CircleWithText(
                         this.context,
                         Vec2.Zero(),
-                        10,
+                        5,
                         ballsColors[index],
-                        index,
+                        '',
                         '#000000'
                     )
                 )
@@ -187,8 +193,11 @@ export class Render {
 
         this.clear();
         this.renderItems();
+        //this.renderGrid();
 
         this.printFPS();
+
+        Vec2.lengthCallsCount = 0;
     }
 
     nextFrame = (time) => {
@@ -229,10 +238,12 @@ export class Render {
 
     printFPS() {
         this.printText(`${Math.round(this.step)} ms / ${Math.round(1000/this.step)} FPS`, 0, 10);
+        this.printText(`${Vec2.lengthCallsCount}`, 0 , 20);
+        this.printText(`${Vec2.length2CallsCount}`, 0 , 30);
     }
 
     clear() {
-        this.context.fillStyle = "#ffffff";
+        this.context.fillStyle = "rgba(0, 0, 0, 0.1)";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     }
@@ -243,6 +254,30 @@ export class Render {
         } else {
             setInterval(this.nextInterval, 16)
         }
+    }
+
+    renderGrid() {
+        this.solver.collisionGrid.forEach((x, y, cell, index) => {
+            const cellPosition = new Vec2(
+                x * this.solver.cellSize.x,
+                y * this.solver.cellSize.y,
+            );
+            const rect = new Frame(
+                this.context,
+                cellPosition,
+                this.solver.cellSize.diff(new Vec2(5, 5)),
+                cell.count > 0 ? '#ff0000' : '#00ff00'
+            )
+
+            if (cell.hightlight) {
+                this.context.lineWidth = 10;
+            }
+
+            rect.render();
+
+            this.context.lineWidth = 1;
+            this.printText(index, cellPosition.x + this.solver.cellSize.x / 2, cellPosition.y + this.solver.cellSize.y / 2)
+        })
     }
 
     switchToCircleConstrain() {
@@ -264,16 +299,16 @@ export class Render {
 
     switchToViewportConstrain() {
         this.constrains = new ViewportConstrain(this.canvas.width, this.canvas.height)
-        this.items.push(
-            new Rect(
-                this.context,
-                Vec2.Zero(),
-                new Vec2(
-                    this.canvas.width,
-                    this.canvas.height
-                ),
-                '#000000'
-            )
-        );
+        // this.items.push(
+        //     new Rect(
+        //         this.context,
+        //         Vec2.Zero(),
+        //         new Vec2(
+        //             this.canvas.width,
+        //             this.canvas.height
+        //         ),
+        //         '#000000'
+        //     )
+        // );
     }
 }

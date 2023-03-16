@@ -1,12 +1,14 @@
-import {BallsObject} from "./object";
-import {Vec2Line} from "../vector/vec2";
-import {TYPE_IMMOVABLE_LINE} from "./types";
+import { BallsObject } from "./ball";
+import { Vec2Line } from "../vector/vec2Line";
+import {SolverObjectTypes} from "./types";
+import {CollisionGrid} from "../grid";
 
 export class ImmovableLineObject extends BallsObject {
     _direction;
     _line;
 
-    type = TYPE_IMMOVABLE_LINE;
+    type = SolverObjectTypes.TypeImmovableLine;
+    immovable = true;
 
     constructor(position, direction) {
         super(position, 0);
@@ -21,6 +23,14 @@ export class ImmovableLineObject extends BallsObject {
     update(step) {
         this.currentPosition = this._line._vec1;
         this.previousPosition = this._line._vec2;
+    }
+
+    addToGrid(collisionGrid: CollisionGrid) {
+        collisionGrid.addObjectToCells(
+            this._line._vec1,
+            this._line._vec2,
+            this
+        );
     }
 
 }

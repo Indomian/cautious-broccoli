@@ -1,6 +1,6 @@
-import {Vec2Math} from "../vector/vec2";
-import {BallsObject} from "./object";
-import {TYPE_BALL, TYPE_IMMOVABLE_BALL, TYPE_IMMOVABLE_LINE} from "./types";
+import {Vec2Math} from "../vector/vec2Math";
+import {BallsObject} from "./ball";
+import {SolverObjectTypes, TYPE_BALL, TYPE_IMMOVABLE_BALL, TYPE_IMMOVABLE_LINE} from "./types";
 
 /**
  * Collision between 2 balls objects
@@ -13,10 +13,10 @@ export function collideBallAndBall(obj1, obj2) {
     const requiredDistance = obj1.radius + obj2.radius;
 
     if (distance < requiredDistance) {
-        const normalized = between.normalized;
+        const normalized = between.ort;
         const delta = requiredDistance - distance;
-        obj1.currentPosition.add(Vec2Math.mul(normalized, obj1.radius / requiredDistance * delta * obj1.bounceValue));
-        obj2.currentPosition.sub(Vec2Math.mul(normalized, obj2.radius / requiredDistance * delta * obj2.bounceValue));
+        obj1.currentPosition.addSelf(Vec2Math.mul(normalized, obj1.radius / requiredDistance * delta * obj1.bounceValue));
+        obj2.currentPosition.subSelf(Vec2Math.mul(normalized, obj2.radius / requiredDistance * delta * obj2.bounceValue));
     }
 }
 
@@ -35,9 +35,9 @@ export function collideBallAndImmovableBall(ball, immovable) {
     const requiredDistance = ball.radius + immovable.radius;
 
     if (distance < requiredDistance) {
-        const normalized = between.normalized;
+        const normalized = between.ort;
         const delta = requiredDistance - distance;
-        ball.currentPosition.add(Vec2Math.mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue));
+        ball.currentPosition.addSelf(Vec2Math.mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue));
     }
 }
 
@@ -57,11 +57,11 @@ export function collideBallAndImmovableLine(ball, line) {
             )
 
             if (between.length < ball.radius) {
-                const normalized = between.normalized;
+                const normalized = between.ort;
 
                 const delta = ball.radius - between.length;
 
-                ball.currentPosition.sub(
+                ball.currentPosition.subSelf(
                     Vec2Math.mul(normalized, delta * ball.bounceValue)
                 )
             }
@@ -70,17 +70,28 @@ export function collideBallAndImmovableLine(ball, line) {
     }
 }
 
-export function collide(obj1, obj2) {
+function flipObjects(obj1, obj2) {
+    return {
+        a: obj2,
+        b: obj1
+    }
+}
+
+export function collide(a, b) {
+    let obj1 = a;
+    let obj2 = b;
     if (obj1.type > obj2.type) {
-        [obj2, obj1] = [obj1, obj2];
+        const flipped = flipObjects(obj1, obj2);
+        obj1 = flipped.a;
+        obj2 = flipped.b
     }
 
     switch (true) {
-        case obj1.type === TYPE_BALL && obj2.type === TYPE_BALL:
+        case obj1.type === SolverObjectTypes.TypeBall && obj2.type === SolverObjectTypes.TypeBall:
             return collideBallAndBall(obj1, obj2);
-        case obj1.type === TYPE_BALL && obj2.type === TYPE_IMMOVABLE_BALL:
+        case obj1.type === SolverObjectTypes.TypeBall && obj2.type === SolverObjectTypes.TypeImmovableBall:
             return collideBallAndImmovableBall(obj1, obj2);
-        case obj1.type === TYPE_BALL && obj2.type === TYPE_IMMOVABLE_LINE:
+        case obj1.type === SolverObjectTypes.TypeBall && obj2.type === SolverObjectTypes.TypeImmovableLine:
             return collideBallAndImmovableLine(obj1, obj2);
         default:
             return;
