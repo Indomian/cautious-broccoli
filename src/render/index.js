@@ -193,7 +193,7 @@ export class Render {
 
         this.clear();
         this.renderItems();
-        //this.renderGrid();
+        this.renderGrid();
 
         this.printFPS();
 
@@ -237,13 +237,17 @@ export class Render {
     }
 
     printFPS() {
+        this.context.fillStyle = '#000000';
+        this.context.fillRect(0, 0, 100, 60);
         this.printText(`${Math.round(this.step)} ms / ${Math.round(1000/this.step)} FPS`, 0, 10);
-        this.printText(`${Vec2.lengthCallsCount}`, 0 , 20);
-        this.printText(`${Vec2.length2CallsCount}`, 0 , 30);
+        this.printText(`Length calls: ${Vec2.lengthCallsCount}`, 0 , 20);
+        this.printText(`Lenght2 calls: ${Vec2.length2CallsCount}`, 0 , 30);
+        this.printText(`Objects: ${this.objects.length}`, 0, 40);
+        this.printText(`Compares per object: ${Math.round(Vec2.lengthCallsCount / this.objects.length)}`, 0, 50);
     }
 
     clear() {
-        this.context.fillStyle = "rgba(0, 0, 0, 0.1)";
+        this.context.fillStyle = "rgba(0, 0, 0, 0.9)";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     }

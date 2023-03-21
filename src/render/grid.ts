@@ -31,21 +31,48 @@ type CollisionGridForEachCallback = (x: number, y: number, cell: CollisionCell, 
 
 export class CollisionGrid {
     cells: CollisionCell[] = [];
-    width: number;
-    height: number;
+    _width: number;
+    _height: number;
+    _size: number;
     cellSize: Vec2;
 
     constructor(width, height, cellSize: Vec2) {
-        this.width = width;
-        this.height = height;
+        this._width = width;
+        this._height = height;
 
         this.cellSize = cellSize;
 
-        this.clear();
+        this.resize();
     }
 
-    get size() {
-        return this.width * this.height;
+    get size(): number {
+        return this._size;
+    }
+
+    get width(): number {
+        return this._width;
+    }
+
+    set width(w: number) {
+        this._width = w;
+        this.resize();
+    }
+
+    get height(): number {
+        return this._height;
+    }
+
+    set height(h: number) {
+        this._height = h;
+        this.resize();
+    }
+
+    resize() {
+        this.cells = [];
+        this._size = this._width * this._height;
+        for (let i = 0; i < this._size; i++) {
+            this.cells.push(new CollisionCell());
+        }
     }
 
     addObject(worldX, worldY, obj) {
@@ -109,9 +136,8 @@ export class CollisionGrid {
     }
 
     clear() {
-        this.cells = [];
         for (let i = 0; i < this.size; i++) {
-            this.cells[i] = new CollisionCell();
+            this.cells[i].clear();
         }
     }
 

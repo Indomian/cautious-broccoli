@@ -29,7 +29,7 @@ export class Solver {
         this.useFixedTime = true;
         this.step = 0.017 / this.subSteps;
 
-        const grids = 20;
+        const grids = 30;
 
         this.cellSize = new Vec2(
             this.worldSize.x / grids,
