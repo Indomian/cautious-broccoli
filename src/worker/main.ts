@@ -1,5 +1,5 @@
-import { Render } from "../render/index.js";
-import {MessageType} from "../host/worker";
+import { Render } from "../render/index";
+import { MessageType } from "../host/messages";
 
 let render;
 

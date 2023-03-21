@@ -44,6 +44,7 @@ export class Vec2Line {
 
 
 
+
         return isEqual(this._length, sum, MATH_ERROR);
     }
 
