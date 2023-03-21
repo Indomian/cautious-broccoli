@@ -39,7 +39,7 @@ export class MappedObjectsGenerator extends ObjectsGenerator {
 
         const index = this.items.findIndex((item) => item.timeout < this.currentTime);
         if (index > -1) {
-            return this.items.splice(index, 1)[0].object;
+            return [this.items.splice(index, 1)[0].object];
         }
     }
 }

@@ -6,6 +6,6 @@ export class ObjectsGenerator {
 
     // TODO Make me iterator
     getNextObject(step) {
-        return null;
+        return [];
     }
 }

@@ -7,6 +7,7 @@ import {Vec2} from "../vector/vec2";
 export class ImmovableBallsObject extends BallsObject {
     type = SolverObjectTypes.TypeImmovableBall;
     immovable = true;
+    bounceValue = 0.5;
 
     /**
      * @type {Vec2}

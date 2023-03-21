@@ -1,6 +1,8 @@
 import { onReady }  from "../utils/onReady";
 import { getElement } from "../utils/getElement";
-import {Render} from "../render";
+
+import {WorkerApplication} from "./worker";
+import {DirectApplication} from "./direct";
 
 function initApplication() {
     console.log('Init application');
@@ -8,17 +10,17 @@ function initApplication() {
      * @var {HTMLCanvasElement}
      */
     const canvas = getElement("#image_canvas");
+    const container = getElement('#container');
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
 
     if (canvas.transferControlToOffscreen) {
         console.log('Render in worker');
-        const worker = new Worker(new URL('../worker/main.js', import.meta.url), {type: 'module'});
-        const offscreen = canvas.transferControlToOffscreen();
-        worker.postMessage({canvas: offscreen}, [offscreen]);
+        const application = new WorkerApplication(canvas);
     } else {
         // There is no support for offscreen render
         console.log('Render in main thread');
-        const render = new Render(canvas);
-        render.start();
+        const application = new DirectApplication(canvas);
     }
 }
 

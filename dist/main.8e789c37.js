@@ -142,13 +142,13 @@
       this[globalName] = mainExports;
     }
   }
-})({"ksKUl":[function(require,module,exports) {
+})({"ccn6U":[function(require,module,exports) {
 var global = arguments[3];
 var HMR_HOST = null;
 var HMR_PORT = null;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "a8fb9c35fdafe466";
-module.bundle.HMR_BUNDLE_ID = "04386ad0d51771cf";
+module.bundle.HMR_BUNDLE_ID = "c2528bfa8e789c37";
 "use strict";
 /* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, globalThis, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
 import type {
@@ -556,17 +556,23 @@ function hmrAccept(bundle, id) {
     });
 }
 
-},{}],"3mV1H":[function(require,module,exports) {
+},{}],"fXkCw":[function(require,module,exports) {
 var _indexJs = require("../render/index.js");
+var _worker = require("../host/worker");
+let render;
 onmessage = function(event) {
-    console.log(event);
-    if (event.data.canvas) {
-        const render = new (0, _indexJs.Render)(event.data.canvas);
-        render.start();
+    switch(event.data.type){
+        case (0, _worker.MessageType).MessageInit:
+            render = new (0, _indexJs.Render)(event.data.canvas);
+            render.start();
+            break;
+        case (0, _worker.MessageType).MessageUserInput:
+            if (render) render.processUserInput(event.data.event);
+            break;
     }
 };
 
-},{"../render/index.js":"1c5al"}],"1c5al":[function(require,module,exports) {
+},{"../render/index.js":"1c5al","../host/worker":"fOwCs"}],"1c5al":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
@@ -593,10 +599,10 @@ const balls = [
     new (0, _mappedObjectsGenerator.MappedObjectGeneratorItem)(3, new (0, _ball.BallsObject)(new (0, _vec2.Vec2)(10, 10)))
 ];
 const milkShakePoints = [
-    new (0, _vec2.Vec2)(60, 110),
-    new (0, _vec2.Vec2)(130, 490),
-    new (0, _vec2.Vec2)(330, 490),
-    new (0, _vec2.Vec2)(400, 110)
+    new (0, _vec2.Vec2)(0, 0),
+    new (0, _vec2.Vec2)(70, 380),
+    new (0, _vec2.Vec2)(270, 380),
+    new (0, _vec2.Vec2)(340, 0)
 ];
 const milkShakeLines = [
     [
@@ -621,6 +627,13 @@ const ballsColors = {
     202: "#ffffff",
     218: "#ffffff"
 };
+function index2color(index) {
+    const frequency = 0.005;
+    const r = Math.floor(Math.sin(frequency * index + 0) * 127 + 128);
+    const g = Math.floor(Math.sin(frequency * index + 2) * 127 + 128);
+    const b = Math.floor(Math.sin(frequency * index + 4) * 127 + 128);
+    return `rgba(${r}, ${g}, ${b}, 1)`;
+}
 class Render {
     /**
      * List of balls
@@ -645,6 +658,7 @@ class Render {
         this.items = [];
         this.generator = null;
         this.solver = null;
+        this.redBall = null;
         this.configure();
     }
     configure() {
@@ -654,16 +668,29 @@ class Render {
         this.switchToViewportConstrain();
         this.solver.constrains = this.constrains;
         const canvasCenter = new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2);
-        const ballGeneratorPoint = new (0, _vec2.Vec2)(10, 10);
-        const ballVelocity = new (0, _vec2.Vec2)(3, -3).mul(1 / this.solver.subSteps);
+        const ballGeneratorPoint = canvasCenter.diff(new (0, _vec2.Vec2)(300, 300));
+        const ballVelocity = new (0, _vec2.Vec2)(2, -2).mul(1 / this.solver.subSteps);
         this.generator = new (0, _totalObjectsGenerator.TotalObjectsGenerator)(this.solver, 1000, 7, (index)=>{
-            const obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint, 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.context, (0, _vec2.Vec2).Zero(), 5, ballsColors[index], "", "#000000"));
-            return obj;
+            const obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint, 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.context, (0, _vec2.Vec2).Zero(), 7, index2color(index + 200), "", "#000000"));
+            const obj2 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Down(20)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.context, (0, _vec2.Vec2).Zero(), 7, index2color(index + 100), "", "#000000"));
+            const obj3 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Down(-20)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.context, (0, _vec2.Vec2).Zero(), 7, index2color(index), "", "#000000"));
+            return [
+                obj,
+                obj2,
+                obj3
+            ];
         });
-        this.addObject(new (0, _object.RenderableObject)(new (0, _immovableBall.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000")));
+        this.redBall = new (0, _object.RenderableObject)(new (0, _immovableBall.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000"));
+        this.addObject(this.redBall);
         milkShakeLines.forEach((line)=>{
-            this.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line[0], line[1]), new (0, _line.Line)(this.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
+            this.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line[0].sum(canvasCenter.diff(new (0, _vec2.Vec2)(170, 190))), line[1]), new (0, _line.Line)(this.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
         });
+    }
+    processUserInput(event) {
+        if (event.leftButtonDown) {
+            if (this.redBall.ballsObject.isPointInsideObject(new (0, _vec2.Vec2)(event.screenX, event.screenY))) this.canMoveRedObject = true;
+            if (this.canMoveRedObject) this.redBall.ballsObject.moveBy(new (0, _vec2.Vec2)(event.dx, event.dy));
+        } else this.canMoveRedObject = false;
     }
     /**
      * @param {RenderableObject} obj
@@ -675,8 +702,8 @@ class Render {
         this.solver.update(time);
     }
     generatorsTick(time) {
-        const newBall = this.generator.getNextObject(time);
-        if (newBall) this.addObject(newBall);
+        const newBalls = this.generator.getNextObject(time);
+        if (newBalls) newBalls.forEach((ball)=>this.addObject(ball));
     }
     tick() {
         if (this.step < 0) this.step = 0;
@@ -684,7 +711,7 @@ class Render {
         this.update(this.step / 1000);
         this.clear();
         this.renderItems();
-        this.renderGrid();
+        //this.renderGrid();
         this.printFPS();
         (0, _vec2.Vec2).lengthCallsCount = 0;
     }
@@ -712,7 +739,7 @@ class Render {
         this.context.fillText(text, x, y);
     }
     printFPS() {
-        this.context.fillStyle = "#000000";
+        this.context.fillStyle = "rgba(0,0,0,0.1)";
         this.context.fillRect(0, 0, 100, 60);
         this.printText(`${Math.round(this.step)} ms / ${Math.round(1000 / this.step)} FPS`, 0, 10);
         this.printText(`Length calls: ${(0, _vec2.Vec2).lengthCallsCount}`, 0, 20);
@@ -729,13 +756,13 @@ class Render {
         else setInterval(this.nextInterval, 16);
     }
     renderGrid() {
-        this.solver.collisionGrid.forEach((x, y, cell, index)=>{
-            const cellPosition = new (0, _vec2.Vec2)(x * this.solver.cellSize.x, y * this.solver.cellSize.y);
+        this.solver.collisionGrid.forEach((column, row, cell, index)=>{
+            const cellPosition = new (0, _vec2.Vec2)(column * this.solver.cellSize.x, row * this.solver.cellSize.y);
             const rect = new (0, _frame.Frame)(this.context, cellPosition, this.solver.cellSize.diff(new (0, _vec2.Vec2)(5, 5)), cell.count > 0 ? "#ff0000" : "#00ff00");
             if (cell.highlight) this.context.lineWidth = 10;
             rect.render();
             this.context.lineWidth = 1;
-            this.printText(cell.count, cellPosition.x + this.solver.cellSize.x / 2, cellPosition.y + this.solver.cellSize.y / 2);
+            this.printText(index, cellPosition.x + this.solver.cellSize.x / 2, cellPosition.y + this.solver.cellSize.y / 2);
         });
     }
     switchToCircleConstrain() {
@@ -958,6 +985,12 @@ class Vec2 {
     static Vertical() {
         return new Vec2(0, 1);
     }
+    static Down(y) {
+        return new Vec2(0, y);
+    }
+    static Right(x) {
+        return new Vec2(x, 0);
+    }
 }
 
 },{"./vec2Math":"j4cED","./math":"efHiM","./exceptions":"a3jqY","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"j4cED":[function(require,module,exports) {
@@ -1141,6 +1174,12 @@ class BallsObject extends (0, _object.BaseSolverObject) {
     }
     addToGrid(collisionGrid) {
         collisionGrid.addObject(Math.floor(this.currentPosition.x), Math.floor(this.currentPosition.y), this);
+    }
+    moveBy(delta) {
+        this.currentPosition.addSelf(delta);
+    }
+    isPointInsideObject(point) {
+        return (0, _vec2Math.Vec2Math).distance(this.currentPosition, point) < this.radius;
     }
     get velocity() {
         return (0, _vec2Math.Vec2Math).diff(this.currentPosition, this.previousPosition);
@@ -1471,7 +1510,9 @@ class MappedObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
         this.currentTime += step;
         console.log(this.currentTime);
         const index = this.items.findIndex((item)=>item.timeout < this.currentTime);
-        if (index > -1) return this.items.splice(index, 1)[0].object;
+        if (index > -1) return [
+            this.items.splice(index, 1)[0].object
+        ];
     }
 }
 
@@ -1486,7 +1527,7 @@ class ObjectsGenerator {
     }
     // TODO Make me iterator
     getNextObject(step) {
-        return null;
+        return [];
     }
 }
 
@@ -1505,13 +1546,13 @@ class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
         this.lastCreateTime = 0;
     }
     getNextObject(step) {
-        if (this.total > this.limit) return;
+        if (this.total > this.limit) return [];
         this.lastCreateTime += 1;
         if (this.lastCreateTime > this.delay) {
-            const newItem = this.create(this.total);
+            const newItems = this.create(this.total);
             this.lastCreateTime = 0;
-            this.total++;
-            return newItem;
+            this.total += newItems.length;
+            return newItems;
         }
     }
 }
@@ -1537,9 +1578,11 @@ class Solver {
         this.gravity = new (0, _vec2.Vec2)(0, 100);
         this.useFixedTime = true;
         this.step = 0.017 / this.subSteps;
-        const grids = 30;
-        this.cellSize = new (0, _vec2.Vec2)(this.worldSize.x / grids, this.worldSize.y / grids);
-        this.collisionGrid = new (0, _grid.CollisionGrid)(grids, grids, this.cellSize);
+        const cellSize = 16;
+        const gridX = Math.round(this.worldSize.x / cellSize);
+        const gridY = Math.round(this.worldSize.y / cellSize);
+        this.cellSize = new (0, _vec2.Vec2)(this.worldSize.x / gridX, this.worldSize.y / gridY);
+        this.collisionGrid = new (0, _grid.CollisionGrid)(gridX, gridY, this.cellSize);
     }
     /**
      *
@@ -1614,11 +1657,14 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CollisionCell", ()=>CollisionCell);
 parcelHelpers.export(exports, "CollisionGrid", ()=>CollisionGrid);
+var _vec2 = require("./vector/vec2");
 var _vec2Math = require("./vector/vec2Math");
 class CollisionCell {
     objects = [];
     highlight = false;
+    static MAX_OBJECT_IN_CELL = 10;
     addObject(obj) {
+        if (this.objects.length >= CollisionCell.MAX_OBJECT_IN_CELL) return;
         this.objects.push(obj);
     }
     clear() {
@@ -1666,15 +1712,22 @@ class CollisionGrid {
     addObject(worldX, worldY, obj) {
         const x = Math.floor(worldX / this.cellSize.x);
         const y = Math.floor(worldY / this.cellSize.y);
-        const index = x * this.width + y;
-        if (isNaN(index) || index >= this.size || index < 0) ;
-        else this.cells[index].addObject(obj);
+        const index = x * this._height + y;
+        this.addObjectByIndex(index, obj);
+    }
+    addObjectByIndex(index, obj) {
+        if (!isNaN(index) && index >= 0 && index < this.size) this.cells[index].addObject(obj);
     }
     makeIndexFromVec(vec) {
-        return vec.x * this.width + vec.y;
+        return vec.x * this._height + vec.y;
     }
     makeIndexFromCoord(x, y) {
-        return x * this.width + y;
+        return x * this._height + y;
+    }
+    makeVecFromIndex(index) {
+        const x = Math.floor(index / this._height);
+        const y = index - x * this._height;
+        return new (0, _vec2.Vec2)(x, y);
     }
     /**
      * Adds object to all cells between given coords
@@ -1699,7 +1752,7 @@ class CollisionGrid {
             let startFrom = this.makeIndexFromCoord(left, top);
             for(let x = 0; x <= right - left; x++)for(let y = 0; y <= height; y++){
                 const cellIndex = startFrom + x * this.height + y;
-                this.cells[cellIndex].addObject(obj);
+                this.addObjectByIndex(cellIndex, obj);
             }
         }
     }
@@ -1708,15 +1761,15 @@ class CollisionGrid {
     }
     forEach(callback) {
         this.cells.forEach((cell, index)=>{
-            const x = Math.floor(index / this.width);
-            const y = index - x * this.width;
-            callback(x, y, cell, index);
+            const pos = this.makeVecFromIndex(index);
+            callback(pos.x, pos.y, cell, index);
         });
     }
     hasCell(index, dt) {
         if (index < 0 || index >= this.size) return false;
-        const x = Math.floor(index / this.width);
-        const y = index - x * this.width;
+        const pos = this.makeVecFromIndex(index);
+        const x = pos.x;
+        const y = pos.y;
         if (y <= 0 && dt < 0) // TOP CELL
         return false;
         if (y === this.height - 1 && dt > 0) // Bottom cell
@@ -1729,7 +1782,7 @@ class CollisionGrid {
     }
 }
 
-},{"./vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"d4B3G":[function(require,module,exports) {
+},{"./vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","./vector/vec2":"9XJHV"}],"d4B3G":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Rect", ()=>Rect);
@@ -1784,6 +1837,7 @@ var _vec2 = require("../vector/vec2");
 class ImmovableBallsObject extends (0, _ball.BallsObject) {
     type = (0, _types.SolverObjectTypes).TypeImmovableBall;
     immovable = true;
+    bounceValue = 0.5;
     /**
      * @type {Vec2}
      * @private
@@ -1912,6 +1966,191 @@ class Frame extends (0, _rect.Rect) {
     queue() {}
 }
 
-},{"./rect":"d4B3G","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ksKUl","3mV1H"], "3mV1H", "parcelRequire62ee")
+},{"./rect":"d4B3G","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fOwCs":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MessageType", ()=>MessageType);
+parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
+parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
+parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
+parcelHelpers.export(exports, "WorkerApplication", ()=>WorkerApplication);
+var _input = require("./input");
+let MessageType;
+(function(MessageType) {
+    MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
+    MessageType[MessageType["MessageInit"] = 1] = "MessageInit";
+    MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
+})(MessageType || (MessageType = {}));
+class MessageEvent {
+    type = MessageType.MessageNone;
+}
+class MessageInit extends MessageEvent {
+    type = MessageType.MessageInit;
+    constructor(canvas){
+        super();
+        this.canvas = canvas;
+    }
+}
+class MessageUserInput extends MessageEvent {
+    type = MessageType.MessageUserInput;
+    constructor(event){
+        super();
+        this.event = event;
+    }
+}
+class WorkerApplication {
+    constructor(canvas){
+        this.worker = new Worker(require("2aae74af0065a4ec"));
+        const offscreen = canvas.transferControlToOffscreen();
+        this.worker.postMessage(new MessageInit(offscreen), [
+            offscreen
+        ]);
+        this.userInput = new (0, _input.UserInput)(canvas);
+        this.userInput.addHandler(this.sendUserInputEvent);
+    }
+    sendUserInputEvent = (event)=>{
+        this.worker.postMessage(new MessageUserInput(event));
+    };
+    initUserInput() {}
+}
 
-//# sourceMappingURL=main.d51771cf.js.map
+},{"./input":"gGBsG","2aae74af0065a4ec":"lWVxd","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"gGBsG":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "UserInput", ()=>UserInput);
+class UserInput {
+    constructor(canvas){
+        this._canvas = canvas;
+        this._handlers = new Set();
+        this._leftButtonDown = false;
+        this.addHandlers();
+    }
+    addHandlers() {
+        this._canvas.addEventListener("mouseenter", this.mouseEnter);
+        this._canvas.addEventListener("mouseleave", this.mouseLeave);
+        this._canvas.addEventListener("mousemove", this.mouseMove);
+        this._canvas.addEventListener("mousedown", this.mouseDown);
+        this._canvas.addEventListener("mouseup", this.mouseUp);
+        this._canvas.addEventListener("click", this.click);
+    }
+    removeHandlers() {}
+    processEvent(event) {
+        this._handlers.forEach((callback)=>{
+            callback(event);
+        });
+    }
+    addHandler(callback) {
+        this._handlers.add(callback);
+    }
+    removeHandler(callback) {
+        if (this._handlers.has(callback)) this._handlers.delete(callback);
+    }
+    createMouseEvent(browserEvent) {
+        return {
+            screenX: browserEvent.offsetX,
+            screenY: browserEvent.offsetY,
+            dx: -this._oldX + browserEvent.offsetX,
+            dy: -this._oldY + browserEvent.offsetY,
+            leftButtonDown: this._leftButtonDown
+        };
+    }
+    mouseEnter = (browserEvent)=>{
+        const event = this.createMouseEvent(browserEvent);
+        this.processEvent(event);
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+    mouseLeave = (browserEvent)=>{
+        const event = this.createMouseEvent(browserEvent);
+        this.processEvent(event);
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+    mouseMove = (browserEvent)=>{
+        const event = this.createMouseEvent(browserEvent);
+        this.processEvent(event);
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+    mouseDown = (browserEvent)=>{
+        this._leftButtonDown = true;
+        const event = this.createMouseEvent(browserEvent);
+        this.processEvent(event);
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+    mouseUp = (browserEvent)=>{
+        this._leftButtonDown = false;
+        const event = this.createMouseEvent(browserEvent);
+        this.processEvent(event);
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+    click = (browserEvent)=>{
+        const event = this.createMouseEvent(browserEvent);
+        this.processEvent(event);
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lWVxd":[function(require,module,exports) {
+let workerURL = require("d04653533e7bbcfd");
+let bundleURL = require("a0b4a4cb0db7f678");
+let url = bundleURL.getBundleURL("gGnb0") + "main.8e789c37.js" + "?" + Date.now();
+module.exports = workerURL(url, bundleURL.getOrigin(url), false);
+
+},{"d04653533e7bbcfd":"6pzw8","a0b4a4cb0db7f678":"acFkO"}],"6pzw8":[function(require,module,exports) {
+"use strict";
+module.exports = function(workerUrl, origin, isESM) {
+    if (origin === self.location.origin) // If the worker bundle's url is on the same origin as the document,
+    // use the worker bundle's own url.
+    return workerUrl;
+    else {
+        // Otherwise, create a blob URL which loads the worker bundle with `importScripts`.
+        var source = isESM ? "import " + JSON.stringify(workerUrl) + ";" : "importScripts(" + JSON.stringify(workerUrl) + ");";
+        return URL.createObjectURL(new Blob([
+            source
+        ], {
+            type: "application/javascript"
+        }));
+    }
+};
+
+},{}],"acFkO":[function(require,module,exports) {
+"use strict";
+var bundleURL = {};
+function getBundleURLCached(id) {
+    var value = bundleURL[id];
+    if (!value) {
+        value = getBundleURL();
+        bundleURL[id] = value;
+    }
+    return value;
+}
+function getBundleURL() {
+    try {
+        throw new Error();
+    } catch (err) {
+        var matches = ("" + err.stack).match(/(https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/[^)\n]+/g);
+        if (matches) // The first two stack frames will be this function and getBundleURLCached.
+        // Use the 3rd one, which will be a runtime in the original bundle.
+        return getBaseURL(matches[2]);
+    }
+    return "/";
+}
+function getBaseURL(url) {
+    return ("" + url).replace(/^((?:https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/.+)\/[^/]+$/, "$1") + "/";
+} // TODO: Replace uses with `new URL(url).origin` when ie11 is no longer supported.
+function getOrigin(url) {
+    var matches = ("" + url).match(/(https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/[^/]+/);
+    if (!matches) throw new Error("Origin not found");
+    return matches[0];
+}
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+exports.getOrigin = getOrigin;
+
+},{}]},["ccn6U","fXkCw"], "fXkCw", "parcelRequire62ee")
+
+//# sourceMappingURL=main.8e789c37.js.map

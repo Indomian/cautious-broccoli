@@ -13,16 +13,16 @@ export class TotalObjectsGenerator extends ObjectsGenerator {
 
     getNextObject(step) {
         if (this.total > this.limit) {
-            return;
+            return [];
         }
 
         this.lastCreateTime += 1;
         if (this.lastCreateTime > this.delay) {
-            const newItem = this.create(this.total);
+            const newItems = this.create(this.total);
             this.lastCreateTime = 0;
-            this.total++;
+            this.total+= newItems.length;
 
-            return newItem;
+            return newItems;
         }
     }
 }

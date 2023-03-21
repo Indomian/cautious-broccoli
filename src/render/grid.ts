@@ -4,15 +4,21 @@ import {Vec2Math} from "./vector/vec2Math";
 
 export class CollisionCell {
     objects: BaseSolverObject[] = [];
-    hightlight: boolean = false;
+    highlight: boolean = false;
+
+    static MAX_OBJECT_IN_CELL = 10;
 
     addObject(obj) {
+        if (this.objects.length >= CollisionCell.MAX_OBJECT_IN_CELL) {
+            return
+        }
+
         this.objects.push(obj);
     }
 
     clear() {
         this.objects = [];
-        this.hightlight = false;
+        this.highlight = false;
     }
 
     remove(index) {
@@ -27,7 +33,7 @@ export class CollisionCell {
     }
 }
 
-type CollisionGridForEachCallback = (x: number, y: number, cell: CollisionCell, index?: number) => void;
+type CollisionGridForEachCallback = (column: number, row: number, cell: CollisionCell, index?: number) => void;
 
 export class CollisionGrid {
     cells: CollisionCell[] = [];
@@ -79,20 +85,28 @@ export class CollisionGrid {
         const x = Math.floor(worldX / this.cellSize.x);
         const y = Math.floor(worldY / this.cellSize.y);
 
-        const index = x * this.width + y;
-        if (isNaN(index) || index >= this.size || index < 0) {
+        const index = x * this._height + y;
+        this.addObjectByIndex(index, obj);
+    }
 
-        } else {
+    addObjectByIndex(index, obj) {
+        if (!isNaN(index) && index>=0 && index<this.size) {
             this.cells[index].addObject(obj);
         }
     }
 
     makeIndexFromVec(vec) {
-        return vec.x * this.width + vec.y;
+        return vec.x * this._height + vec.y;
     }
 
     makeIndexFromCoord(x, y) {
-        return x * this.width + y;
+        return x * this._height + y;
+    }
+
+    makeVecFromIndex(index): Vec2 {
+        const x = Math.floor(index / this._height);
+        const y = index - x * this._height;
+        return new Vec2(x, y);
     }
 
     /**
@@ -129,7 +143,7 @@ export class CollisionGrid {
             for (let x = 0; x <= right-left; x++) {
                 for (let y = 0; y <= height; y++) {
                     const cellIndex= startFrom + x * this.height + y;
-                    this.cells[cellIndex].addObject(obj)
+                    this.addObjectByIndex(cellIndex, obj);
                 }
             }
         }
@@ -143,9 +157,8 @@ export class CollisionGrid {
 
     forEach(callback: CollisionGridForEachCallback) {
         this.cells.forEach((cell, index) => {
-            const x = Math.floor(index / this.width);
-            const y = index - x * this.width;
-            callback(x, y, cell, index);
+            const pos = this.makeVecFromIndex(index);
+            callback(pos.x, pos.y, cell, index);
         })
     }
 
@@ -154,8 +167,10 @@ export class CollisionGrid {
             return false;
         }
 
-        const x = Math.floor(index / this.width);
-        const y = index - x * this.width;
+        const pos = this.makeVecFromIndex(index);
+
+        const x = pos.x;
+        const y = pos.y;
 
         if (y <= 0 && dt < 0) {
             // TOP CELL

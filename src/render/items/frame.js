@@ -14,4 +14,8 @@ export class Frame extends Rect {
             this.size.y
         )
     }
+
+    queue() {
+
+    }
 }

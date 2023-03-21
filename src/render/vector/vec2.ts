@@ -200,6 +200,14 @@ export class Vec2 {
     static Vertical() {
         return new Vec2(0, 1);
     }
+
+    static Down(y) {
+        return new Vec2(0, y);
+    }
+
+    static Right(x) {
+        return new Vec2(x, 0);
+    }
 }
 
 

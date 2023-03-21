@@ -4,9 +4,55 @@
     <meta charset="utf-8"/>
     <title>My First Parcel App</title>
     <script src="host/main.js" type="module"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            padding: 0;
+            margin: 0;
+        }
+
+        #container {
+            position: relative;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ddd;
+        }
+
+        #container h1 {
+            position: absolute;
+            right: 0;
+            top: 0;
+            color: #fff;
+        }
+
+        #container p {
+            position: absolute;
+            right: 0;
+            top: 100px;
+            width: 100px;
+            color: white;
+        }
+    </style>
 </head>
 <body>
+<div id="container">
 <h1>This is my shake ;)</h1>
-<canvas id="image_canvas" width="500" height="500" style="border:1px solid black"></canvas>
+<canvas
+        id="image_canvas"
+        width="500"
+        height="500"
+        style="border:1px solid black;"
+></canvas>
+<p>
+    Try to move red circile with drag'n'drop :)
+</p>
+</div>
 </body>
 </html>

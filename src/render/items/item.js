@@ -12,7 +12,17 @@ export class Item {
         this.position = position;
     }
 
+    /**
+     * Method immediately renders object on context
+     */
     render() {
+
+    }
+
+    /**
+     * Method tries to put object in render block
+     */
+    queue() {
 
     }
 }

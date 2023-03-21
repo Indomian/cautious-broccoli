@@ -29,15 +29,18 @@ export class Solver {
         this.useFixedTime = true;
         this.step = 0.017 / this.subSteps;
 
-        const grids = 30;
+        const cellSize = 16;
+
+        const gridX = Math.round(this.worldSize.x / cellSize);
+        const gridY = Math.round(this.worldSize.y / cellSize);
 
         this.cellSize = new Vec2(
-            this.worldSize.x / grids,
-            this.worldSize.y / grids
+            this.worldSize.x / gridX,
+            this.worldSize.y / gridY
         );
 
         this.collisionGrid = new CollisionGrid(
-            grids, grids,
+            gridX, gridY,
             this.cellSize
         )
     }

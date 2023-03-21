@@ -32,10 +32,10 @@ const balls = [
 ]
 
 const milkShakePoints = [
-    new Vec2(60, 110),
-    new Vec2(130, 490),
-    new Vec2(330, 490),
-    new Vec2(400, 110)
+    new Vec2(0, 0),
+    new Vec2(70, 380),
+    new Vec2(270, 380),
+    new Vec2(340, 0)
 ]
 
 const milkShakeLines = [
@@ -52,6 +52,14 @@ const ballsColors = {
     200: '#ffffff',
     202: '#ffffff',
     218: '#ffffff',
+}
+
+function index2color(index) {
+    const frequency=5/1000;
+    const r = Math.floor(Math.sin(frequency*index + 0) * (127) + 128);
+    const g = Math.floor(Math.sin(frequency*index + 2) * (127) + 128);
+    const b = Math.floor(Math.sin(frequency*index + 4) * (127) + 128);
+    return `rgba(${r}, ${g}, ${b}, 1)`;
 }
 
 export class Render {
@@ -88,7 +96,9 @@ export class Render {
         this.items = [];
 
         this.generator = null;
-        this.solver = null;
+        this.solver = null
+
+        this.redBall = null;
 
         this.configure();
     }
@@ -112,16 +122,19 @@ export class Render {
             this.canvas.height / 2
         );
 
-        const ballGeneratorPoint = new Vec2(
-            10, 10
-        );
+        const ballGeneratorPoint = canvasCenter.diff(
+            new Vec2(
+                300,
+                300
+            )
+        )
         const ballVelocity = new Vec2(
-            3, -3
+            2, -2
         ).mul(1/this.solver.subSteps);
 
         this.generator = new TotalObjectsGenerator(
             this.solver,
-            600,
+            1000,
             7,
             (index) => {
                 const obj = new RenderableObject(
@@ -132,26 +145,64 @@ export class Render {
                     new CircleWithText(
                         this.context,
                         Vec2.Zero(),
-                        5,
-                        ballsColors[index],
+                        7,
+                        index2color(index+200),
                         '',
                         '#000000'
                     )
                 )
 
-                return obj;
+                const obj2 = new RenderableObject(
+                    (new BallsObject(
+                        ballGeneratorPoint.sum(
+                            Vec2.Down(20)
+                        ),
+                        5
+                    )).setVelocity(ballVelocity),
+                    new CircleWithText(
+                        this.context,
+                        Vec2.Zero(),
+                        7,
+                        index2color(index+100),
+                        '',
+                        '#000000'
+                    )
+                )
+
+                const obj3 = new RenderableObject(
+                    (new BallsObject(
+                        ballGeneratorPoint.sum(
+                            Vec2.Down(-20)
+                        ),
+                        5
+                    )).setVelocity(ballVelocity),
+                    new CircleWithText(
+                        this.context,
+                        Vec2.Zero(),
+                        7,
+                        index2color(index),
+                        '',
+                        '#000000'
+                    )
+                )
+
+                return [obj,obj2, obj3];
             }
         );
 
-        this.addObject(new RenderableObject(
+        this.redBall = new RenderableObject(
             new ImmovableBallsObject(new Vec2(230, 50), 30),
             new Circle(this.context, Vec2.Zero(), 30, '#ff0000')
-        ));
+        );
+
+        this.addObject(this.redBall);
 
         milkShakeLines.forEach(line => {
             this.addObject(new ImmovableLineRenderableObject(
                 new ImmovableLineObject(
-                    line[0],
+                    line[0].sum(
+                        canvasCenter.diff(new Vec2(340/2, 380/2))
+                    ),
                     line[1]
                 ),
                 new Line(
@@ -162,6 +213,30 @@ export class Render {
                 )
             ));
         });
+    }
+
+    processUserInput(event) {
+        if (event.leftButtonDown) {
+            if (this.redBall.ballsObject.isPointInsideObject(
+                new Vec2(
+                    event.screenX,
+                    event.screenY
+                )
+            )) {
+                this.canMoveRedObject = true;
+            }
+
+            if (this.canMoveRedObject) {
+                this.redBall.ballsObject.moveBy(
+                    new Vec2(
+                        event.dx,
+                        event.dy
+                    )
+                )
+            }
+        } else {
+            this.canMoveRedObject = false;
+        }
     }
 
     /**
@@ -177,9 +252,9 @@ export class Render {
     }
 
     generatorsTick(time) {
-        const newBall = this.generator.getNextObject(time);
-        if (newBall) {
-            this.addObject(newBall)
+        const newBalls = this.generator.getNextObject(time);
+        if (newBalls) {
+            newBalls.forEach(ball => this.addObject(ball));
         }
     }
 
@@ -193,7 +268,7 @@ export class Render {
 
         this.clear();
         this.renderItems();
-        this.renderGrid();
+        //this.renderGrid();
 
         this.printFPS();
 
@@ -237,7 +312,7 @@ export class Render {
     }
 
     printFPS() {
-        this.context.fillStyle = '#000000';
+        this.context.fillStyle = 'rgba(0,0,0,0.1)';
         this.context.fillRect(0, 0, 100, 60);
         this.printText(`${Math.round(this.step)} ms / ${Math.round(1000/this.step)} FPS`, 0, 10);
         this.printText(`Length calls: ${Vec2.lengthCallsCount}`, 0 , 20);
@@ -261,10 +336,10 @@ export class Render {
     }
 
     renderGrid() {
-        this.solver.collisionGrid.forEach((x, y, cell, index) => {
+        this.solver.collisionGrid.forEach((column, row, cell, index) => {
             const cellPosition = new Vec2(
-                x * this.solver.cellSize.x,
-                y * this.solver.cellSize.y,
+                column * this.solver.cellSize.x,
+                row * this.solver.cellSize.y,
             );
             const rect = new Frame(
                 this.context,
@@ -273,14 +348,18 @@ export class Render {
                 cell.count > 0 ? '#ff0000' : '#00ff00'
             )
 
-            if (cell.hightlight) {
+            if (cell.highlight) {
                 this.context.lineWidth = 10;
             }
 
             rect.render();
 
             this.context.lineWidth = 1;
-            this.printText(index, cellPosition.x + this.solver.cellSize.x / 2, cellPosition.y + this.solver.cellSize.y / 2)
+            this.printText(
+                index,
+                cellPosition.x + this.solver.cellSize.x / 2,
+                cellPosition.y + this.solver.cellSize.y / 2
+            )
         })
     }
 
