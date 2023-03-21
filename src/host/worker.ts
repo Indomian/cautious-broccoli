@@ -1,4 +1,5 @@
 import {UserInput, UIEvent} from "./input";
+import {createWorker} from "./workerWorkaround.js";
 
 export enum MessageType {
     MessageNone = 0,
@@ -35,7 +36,7 @@ export class WorkerApplication {
     userInput;
 
     constructor(canvas) {
-        this.worker = new Worker(new URL('../worker/main.ts', import.meta.url), {type: 'module'});
+        this.worker = createWorker();
         const offscreen = canvas.transferControlToOffscreen();
 
         this.worker.postMessage(
