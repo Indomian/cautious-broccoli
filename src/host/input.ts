@@ -41,10 +41,10 @@ export class UserInput {
         this._canvas.addEventListener('click', this.click);
 
         // Touch events
-        this._canvas.addEventListener('touchstart', this.touchStart, false);
-        this._canvas.addEventListener('touchmove', this.touchMove, false);
-        this._canvas.addEventListener('touchcancel', this.touchCancel, false);
-        this._canvas.addEventListener('touchend', this.touchEnd, false);
+        this._canvas.addEventListener('touchstart', this.touchStart, { passive: false });
+        this._canvas.addEventListener('touchmove', this.touchMove, { passive: false });
+        this._canvas.addEventListener('touchcancel', this.touchCancel, { passive: false });
+        this._canvas.addEventListener('touchend', this.touchEnd, { passive: false });
 
         // Keyboard events
         document.addEventListener('keypress', this.keyPress);
@@ -147,6 +147,8 @@ export class UserInput {
     }
 
     touchStart = (browserEvent: TouchEvent) => {
+        browserEvent.preventDefault();
+
         if (browserEvent.touches.length === 0) {
             return;
         }
@@ -167,6 +169,8 @@ export class UserInput {
     }
 
     touchMove = (browserEvent: TouchEvent) => {
+        browserEvent.preventDefault();
+
         const event = this.createTouchEvent(browserEvent);
         if (event) {
             this.processEvent(event);
@@ -174,6 +178,8 @@ export class UserInput {
     }
 
     touchEnd = (browserEvent: TouchEvent) => {
+        browserEvent.preventDefault();
+
         this._leftButtonDown = false;
         const event = this.createTouchEndEvent();
         if (event) {
@@ -182,6 +188,8 @@ export class UserInput {
     }
 
     touchCancel = (browserEvent: TouchEvent) => {
+        browserEvent.preventDefault();
+        
         this._leftButtonDown = false;
         const event = this.createTouchEndEvent();
         if (event) {
