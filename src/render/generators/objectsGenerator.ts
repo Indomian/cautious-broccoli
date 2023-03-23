@@ -5,7 +5,7 @@ export class ObjectsGenerator {
     }
 
     // TODO Make me iterator
-    getNextObject(step) {
+    getNextObjects(step) {
         return [];
     }
 }

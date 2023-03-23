@@ -32,7 +32,7 @@ export class MappedObjectsGenerator extends ObjectsGenerator {
         this.currentTime = 0;
     }
 
-    getNextObject(step) {
+    getNextObjects(step) {
         this.currentTime += step;
 
         console.log(this.currentTime)

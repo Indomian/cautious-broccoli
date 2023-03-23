@@ -11,7 +11,7 @@ export class TotalObjectsGenerator extends ObjectsGenerator {
         this.lastCreateTime = 0;
     }
 
-    getNextObject(step) {
+    getNextObjects(step) {
         if (this.total > this.limit) {
             return [];
         }
@@ -24,5 +24,7 @@ export class TotalObjectsGenerator extends ObjectsGenerator {
 
             return newItems;
         }
+
+        return []
     }
 }

@@ -7,8 +7,8 @@
   "scripts": {
     "test": "jest",
     "start": "rm -rf .parcel-cache && yarn parcel",
-    "build": "rm -rf .parcel-cache && yarn parcel build --public-url /cautious-broccoli/",
-    "build-local": "rm -rf .parcel-cache dist && yarn parcel build"
+    "build": "rm -rf .parcel-cache && yarn parcel build --public-url /cautious-broccoli/ --no-source-maps",
+    "build-local": "rm -rf .parcel-cache dist && yarn parcel build --no-source-maps"
   },
   "author": "Egor Bolgov <e.bolgov@semrush.com>",
   "license": "UNLICENSED",

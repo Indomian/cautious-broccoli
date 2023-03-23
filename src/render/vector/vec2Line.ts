@@ -42,10 +42,15 @@ export class Vec2Line {
         const sum = l1 + l2;
 
 
-
-
-
         return isEqual(this._length, sum, MATH_ERROR);
+    }
+
+    /**
+     * Checks if vector which lies on this line is in between vec1 and vec2
+     * @param vec
+     */
+    inBetweenFast(vec: Vec2) {
+        return vec.isInsideRect(this._vec1, this._vec2);
     }
 
     calculateKB() {

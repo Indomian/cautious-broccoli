@@ -8,6 +8,10 @@ export interface UIMouseEvent {
     leftButtonDown: boolean
 }
 
+export interface UIKeyboardEvent {
+    keyPressed: string
+}
+
 export type UserInputHandler = (event: UIEvent) => void;
 
 export class UserInput {
@@ -35,16 +39,28 @@ export class UserInput {
         this._canvas.addEventListener('mousedown', this.mouseDown);
         this._canvas.addEventListener('mouseup', this.mouseUp);
         this._canvas.addEventListener('click', this.click);
+
+        // Touch events
+        this._canvas.addEventListener('touchstart', this.touchStart, false);
+        this._canvas.addEventListener('touchmove', this.touchMove, false);
+        this._canvas.addEventListener('touchcancel', this.touchCancel, false);
+        this._canvas.addEventListener('touchend', this.touchEnd, false);
+
+        // Keyboard events
+        document.addEventListener('keypress', this.keyPress);
     }
 
     private removeHandlers() {
-
+        document.removeEventListener('keypress', this.keyPress);
     }
 
     private processEvent(event) {
         this._handlers.forEach((callback: UserInputHandler) => {
             callback(event);
         })
+
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
     }
 
     addHandler(callback: UserInputHandler) {
@@ -55,6 +71,13 @@ export class UserInput {
         if (this._handlers.has(callback)) {
             this._handlers.delete(callback);
         }
+    }
+
+    keyPress = (browserEvent: KeyboardEvent) => {
+        const event = {
+            keyPressed: browserEvent.key
+        }
+        this.processEvent(event)
     }
 
     createMouseEvent(browserEvent: MouseEvent): UIMouseEvent {
@@ -70,25 +93,16 @@ export class UserInput {
     mouseEnter = (browserEvent: MouseEvent) => {
         const event = this.createMouseEvent(browserEvent);
         this.processEvent(event);
-
-        this._oldX = event.screenX;
-        this._oldY = event.screenY;
     }
 
     mouseLeave = (browserEvent: MouseEvent) => {
         const event = this.createMouseEvent(browserEvent);
         this.processEvent(event);
-
-        this._oldX = event.screenX;
-        this._oldY = event.screenY;
     }
 
     mouseMove = (browserEvent: MouseEvent) => {
         const event = this.createMouseEvent(browserEvent);
         this.processEvent(event);
-
-        this._oldX = event.screenX;
-        this._oldY = event.screenY;
     }
 
     mouseDown = (browserEvent: MouseEvent) => {
@@ -96,9 +110,6 @@ export class UserInput {
 
         const event = this.createMouseEvent(browserEvent);
         this.processEvent(event);
-
-        this._oldX = event.screenX;
-        this._oldY = event.screenY;
     }
 
     mouseUp = (browserEvent: MouseEvent) => {
@@ -106,16 +117,75 @@ export class UserInput {
 
         const event = this.createMouseEvent(browserEvent);
         this.processEvent(event);
-
-        this._oldX = event.screenX;
-        this._oldY = event.screenY;
     }
 
     click = (browserEvent: MouseEvent) => {
         const event = this.createMouseEvent(browserEvent);
         this.processEvent(event);
+    }
 
-        this._oldX = event.screenX;
-        this._oldY = event.screenY;
+    createTouchEvent(browserEvent: TouchEvent): UIMouseEvent | null {
+        const touch = browserEvent.touches.item(0)
+
+        return {
+            screenX: touch.pageX,
+            screenY: touch.pageY,
+            dx: -this._oldX + touch.pageX,
+            dy: -this._oldY + touch.pageY,
+            leftButtonDown: this._leftButtonDown
+        }
+    }
+
+    createTouchEndEvent(): UIMouseEvent {
+        return {
+            screenX: this._oldX,
+            screenY: this._oldY,
+            dx: 0,
+            dy: 0,
+            leftButtonDown: this._leftButtonDown
+        }
+    }
+
+    touchStart = (browserEvent: TouchEvent) => {
+        if (browserEvent.touches.length === 0) {
+            return;
+        }
+
+        this._leftButtonDown = true;
+
+        const touch = browserEvent.touches.item(0)
+
+        const event = {
+            screenX: touch.pageX,
+            screenY: touch.pageY,
+            dx: 0,
+            dy: 0,
+            leftButtonDown: this._leftButtonDown
+        }
+
+        this.processEvent(event);
+    }
+
+    touchMove = (browserEvent: TouchEvent) => {
+        const event = this.createTouchEvent(browserEvent);
+        if (event) {
+            this.processEvent(event);
+        }
+    }
+
+    touchEnd = (browserEvent: TouchEvent) => {
+        this._leftButtonDown = false;
+        const event = this.createTouchEndEvent();
+        if (event) {
+            this.processEvent(event);
+        }
+    }
+
+    touchCancel = (browserEvent: TouchEvent) => {
+        this._leftButtonDown = false;
+        const event = this.createTouchEndEvent();
+        if (event) {
+            this.processEvent(event);
+        }
     }
 }

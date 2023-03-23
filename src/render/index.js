@@ -1,66 +1,11 @@
 import {Circle} from "./items/circle";
 import {Vec2} from "./vector/vec2";
-import {Vec2Math} from "./vector/vec2Math";
-import {BallsObject} from "./objects/ball";
 import {ViewportConstrain} from "./constrains/viewport";
 import {CircleConstrain} from "./constrains/circle";
-import {MappedObjectGeneratorItem, MappedObjectsGenerator} from "./mappedObjectsGenerator";
-import {TotalObjectsGenerator} from "./totalObjectsGenerator";
 import {Solver} from "./solver";
-import {Rect} from "./items/rect";
 import {RenderableObject} from "./renderableObjects/object";
-import {ImmovableBallsObject} from "./objects/immovableBall";
-import {ImmovableLineRenderableObject} from "./renderableObjects/immovableLine";
-import {ImmovableLineObject} from "./objects/immovableLine";
-import {Line} from "./items/line";
-import {CircleWithText} from "./items/circleWithText";
 import {Frame} from "./items/frame";
-
-const balls = [
-    new MappedObjectGeneratorItem(
-        1,
-        new BallsObject(new Vec2(10, 10))
-    ),
-    new MappedObjectGeneratorItem(
-        2,
-        new BallsObject(new Vec2(10, 10))
-    ),
-    new MappedObjectGeneratorItem(
-        3,
-        new BallsObject(new Vec2(10, 10))
-    ),
-]
-
-const milkShakePoints = [
-    new Vec2(0, 0),
-    new Vec2(70, 380),
-    new Vec2(270, 380),
-    new Vec2(340, 0)
-]
-
-const milkShakeLines = [
-    [milkShakePoints[0], Vec2Math.diff(milkShakePoints[0], milkShakePoints[1]).flipSelf()],
-    [milkShakePoints[1], Vec2Math.diff(milkShakePoints[1], milkShakePoints[2]).flipSelf()],
-    [milkShakePoints[2], Vec2Math.diff(milkShakePoints[2], milkShakePoints[3]).flipSelf()]
-]
-
-const ballsColors = {
-    57: '#ffffff',
-    78: '#ffffff',
-    71: '#ffffff',
-    86: '#ffffff',
-    200: '#ffffff',
-    202: '#ffffff',
-    218: '#ffffff',
-}
-
-function index2color(index) {
-    const frequency=5/1000;
-    const r = Math.floor(Math.sin(frequency*index + 0) * (127) + 128);
-    const g = Math.floor(Math.sin(frequency*index + 2) * (127) + 128);
-    const b = Math.floor(Math.sin(frequency*index + 4) * (127) + 128);
-    return `rgba(${r}, ${g}, ${b}, 1)`;
-}
+import {Scene1} from "./scenes/scene1";
 
 export class Render {
     /**
@@ -79,6 +24,8 @@ export class Render {
      * @type {Solver}
      */
     solver = null;
+
+    flagRenderGrid = false;
 
     constructor(canvas) {
         this.canvas = canvas;
@@ -117,102 +64,10 @@ export class Render {
         this.switchToViewportConstrain();
         this.solver.constrains = this.constrains;
 
-        const canvasCenter = new Vec2(
-            this.canvas.width / 2,
-            this.canvas.height / 2
-        );
+        const scene = new Scene1(this);
 
-        const ballGeneratorPoint = canvasCenter.diff(
-            new Vec2(
-                300,
-                300
-            )
-        )
-        const ballVelocity = new Vec2(
-            2, -2
-        ).mul(1/this.solver.subSteps);
-
-        this.generator = new TotalObjectsGenerator(
-            this.solver,
-            1000,
-            7,
-            (index) => {
-                const obj = new RenderableObject(
-                    (new BallsObject(
-                        ballGeneratorPoint,
-                        5
-                    )).setVelocity(ballVelocity),
-                    new CircleWithText(
-                        this.context,
-                        Vec2.Zero(),
-                        7,
-                        index2color(index+200),
-                        '',
-                        '#000000'
-                    )
-                )
-
-                const obj2 = new RenderableObject(
-                    (new BallsObject(
-                        ballGeneratorPoint.sum(
-                            Vec2.Down(20)
-                        ),
-                        5
-                    )).setVelocity(ballVelocity),
-                    new CircleWithText(
-                        this.context,
-                        Vec2.Zero(),
-                        7,
-                        index2color(index+100),
-                        '',
-                        '#000000'
-                    )
-                )
-
-                const obj3 = new RenderableObject(
-                    (new BallsObject(
-                        ballGeneratorPoint.sum(
-                            Vec2.Down(-20)
-                        ),
-                        5
-                    )).setVelocity(ballVelocity),
-                    new CircleWithText(
-                        this.context,
-                        Vec2.Zero(),
-                        7,
-                        index2color(index),
-                        '',
-                        '#000000'
-                    )
-                )
-
-                return [obj,obj2, obj3];
-            }
-        );
-
-        this.redBall = new RenderableObject(
-            new ImmovableBallsObject(new Vec2(230, 50), 30),
-            new Circle(this.context, Vec2.Zero(), 30, '#ff0000')
-        );
-
-        this.addObject(this.redBall);
-
-        milkShakeLines.forEach(line => {
-            this.addObject(new ImmovableLineRenderableObject(
-                new ImmovableLineObject(
-                    line[0].sum(
-                        canvasCenter.diff(new Vec2(340/2, 380/2))
-                    ),
-                    line[1]
-                ),
-                new Line(
-                    this.context,
-                    Vec2.Zero(),
-                    Vec2.Zero(),
-                    '#ffffff'
-                )
-            ));
-        });
+        this.generator = scene.generator;
+        this.redBall = scene.getActor();
     }
 
     processUserInput(event) {
@@ -237,6 +92,10 @@ export class Render {
         } else {
             this.canMoveRedObject = false;
         }
+
+        if (event.keyPressed === 'g') {
+            this.flagRenderGrid = !this.flagRenderGrid;
+        }
     }
 
     /**
@@ -252,7 +111,7 @@ export class Render {
     }
 
     generatorsTick(time) {
-        const newBalls = this.generator.getNextObject(time);
+        const newBalls = this.generator.getNextObjects(time);
         if (newBalls) {
             newBalls.forEach(ball => this.addObject(ball));
         }
@@ -268,11 +127,14 @@ export class Render {
 
         this.clear();
         this.renderItems();
-        //this.renderGrid();
+        if (this.flagRenderGrid) {
+            this.renderGrid();
+        }
 
         this.printFPS();
 
         Vec2.lengthCallsCount = 0;
+        Vec2.length2CallsCount = 0;
     }
 
     nextFrame = (time) => {

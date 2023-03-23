@@ -6,7 +6,7 @@ export class CollisionCell {
     objects: BaseSolverObject[] = [];
     highlight: boolean = false;
 
-    static MAX_OBJECT_IN_CELL = 10;
+    static MAX_OBJECT_IN_CELL = 100;
 
     addObject(obj) {
         if (this.objects.length >= CollisionCell.MAX_OBJECT_IN_CELL) {
@@ -34,6 +34,8 @@ export class CollisionCell {
 }
 
 type CollisionGridForEachCallback = (column: number, row: number, cell: CollisionCell, index?: number) => void;
+
+type GridIndex = number;
 
 export class CollisionGrid {
     cells: CollisionCell[] = [];
@@ -82,29 +84,29 @@ export class CollisionGrid {
     }
 
     addObject(worldX, worldY, obj) {
-        const x = Math.floor(worldX / this.cellSize.x);
-        const y = Math.floor(worldY / this.cellSize.y);
+        const x = Math.trunc(worldX / this.cellSize.x);
+        const y = Math.trunc(worldY / this.cellSize.y);
 
-        const index = x * this._height + y;
+        const index: GridIndex = x * this._height + y;
         this.addObjectByIndex(index, obj);
     }
 
-    addObjectByIndex(index, obj) {
+    addObjectByIndex(index: GridIndex, obj: BaseSolverObject) {
         if (!isNaN(index) && index>=0 && index<this.size) {
             this.cells[index].addObject(obj);
         }
     }
 
-    makeIndexFromVec(vec) {
+    makeIndexFromVec(vec: Vec2): number {
         return vec.x * this._height + vec.y;
     }
 
-    makeIndexFromCoord(x, y) {
+    makeIndexFromCoord(x: number, y: number): number {
         return x * this._height + y;
     }
 
-    makeVecFromIndex(index): Vec2 {
-        const x = Math.floor(index / this._height);
+    makeVecFromIndex(index: GridIndex): Vec2 {
+        const x = Math.trunc(index / this._height);
         const y = index - x * this._height;
         return new Vec2(x, y);
     }
@@ -116,8 +118,8 @@ export class CollisionGrid {
      * @param obj
      */
     addObjectToCells(worldLeftTop: Vec2, worldRightBottom: Vec2, obj: BaseSolverObject) {
-        const point1 = Vec2Math.scale(worldLeftTop, this.cellSize).applySelf(Math.floor);
-        const point2 = Vec2Math.scale(worldRightBottom, this.cellSize).applySelf(Math.floor);
+        const point1 = Vec2Math.scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
+        const point2 = Vec2Math.scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
 
         const index1 = this.makeIndexFromVec(point1);
         const index2 = this.makeIndexFromVec(point2);
@@ -142,7 +144,7 @@ export class CollisionGrid {
 
             for (let x = 0; x <= right-left; x++) {
                 for (let y = 0; y <= height; y++) {
-                    const cellIndex= startFrom + x * this.height + y;
+                    const cellIndex = startFrom + this.makeIndexFromCoord(x, y);
                     this.addObjectByIndex(cellIndex, obj);
                 }
             }

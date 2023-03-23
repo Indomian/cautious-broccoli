@@ -6,14 +6,20 @@ import { collide } from "./collisionModels";
 import {BaseSolverObject} from "./object";
 import {CollisionGrid} from "../grid";
 
+const MAX_VELOCITY = 10;
+const MAX_VELOCITY2 = MAX_VELOCITY ** 2;
+
 export class BallsObject extends BaseSolverObject {
     acc = Vec2.Zero();
 
     radius = 10;
     bounceValue = 1.1;
+    motionReduce = 1;
 
     type = SolverObjectTypes.TypeBall;
     immovable = false;
+
+    private _radius2;
 
     /**
      * Creates balls object
@@ -27,6 +33,8 @@ export class BallsObject extends BaseSolverObject {
         if (radius !== undefined) {
             this.radius = radius
         }
+
+        this._radius2 = this.radius * this.radius;
     }
 
     /**
@@ -34,7 +42,10 @@ export class BallsObject extends BaseSolverObject {
      * @param {number} step
      */
     update(step) {
-        const velocity = this.velocity;
+        let velocity = this.velocity.mul(this.motionReduce);
+        if (velocity.length2 > MAX_VELOCITY2) {
+            velocity = velocity.ort.mul(MAX_VELOCITY);
+        }
         this.previousPosition = this.currentPosition.copy();
         this.currentPosition.addSelf(
             velocity.addSelf(
@@ -78,7 +89,7 @@ export class BallsObject extends BaseSolverObject {
         return Vec2Math.distance(this.currentPosition, point) < this.radius;
     }
 
-    get velocity() {
+    get velocity(): Vec2 {
         return Vec2Math.diff(
             this.currentPosition,
             this.previousPosition
@@ -95,5 +106,9 @@ export class BallsObject extends BaseSolverObject {
      */
     get movementVector() {
         return new Vec2Line(this.previousPosition, this.currentPosition);
+    }
+
+    get radius2() {
+        return this._radius2;
     }
 }

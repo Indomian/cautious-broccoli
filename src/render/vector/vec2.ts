@@ -156,6 +156,20 @@ export class Vec2 {
     }
 
     /**
+     * Checks if this vector inside rect created by 2 other vectors.
+     * @param vec1
+     * @param vec2
+     */
+    isInsideRect(vec1: Vec2, vec2: Vec2) {
+        const leftTopX = Math.min(vec1.x, vec2.x);
+        const leftTopY = Math.min(vec1.y, vec2.y);
+        const rightBottomX = Math.max(vec1.x, vec2.x);
+        const rightBottomY = Math.max(vec1.y, vec2.y);
+
+        return this._x >= leftTopX && this._x <= rightBottomX && this._y >= leftTopY && this._y <= rightBottomY;
+    }
+
+    /**
      * Returns normalized vector
      * @returns {Vec2}
      */

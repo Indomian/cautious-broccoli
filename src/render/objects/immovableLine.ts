@@ -10,6 +10,8 @@ export class ImmovableLineObject extends BallsObject {
     type = SolverObjectTypes.TypeImmovableLine;
     immovable = true;
 
+    bounceValue = 1;
+
     constructor(position, direction) {
         super(position, 0);
         this._direction = direction;
