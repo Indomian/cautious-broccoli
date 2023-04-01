@@ -1,12 +1,15 @@
-import {UserInput, UIEvent} from "./input";
-import {MessageUserInput, MessageInit} from "./messages";
+import {UserInput, UIEvent, AnyUIEvent} from "./input";
+import {MessageUserInput, MessageInit, MessageEngineEvent} from "./messages";
 import {createWorker} from "./workerWorkaround.js";
+import {BaseEngine} from "../engine/baseEngine";
+import {AnyEngineEvent} from "../render/events/engine";
 
-export class WorkerApplication {
+export class WorkerApplication extends BaseEngine {
     worker;
     userInput;
 
     constructor(canvas) {
+        super();
         this.worker = createWorker();
         const offscreen = canvas.transferControlToOffscreen();
 
@@ -19,13 +22,15 @@ export class WorkerApplication {
         this.userInput.addHandler(this.sendUserInputEvent);
     }
 
-    sendUserInputEvent = (event: UIEvent) => {
+    sendUserInputEvent = (event: AnyUIEvent) => {
         this.worker.postMessage(
             new MessageUserInput(event)
         )
     }
 
-    initUserInput() {
-
+    sendEngineEvent = (event: AnyEngineEvent) => {
+        this.worker.postMessage(
+            new MessageEngineEvent(event)
+        )
     }
 }

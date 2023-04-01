@@ -1,13 +1,16 @@
+import {Item} from "../items/item";
+import {BallsObject} from "../objects/ball";
+
 export class RenderableObject {
     /**
      * @type {BallsObject}
      */
-    ballsObject = null;
+    ballsObject: BallsObject = null;
 
     /**
      * @type {Item}
      */
-    renderItem = null;
+    renderItem: Item = null;
 
     constructor(ballsObject, renderItem) {
         this.ballsObject = ballsObject;

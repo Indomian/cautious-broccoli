@@ -30,6 +30,7 @@ export abstract class BaseSolverObject {
     }
 
     abstract moveBy(delta: Vec2);
+    abstract moveTo(position: Vec2);
 
     abstract isPointInsideObject(point: Vec2): boolean;
 

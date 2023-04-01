@@ -23,6 +23,11 @@ export class Solver {
         this.configure();
     }
 
+    reset() {
+        this.objects = [];
+        this.collisionGrid.clear();
+    }
+
     configure() {
         this.gravity = new Vec2(0, 100);
 

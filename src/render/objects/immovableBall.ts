@@ -44,4 +44,10 @@ export class ImmovableBallsObject extends BallsObject {
             this
         );
     }
+
+    moveTo(position: Vec2) {
+        this.currentPosition = position.copy();
+        this.previousPosition = position.copy();
+        this._fixedPosition = position.copy();
+    }
 }

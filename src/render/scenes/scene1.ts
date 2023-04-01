@@ -13,6 +13,8 @@ import {ImmovableLineObject} from "../objects/immovableLine";
 import {Line} from "../items/line";
 import {CircleWithText} from "../items/circleWithText";
 import { index2color } from "../items/utils/index2color";
+import { ViewportConstrain } from "../constrains/viewport";
+import {AnyUIEvent, UIMouseEvent} from "../../host/input";
 
 const milkShakePoints = [
     new Vec2(0, 0),
@@ -38,6 +40,8 @@ const ballsColors = {
 }
 
 export class Scene1 extends BaseScene {
+    canMoveRedObject: boolean = false;
+
     constructor(engine: Render) {
         super(engine)
 
@@ -59,6 +63,7 @@ export class Scene1 extends BaseScene {
         this.createBottomBouncyLine();
         this.createMilkShake(canvasCenter);
         this.createActor();
+        this.initConstrain();
     }
 
     createBallsGenerator(canvasCenter, pointDelta, baseBallVelocity) {
@@ -186,6 +191,10 @@ export class Scene1 extends BaseScene {
         });
     }
 
+    initConstrain() {
+        this.engine.constrain = new ViewportConstrain(this.engine.canvas.width, this.engine.canvas.height)
+    }
+
     createActor() {
         this.actor = new RenderableObject(
             new ImmovableBallsObject(new Vec2(230, 50), 30),
@@ -196,5 +205,38 @@ export class Scene1 extends BaseScene {
 
     getActor() {
         return this.actor;
+    }
+
+    tick(timePassed: number) {
+        const newBalls = this.generator.getNextObjects(timePassed);
+        if (newBalls) {
+            newBalls.forEach(ball => this.engine.addObject(ball));
+        }
+    }
+
+    processUserInput(event: AnyUIEvent) {
+        const mouseEvent = event as UIMouseEvent;
+
+        if (mouseEvent.leftButtonDown) {
+            if (this.actor.ballsObject.isPointInsideObject(
+                new Vec2(
+                    mouseEvent.screenX,
+                    mouseEvent.screenY
+                )
+            )) {
+                this.canMoveRedObject = true;
+            }
+
+            if (this.canMoveRedObject) {
+                this.actor.ballsObject.moveBy(
+                    new Vec2(
+                        mouseEvent.dx,
+                        mouseEvent.dy
+                    )
+                )
+            }
+        } else {
+            this.canMoveRedObject = false;
+        }
     }
 }

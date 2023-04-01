@@ -14,5 +14,10 @@ onmessage = function (event ) {
                 render.processUserInput(event.data.event);
             }
             break;
+        case MessageType.MessageEngineEvent:
+            if (render) {
+                render.processEngineEvent(event.data.event);
+            }
+            break;
     }
 }

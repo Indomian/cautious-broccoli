@@ -1,11 +1,14 @@
-import {Circle} from "./items/circle";
 import {Vec2} from "./vector/vec2";
-import {ViewportConstrain} from "./constrains/viewport";
-import {CircleConstrain} from "./constrains/circle";
 import {Solver} from "./solver";
 import {RenderableObject} from "./renderableObjects/object";
 import {Frame} from "./items/frame";
 import {Scene1} from "./scenes/scene1";
+import {Constrain} from "./constrains/constrain";
+import {BaseScene, SceneName} from "./scenes/baseScene";
+import {AnyUIEvent, UIKeyboardEvent} from "../host/input";
+import { Item } from "./items/item";
+import {AnyEngineEvent, LoadSceneEngineEvent} from "./events/engine";
+import {ENGINE_SCENES} from "./scenes/all";
 
 export class Render {
     /**
@@ -17,7 +20,7 @@ export class Render {
     /**
      * @type {Constrain}
      */
-    constrains = null;
+    _constrains = null;
 
     /**
      * Solver for physics
@@ -26,6 +29,18 @@ export class Render {
     solver = null;
 
     flagRenderGrid = false;
+    flagRenderPreviousPosition = false;
+
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+
+    timeRenderStart: number;
+    timeRenderEnd: number;
+    step: number;
+
+    items: Item[];
+
+    scene: BaseScene;
 
     constructor(canvas) {
         this.canvas = canvas;
@@ -42,12 +57,15 @@ export class Render {
 
         this.items = [];
 
-        this.generator = null;
         this.solver = null
 
-        this.redBall = null;
-
         this.configure();
+    }
+
+    reset() {
+        this.objects = [];
+        this.items = [];
+        this.solver.reset();
     }
 
     configure() {
@@ -60,42 +78,35 @@ export class Render {
 
         this.context.font = '10px serif';
 
-        //this.switchToCircleConstrain();
-        this.switchToViewportConstrain();
-        this.solver.constrains = this.constrains;
-
-        const scene = new Scene1(this);
-
-        this.generator = scene.generator;
-        this.redBall = scene.getActor();
+        this.loadScene("scene2");
     }
 
-    processUserInput(event) {
-        if (event.leftButtonDown) {
-            if (this.redBall.ballsObject.isPointInsideObject(
-                new Vec2(
-                    event.screenX,
-                    event.screenY
-                )
-            )) {
-                this.canMoveRedObject = true;
-            }
-
-            if (this.canMoveRedObject) {
-                this.redBall.ballsObject.moveBy(
-                    new Vec2(
-                        event.dx,
-                        event.dy
-                    )
-                )
-            }
-        } else {
-            this.canMoveRedObject = false;
-        }
-
-        if (event.keyPressed === 'g') {
+    processUserInput(event: AnyUIEvent) {
+        const keyboardEvent = event as UIKeyboardEvent;
+        if (keyboardEvent.keyPressed === 'g') {
             this.flagRenderGrid = !this.flagRenderGrid;
         }
+
+        if (keyboardEvent.keyPressed === 'p') {
+            this.flagRenderPreviousPosition = !this.flagRenderPreviousPosition;
+        }
+
+        this.scene.processUserInput(event);
+    }
+
+    processEngineEvent(event: AnyEngineEvent) {
+        const loadSceneEvent = event as LoadSceneEngineEvent;
+
+        if (loadSceneEvent.scene) {
+            this.loadScene(loadSceneEvent.scene);
+        }
+    }
+
+    loadScene(sceneName: SceneName) {
+        this.reset();
+
+        const Scene = ENGINE_SCENES[sceneName];
+        this.scene = new Scene(this);
     }
 
     /**
@@ -110,25 +121,25 @@ export class Render {
         this.solver.update(time);
     }
 
-    generatorsTick(time) {
-        const newBalls = this.generator.getNextObjects(time);
-        if (newBalls) {
-            newBalls.forEach(ball => this.addObject(ball));
-        }
-    }
-
     tick() {
         if (this.step < 0) {
             this.step = 0;
         }
 
-        this.generatorsTick(this.step / 1000);
-        this.update(this.step / 1000);
+        const timePassed = this.step / 1000;
+
+        this.scene.tick(timePassed);
+        this.update(timePassed);
 
         this.clear();
         this.renderItems();
+
         if (this.flagRenderGrid) {
             this.renderGrid();
+        }
+
+        if (this.flagRenderPreviousPosition) {
+            this.renderPreviousPosition();
         }
 
         this.printFPS();
@@ -164,7 +175,7 @@ export class Render {
 
     renderItems() {
         this.items.forEach(item => item.render());
-        this.objects.forEach(obj => obj.render());
+        this.objects.forEach((obj: RenderableObject) => obj.render());
     }
 
     printText(text, x, y) {
@@ -225,35 +236,28 @@ export class Render {
         })
     }
 
-    switchToCircleConstrain() {
-        this.constrains = new CircleConstrain(
-            new Vec2(this.canvas.width / 2, this.canvas.height / 2),
-            this.canvas.height / 2
-        )
-
-        this.items.push(
-            new Circle(
-                this.context,
-                this.canvas.width / 2,
-                this.canvas.height / 2,
-                this.canvas.height / 2,
-                '#000000'
+    renderPreviousPosition() {
+        this.objects.forEach((renderableObject: RenderableObject) => {
+            const position = renderableObject.ballsObject.previousPosition;
+            this.context.fillStyle = 'rgba(0, 0, 255, 0.5)';
+            this.context.beginPath()
+            this.context.arc(
+                position.x,
+                position.y,
+                10,
+                0,
+                2 * Math.PI
             )
-        );
+            this.context.fill();
+        })
     }
 
-    switchToViewportConstrain() {
-        this.constrains = new ViewportConstrain(this.canvas.width, this.canvas.height)
-        // this.items.push(
-        //     new Rect(
-        //         this.context,
-        //         Vec2.Zero(),
-        //         new Vec2(
-        //             this.canvas.width,
-        //             this.canvas.height
-        //         ),
-        //         '#000000'
-        //     )
-        // );
+    set constrain(constrain: Constrain) {
+        this._constrains = constrain;
+        this.solver.constrains = this._constrains;
+    }
+
+    get constrain(): Constrain {
+        return this._constrains;
     }
 }

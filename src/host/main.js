@@ -14,14 +14,29 @@ function initApplication() {
     canvas.width = container.offsetWidth;
     canvas.height = container.offsetHeight;
 
+    let application;
+
     if (canvas.transferControlToOffscreen) {
         console.log('Render in worker');
-        const application = new WorkerApplication(canvas);
+        application = new WorkerApplication(canvas);
     } else {
         // There is no support for offscreen render
         console.log('Render in main thread');
-        const application = new DirectApplication(canvas);
+        application = new DirectApplication(canvas);
     }
+
+    const buttonLoadScene1 = getElement('#scene1');
+    const buttonLoadScene2 = getElement('#scene2');
+
+    buttonLoadScene1.addEventListener('click', (e) => {
+        e.preventDefault();
+        application.loadScene('scene1');
+    })
+
+    buttonLoadScene2.addEventListener('click', e => {
+        e.preventDefault();
+        application.loadScene('scene2');
+    })
 }
 
 onReady(initApplication);

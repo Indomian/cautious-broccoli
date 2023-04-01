@@ -27,8 +27,6 @@ export class ViewportConstrain extends Constrain {
     }
 
     applyConstrain(obj) {
-        super.applyConstrain(obj);
-
         if (obj.currentPosition.x - obj.radius < 0) {
             obj.currentPosition.x = obj.radius;
         }

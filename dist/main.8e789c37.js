@@ -569,35 +569,50 @@ onmessage = function(event) {
         case (0, _messages.MessageType).MessageUserInput:
             if (render) render.processUserInput(event.data.event);
             break;
+        case (0, _messages.MessageType).MessageEngineEvent:
+            if (render) render.processEngineEvent(event.data.event);
+            break;
     }
 };
 
-},{"../render/index":"1c5al","../host/messages":"8fDji"}],"1c5al":[function(require,module,exports) {
+},{"../render/index":"eyyeY","../host/messages":"8fDji"}],"eyyeY":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
-var _circle = require("./items/circle");
 var _vec2 = require("./vector/vec2");
-var _viewport = require("./constrains/viewport");
-var _circle1 = require("./constrains/circle");
 var _solver = require("./solver");
-var _object = require("./renderableObjects/object");
 var _frame = require("./items/frame");
-var _scene1 = require("./scenes/scene1");
-class Render {
-    /**
-     * List of balls
-     * @type {RenderableObject[]}
-     */ objects = [];
-    /**
-     * @type {Constrain}
-     */ constrains = null;
-    /**
-     * Solver for physics
-     * @type {Solver}
-     */ solver = null;
-    flagRenderGrid = false;
-    constructor(canvas){
+var _all = require("./scenes/all");
+var Render = /** @class */ function() {
+    function Render(canvas) {
+        var _this = this;
+        /**
+         * List of balls
+         * @type {RenderableObject[]}
+         */ this.objects = [];
+        /**
+         * @type {Constrain}
+         */ this._constrains = null;
+        /**
+         * Solver for physics
+         * @type {Solver}
+         */ this.solver = null;
+        this.flagRenderGrid = false;
+        this.flagRenderPreviousPosition = false;
+        this.nextFrame = function(time) {
+            _this.step = time - _this.timeRenderEnd;
+            if (_this.step < 0) _this.step = 0;
+            _this.tick();
+            _this.timeRenderEnd = time;
+            self.requestAnimationFrame(_this.nextFrame);
+        };
+        this.nextInterval = function() {
+            _this.timeRenderStart = performance.now();
+            _this.step = _this.timeRenderStart - _this.timeRenderEnd;
+            if (_this.step < 0) _this.step = 0;
+            _this.tick();
+            _this.timeRenderEnd = performance.now();
+        };
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
         this.timeRenderStart = performance.now();
@@ -607,166 +622,122 @@ class Render {
          * @type {RenderableObject[]}
          */ this.objects = [];
         this.items = [];
-        this.generator = null;
         this.solver = null;
-        this.redBall = null;
         this.configure();
     }
-    configure() {
+    Render.prototype.reset = function() {
+        this.objects = [];
+        this.items = [];
+        this.solver.reset();
+    };
+    Render.prototype.configure = function() {
         this.solver = new (0, _solver.Solver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height));
         this.context.font = "10px serif";
-        //this.switchToCircleConstrain();
-        this.switchToViewportConstrain();
-        this.solver.constrains = this.constrains;
-        const scene = new (0, _scene1.Scene1)(this);
-        this.generator = scene.generator;
-        this.redBall = scene.getActor();
-    }
-    processUserInput(event) {
-        if (event.leftButtonDown) {
-            if (this.redBall.ballsObject.isPointInsideObject(new (0, _vec2.Vec2)(event.screenX, event.screenY))) this.canMoveRedObject = true;
-            if (this.canMoveRedObject) this.redBall.ballsObject.moveBy(new (0, _vec2.Vec2)(event.dx, event.dy));
-        } else this.canMoveRedObject = false;
-        if (event.keyPressed === "g") this.flagRenderGrid = !this.flagRenderGrid;
-    }
+        this.loadScene("scene2");
+    };
+    Render.prototype.processUserInput = function(event) {
+        var keyboardEvent = event;
+        if (keyboardEvent.keyPressed === "g") this.flagRenderGrid = !this.flagRenderGrid;
+        if (keyboardEvent.keyPressed === "p") this.flagRenderPreviousPosition = !this.flagRenderPreviousPosition;
+        this.scene.processUserInput(event);
+    };
+    Render.prototype.processEngineEvent = function(event) {
+        var loadSceneEvent = event;
+        if (loadSceneEvent.scene) this.loadScene(loadSceneEvent.scene);
+    };
+    Render.prototype.loadScene = function(sceneName) {
+        this.reset();
+        var Scene = (0, _all.ENGINE_SCENES)[sceneName];
+        this.scene = new Scene(this);
+    };
     /**
      * @param {RenderableObject} obj
-     */ addObject(obj) {
+     */ Render.prototype.addObject = function(obj) {
         this.objects.push(obj);
         this.solver.addObject(obj.ballsObject);
-    }
-    update(time) {
+    };
+    Render.prototype.update = function(time) {
         this.solver.update(time);
-    }
-    generatorsTick(time) {
-        const newBalls = this.generator.getNextObjects(time);
-        if (newBalls) newBalls.forEach((ball)=>this.addObject(ball));
-    }
-    tick() {
+    };
+    Render.prototype.tick = function() {
         if (this.step < 0) this.step = 0;
-        this.generatorsTick(this.step / 1000);
-        this.update(this.step / 1000);
+        var timePassed = this.step / 1000;
+        this.scene.tick(timePassed);
+        this.update(timePassed);
         this.clear();
         this.renderItems();
         if (this.flagRenderGrid) this.renderGrid();
+        if (this.flagRenderPreviousPosition) this.renderPreviousPosition();
         this.printFPS();
         (0, _vec2.Vec2).lengthCallsCount = 0;
         (0, _vec2.Vec2).length2CallsCount = 0;
-    }
-    nextFrame = (time)=>{
-        this.step = time - this.timeRenderEnd;
-        if (this.step < 0) this.step = 0;
-        this.tick();
-        this.timeRenderEnd = time;
-        self.requestAnimationFrame(this.nextFrame);
     };
-    nextInterval = ()=>{
-        this.timeRenderStart = performance.now();
-        this.step = this.timeRenderStart - this.timeRenderEnd;
-        if (this.step < 0) this.step = 0;
-        this.tick();
-        this.timeRenderEnd = performance.now();
+    Render.prototype.renderItems = function() {
+        this.items.forEach(function(item) {
+            return item.render();
+        });
+        this.objects.forEach(function(obj) {
+            return obj.render();
+        });
     };
-    renderItems() {
-        this.items.forEach((item)=>item.render());
-        this.objects.forEach((obj)=>obj.render());
-    }
-    printText(text, x, y) {
+    Render.prototype.printText = function(text, x, y) {
         this.context.fillStyle = "#ffffff";
         this.context.textAlign = "start";
         this.context.fillText(text, x, y);
-    }
-    printFPS() {
+    };
+    Render.prototype.printFPS = function() {
         this.context.fillStyle = "rgba(0,0,0,0.1)";
         this.context.fillRect(0, 0, 100, 60);
-        this.printText(`${Math.round(this.step)} ms / ${Math.round(1000 / this.step)} FPS`, 0, 10);
-        this.printText(`Length calls: ${(0, _vec2.Vec2).lengthCallsCount}`, 0, 20);
-        this.printText(`Lenght2 calls: ${(0, _vec2.Vec2).length2CallsCount}`, 0, 30);
-        this.printText(`Objects: ${this.objects.length}`, 0, 40);
-        this.printText(`Compares per object: ${Math.round((0, _vec2.Vec2).lengthCallsCount / this.objects.length)}`, 0, 50);
-    }
-    clear() {
+        this.printText("".concat(Math.round(this.step), " ms / ").concat(Math.round(1000 / this.step), " FPS"), 0, 10);
+        this.printText("Length calls: ".concat((0, _vec2.Vec2).lengthCallsCount), 0, 20);
+        this.printText("Lenght2 calls: ".concat((0, _vec2.Vec2).length2CallsCount), 0, 30);
+        this.printText("Objects: ".concat(this.objects.length), 0, 40);
+        this.printText("Compares per object: ".concat(Math.round((0, _vec2.Vec2).lengthCallsCount / this.objects.length)), 0, 50);
+    };
+    Render.prototype.clear = function() {
         this.context.fillStyle = "rgba(0, 0, 0, 0.9)";
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    start() {
+    };
+    Render.prototype.start = function() {
         if (self.requestAnimationFrame) self.requestAnimationFrame(this.nextFrame);
         else setInterval(this.nextInterval, 16);
-    }
-    renderGrid() {
-        this.solver.collisionGrid.forEach((column, row, cell, index)=>{
-            const cellPosition = new (0, _vec2.Vec2)(column * this.solver.cellSize.x, row * this.solver.cellSize.y);
-            const rect = new (0, _frame.Frame)(this.context, cellPosition, this.solver.cellSize.diff(new (0, _vec2.Vec2)(5, 5)), cell.count > 0 ? "#ff0000" : "#00ff00");
-            if (cell.highlight) this.context.lineWidth = 10;
+    };
+    Render.prototype.renderGrid = function() {
+        var _this = this;
+        this.solver.collisionGrid.forEach(function(column, row, cell, index) {
+            var cellPosition = new (0, _vec2.Vec2)(column * _this.solver.cellSize.x, row * _this.solver.cellSize.y);
+            var rect = new (0, _frame.Frame)(_this.context, cellPosition, _this.solver.cellSize.diff(new (0, _vec2.Vec2)(5, 5)), cell.count > 0 ? "#ff0000" : "#00ff00");
+            if (cell.highlight) _this.context.lineWidth = 10;
             rect.render();
-            this.context.lineWidth = 1;
-            this.printText(index, cellPosition.x + this.solver.cellSize.x / 2, cellPosition.y + this.solver.cellSize.y / 2);
+            _this.context.lineWidth = 1;
+            _this.printText(index, cellPosition.x + _this.solver.cellSize.x / 2, cellPosition.y + _this.solver.cellSize.y / 2);
         });
-    }
-    switchToCircleConstrain() {
-        this.constrains = new (0, _circle1.CircleConstrain)(new (0, _vec2.Vec2)(this.canvas.width / 2, this.canvas.height / 2), this.canvas.height / 2);
-        this.items.push(new (0, _circle.Circle)(this.context, this.canvas.width / 2, this.canvas.height / 2, this.canvas.height / 2, "#000000"));
-    }
-    switchToViewportConstrain() {
-        this.constrains = new (0, _viewport.ViewportConstrain)(this.canvas.width, this.canvas.height);
-    // this.items.push(
-    //     new Rect(
-    //         this.context,
-    //         Vec2.Zero(),
-    //         new Vec2(
-    //             this.canvas.width,
-    //             this.canvas.height
-    //         ),
-    //         '#000000'
-    //     )
-    // );
-    }
-}
+    };
+    Render.prototype.renderPreviousPosition = function() {
+        var _this = this;
+        this.objects.forEach(function(renderableObject) {
+            var position = renderableObject.ballsObject.previousPosition;
+            _this.context.fillStyle = "rgba(0, 0, 255, 0.5)";
+            _this.context.beginPath();
+            _this.context.arc(position.x, position.y, 10, 0, 2 * Math.PI);
+            _this.context.fill();
+        });
+    };
+    Object.defineProperty(Render.prototype, "constrain", {
+        get: function() {
+            return this._constrains;
+        },
+        set: function(constrain) {
+            this._constrains = constrain;
+            this.solver.constrains = this._constrains;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return Render;
+}();
 
-},{"./items/circle":"1t8sT","./vector/vec2":"9XJHV","./constrains/viewport":"j2D16","./constrains/circle":"if6MS","./solver":"jiRu0","./renderableObjects/object":"lW37O","./items/frame":"fuQ1z","./scenes/scene1":"inrCn","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1t8sT":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Circle", ()=>Circle);
-var _item = require("./item");
-class Circle extends (0, _item.Item) {
-    r = 0;
-    color = "#00ff00";
-    constructor(context, position, r, color){
-        super(context, position);
-        if (r) this.r = r;
-        if (color) this.color = color;
-    }
-    render() {
-        this.context.beginPath();
-        this.context.arc(this.position.x, this.position.y, this.r, 0, 2 * Math.PI);
-        this.context.fillStyle = this.color;
-        this.context.fill();
-    }
-}
-
-},{"./item":"aIQJw","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"aIQJw":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Item", ()=>Item);
-var _vec2 = require("../vector/vec2");
-class Item {
-    position = (0, _vec2.Vec2).Zero();
-    /**
-     *
-     * @param {CanvasRenderingContext2D} context
-     */ constructor(context, position){
-        this.context = context;
-        this.position = position;
-    }
-    /**
-     * Method immediately renders object on context
-     */ render() {}
-    /**
-     * Method tries to put object in render block
-     */ queue() {}
-}
-
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"9XJHV":[function(require,module,exports) {
+},{"./vector/vec2":"9XJHV","./solver":"jiRu0","./items/frame":"fuQ1z","./scenes/all":"ghYpR","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"9XJHV":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2", ()=>Vec2);
@@ -1134,82 +1105,7 @@ function isEqual(a, b, error) {
     return Math.abs(a - b) < error;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"j2D16":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
-var _constrain = require("./constrain");
-class ViewportConstrain extends (0, _constrain.Constrain) {
-    _width = 0;
-    _height = 0;
-    constructor(width, height){
-        super();
-        this.width = width;
-        this.height = height;
-    }
-    get width() {
-        return this._width;
-    }
-    set width(width) {
-        this._width = width;
-    }
-    get height() {
-        return this._height;
-    }
-    set height(height) {
-        this._height = height;
-    }
-    applyConstrain(obj) {
-        super.applyConstrain(obj);
-        if (obj.currentPosition.x - obj.radius < 0) obj.currentPosition.x = obj.radius;
-        if (obj.currentPosition.x + obj.radius > this._width) obj.currentPosition.x = this._width - obj.radius;
-        if (obj.currentPosition.y - obj.radius < 0) obj.currentPosition.y = obj.radius;
-        if (obj.currentPosition.y + obj.radius > this._height) obj.currentPosition.y = this._height - obj.radius;
-    }
-}
-
-},{"./constrain":"hb3g5","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"hb3g5":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Constrain", ()=>Constrain);
-class Constrain {
-    constructor(){}
-    /**
-     *
-     * @param {BallsObject} obj
-     */ applyConstrain(obj) {}
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"if6MS":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
-var _constrain = require("./constrain");
-var _vec2 = require("../vector/vec2");
-class CircleConstrain extends (0, _constrain.Constrain) {
-    /**
-     *
-     * @type {Vec2}
-     */ center = (0, _vec2.Vec2).Zero();
-    radius = 0;
-    constructor(center, radius){
-        super();
-        this.center = center;
-        this.radius = radius;
-    }
-    applyConstrain(obj) {
-        super.applyConstrain(obj);
-        const toCenter = obj.currentPosition.diff(this.center);
-        const distance = toCenter.length;
-        const r = obj.radius;
-        if (distance > this.radius - r) {
-            const n = toCenter.ort;
-            obj.currentPosition = this.center.sum(n.mul(this.radius - r));
-        }
-    }
-}
-
-},{"./constrain":"hb3g5","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"jiRu0":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"jiRu0":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Solver", ()=>Solver);
@@ -1226,6 +1122,10 @@ var Solver = /** @class */ function() {
         this.worldSize = worldSize.copy();
         this.configure();
     }
+    Solver.prototype.reset = function() {
+        this.objects = [];
+        this.collisionGrid.clear();
+    };
     Solver.prototype.configure = function() {
         this.gravity = new (0, _vec2.Vec2)(0, 100);
         this.useFixedTime = true;
@@ -1468,31 +1368,7 @@ var CollisionGrid = /** @class */ function() {
     return CollisionGrid;
 }();
 
-},{"./vector/vec2":"9XJHV","./vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lW37O":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "RenderableObject", ()=>RenderableObject);
-class RenderableObject {
-    /**
-     * @type {BallsObject}
-     */ ballsObject = null;
-    /**
-     * @type {Item}
-     */ renderItem = null;
-    constructor(ballsObject, renderItem){
-        this.ballsObject = ballsObject;
-        this.renderItem = renderItem;
-    }
-    update() {
-        this.renderItem.position = this.ballsObject.currentPosition;
-    }
-    render() {
-        this.update();
-        this.renderItem.render();
-    }
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fuQ1z":[function(require,module,exports) {
+},{"./vector/vec2":"9XJHV","./vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fuQ1z":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Frame", ()=>Frame);
@@ -1528,7 +1404,40 @@ class Rect extends (0, _item.Item) {
     }
 }
 
-},{"./item":"aIQJw","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"inrCn":[function(require,module,exports) {
+},{"./item":"aIQJw","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"aIQJw":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Item", ()=>Item);
+var _vec2 = require("../vector/vec2");
+class Item {
+    position = (0, _vec2.Vec2).Zero();
+    /**
+     *
+     * @param {CanvasRenderingContext2D} context
+     */ constructor(context, position){
+        this.context = context;
+        this.position = position;
+    }
+    /**
+     * Method immediately renders object on context
+     */ render() {}
+    /**
+     * Method tries to put object in render block
+     */ queue() {}
+}
+
+},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ghYpR":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ENGINE_SCENES", ()=>ENGINE_SCENES);
+var _scene1 = require("./scene1");
+var _scene2 = require("./scene2");
+var ENGINE_SCENES = {
+    "scene1": (0, _scene1.Scene1),
+    "scene2": (0, _scene2.Scene2)
+};
+
+},{"./scene1":"inrCn","./scene2":"5cPb7","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"inrCn":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Scene1", ()=>Scene1);
@@ -1545,6 +1454,7 @@ var _immovableLine1 = require("../objects/immovableLine");
 var _line = require("../items/line");
 var _circleWithText = require("../items/circleWithText");
 var _index2Color = require("../items/utils/index2color");
+var _viewport = require("../constrains/viewport");
 var __extends = undefined && undefined.__extends || function() {
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || ({
@@ -1598,11 +1508,13 @@ var Scene1 = /** @class */ function(_super) {
     __extends(Scene1, _super);
     function Scene1(engine) {
         var _this = _super.call(this, engine) || this;
+        _this.canMoveRedObject = false;
         var canvasCenter = new (0, _vec2.Vec2)(_this.engine.canvas.width / 2, _this.engine.canvas.height / 2);
         _this.generator = _this.createBallsGenerator(canvasCenter, new (0, _vec2.Vec2)(300, 300), new (0, _vec2.Vec2)(2, -2));
         _this.createBottomBouncyLine();
         _this.createMilkShake(canvasCenter);
         _this.createActor();
+        _this.initConstrain();
         return _this;
     }
     Scene1.prototype.createBallsGenerator = function(canvasCenter, pointDelta, baseBallVelocity) {
@@ -1634,6 +1546,9 @@ var Scene1 = /** @class */ function(_super) {
             _this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line[0].sum(canvasCenter.diff(new (0, _vec2.Vec2)(170, 190))), line[1]), new (0, _line.Line)(_this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
         });
     };
+    Scene1.prototype.initConstrain = function() {
+        this.engine.constrain = new (0, _viewport.ViewportConstrain)(this.engine.canvas.width, this.engine.canvas.height);
+    };
     Scene1.prototype.createActor = function() {
         this.actor = new (0, _object.RenderableObject)(new (0, _immovableBall.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.engine.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000"));
         this.engine.addObject(this.actor);
@@ -1641,10 +1556,24 @@ var Scene1 = /** @class */ function(_super) {
     Scene1.prototype.getActor = function() {
         return this.actor;
     };
+    Scene1.prototype.tick = function(timePassed) {
+        var _this = this;
+        var newBalls = this.generator.getNextObjects(timePassed);
+        if (newBalls) newBalls.forEach(function(ball) {
+            return _this.engine.addObject(ball);
+        });
+    };
+    Scene1.prototype.processUserInput = function(event) {
+        var mouseEvent = event;
+        if (mouseEvent.leftButtonDown) {
+            if (this.actor.ballsObject.isPointInsideObject(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY))) this.canMoveRedObject = true;
+            if (this.canMoveRedObject) this.actor.ballsObject.moveBy(new (0, _vec2.Vec2)(mouseEvent.dx, mouseEvent.dy));
+        } else this.canMoveRedObject = false;
+    };
     return Scene1;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"1t8sT","../vector/vec2":"9XJHV","../vector/vec2Math":"j4cED","../objects/ball":"1Qukc","../renderableObjects/object":"lW37O","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"bcihL","../items/circleWithText":"2IXVz","../items/utils/index2color":"frxih","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"dsDU5":[function(require,module,exports) {
+},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"1t8sT","../vector/vec2":"9XJHV","../vector/vec2Math":"j4cED","../objects/ball":"1Qukc","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"bcihL","../items/circleWithText":"2IXVz","../items/utils/index2color":"frxih","../constrains/viewport":"j2D16","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"dsDU5":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
@@ -1698,7 +1627,28 @@ var ObjectsGenerator = /** @class */ function() {
     return ObjectsGenerator;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1Qukc":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1t8sT":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Circle", ()=>Circle);
+var _item = require("./item");
+class Circle extends (0, _item.Item) {
+    r = 0;
+    color = "#00ff00";
+    constructor(context, position, r, color){
+        super(context, position);
+        if (r) this.r = r;
+        if (color) this.color = color;
+    }
+    render() {
+        this.context.beginPath();
+        this.context.arc(this.position.x, this.position.y, this.r, 0, 2 * Math.PI);
+        this.context.fillStyle = this.color;
+        this.context.fill();
+    }
+}
+
+},{"./item":"aIQJw","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1Qukc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BallsObject", ()=>BallsObject);
@@ -1779,6 +1729,9 @@ var BallsObject = /** @class */ function(_super) {
     };
     BallsObject.prototype.moveBy = function(delta) {
         this.currentPosition.addSelf(delta);
+    };
+    BallsObject.prototype.moveTo = function(position) {
+        this.currentPosition = position.copy();
     };
     BallsObject.prototype.isPointInsideObject = function(point) {
         return (0, _vec2Math.Vec2Math).distance(this.currentPosition, point) < this.radius;
@@ -2058,7 +2011,32 @@ var BaseSolverObject = /** @class */ function() {
     return BaseSolverObject;
 }();
 
-},{"./types":"46hd3","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"izS6X":[function(require,module,exports) {
+},{"./types":"46hd3","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2ms9R":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "RenderableObject", ()=>RenderableObject);
+var RenderableObject = /** @class */ function() {
+    function RenderableObject(ballsObject, renderItem) {
+        /**
+         * @type {BallsObject}
+         */ this.ballsObject = null;
+        /**
+         * @type {Item}
+         */ this.renderItem = null;
+        this.ballsObject = ballsObject;
+        this.renderItem = renderItem;
+    }
+    RenderableObject.prototype.update = function() {
+        this.renderItem.position = this.ballsObject.currentPosition;
+    };
+    RenderableObject.prototype.render = function() {
+        this.update();
+        this.renderItem.render();
+    };
+    return RenderableObject;
+}();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"izS6X":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableBallsObject", ()=>ImmovableBallsObject);
@@ -2113,6 +2091,11 @@ var ImmovableBallsObject = /** @class */ function(_super) {
         var rightBottom = this.currentPosition.diff(vec);
         collisionGrid.addObjectToCells(leftTop, rightBottom, this);
     };
+    ImmovableBallsObject.prototype.moveTo = function(position) {
+        this.currentPosition = position.copy();
+        this.previousPosition = position.copy();
+        this._fixedPosition = position.copy();
+    };
     return ImmovableBallsObject;
 }((0, _ball.BallsObject));
 
@@ -2136,7 +2119,7 @@ class ImmovableLineRenderableObject extends (0, _object.RenderableObject) {
     }
 }
 
-},{"./object":"lW37O","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4U8jS":[function(require,module,exports) {
+},{"./object":"2ms9R","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4U8jS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableLineObject", ()=>ImmovableLineObject);
@@ -2241,13 +2224,185 @@ function index2color(index) {
     return "rgba(".concat(r, ", ").concat(g, ", ").concat(b, ", 1)");
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"j2D16":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
+var _constrain = require("./constrain");
+class ViewportConstrain extends (0, _constrain.Constrain) {
+    _width = 0;
+    _height = 0;
+    constructor(width, height){
+        super();
+        this.width = width;
+        this.height = height;
+    }
+    get width() {
+        return this._width;
+    }
+    set width(width) {
+        this._width = width;
+    }
+    get height() {
+        return this._height;
+    }
+    set height(height) {
+        this._height = height;
+    }
+    applyConstrain(obj) {
+        if (obj.currentPosition.x - obj.radius < 0) obj.currentPosition.x = obj.radius;
+        if (obj.currentPosition.x + obj.radius > this._width) obj.currentPosition.x = this._width - obj.radius;
+        if (obj.currentPosition.y - obj.radius < 0) obj.currentPosition.y = obj.radius;
+        if (obj.currentPosition.y + obj.radius > this._height) obj.currentPosition.y = this._height - obj.radius;
+    }
+}
+
+},{"./constrain":"e3ALH","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"e3ALH":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Constrain", ()=>Constrain);
+var Constrain = /** @class */ function() {
+    function Constrain() {}
+    return Constrain;
+}();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"5cPb7":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Scene2", ()=>Scene2);
+var _baseScene = require("./baseScene");
+var _circle = require("../items/circle");
+var _circleWithText = require("../items/circleWithText");
+var _vec2 = require("../vector/vec2");
+var _object = require("../renderableObjects/object");
+var _immovableBall = require("../objects/immovableBall");
+var _circle1 = require("../constrains/circle");
+var _objectsGenerator = require("../generators/objectsGenerator");
+var _ball = require("../objects/ball");
+var _index2Color = require("../items/utils/index2color");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var Scene2 = /** @class */ function(_super) {
+    __extends(Scene2, _super);
+    function Scene2(engine) {
+        var _this = _super.call(this, engine) || this;
+        _this._canMoveRedObject = false;
+        _this.timePassedSinceLastBallCreated = 0;
+        _this.ballIndex = 0;
+        _this.center = new (0, _vec2.Vec2)(_this.engine.canvas.width / 2, _this.engine.canvas.height / 2);
+        _this.radius = Math.min(_this.center.x, _this.center.y);
+        _this.generator = new (0, _objectsGenerator.ObjectsGenerator)(_this.engine.solver);
+        _this.createActor();
+        _this.initConstrain();
+        return _this;
+    }
+    Scene2.prototype.createBall = function() {
+        var baseBallVelocity = new (0, _vec2.Vec2)(0, 0);
+        var ballGeneratorPoint = this.actor.ballsObject.currentPosition;
+        var toCenter = ballGeneratorPoint.diff(this.center);
+        var n = toCenter.ort;
+        var ballVelocity = n.mul(-1);
+        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 7, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000"));
+        this.engine.addObject(obj);
+        this.ballIndex++;
+    };
+    Scene2.prototype.createActor = function() {
+        this.actor = new (0, _object.RenderableObject)(new (0, _immovableBall.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.engine.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000"));
+        this.engine.addObject(this.actor);
+    };
+    Scene2.prototype.initConstrain = function() {
+        this.engine.constrain = new (0, _circle1.CircleConstrain)(this.center, this.radius);
+        this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#ffffff"));
+    };
+    Scene2.prototype.getActor = function() {
+        return this.actor;
+    };
+    Scene2.prototype.tick = function(timePassed) {
+        if (this.canMoveRedObject) {
+            this.timePassedSinceLastBallCreated += timePassed;
+            if (this.timePassedSinceLastBallCreated > 0.05) {
+                this.timePassedSinceLastBallCreated = 0;
+                this.createBall();
+            }
+        }
+    };
+    Scene2.prototype.processUserInput = function(event) {
+        var mouseEvent = event;
+        if (mouseEvent.leftButtonDown) {
+            if (this.actor.ballsObject.isPointInsideObject(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY))) this.canMoveRedObject = true;
+            this.canMoveRedObject;
+        } else this.canMoveRedObject = false;
+        if (mouseEvent.screenX || mouseEvent.screenY) this.actor.ballsObject.moveTo(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY));
+    };
+    Object.defineProperty(Scene2.prototype, "canMoveRedObject", {
+        get: function() {
+            return this._canMoveRedObject;
+        },
+        set: function(can) {
+            this._canMoveRedObject = can;
+            if (can) this.actor.renderItem.color = "#00ff00";
+            else this.actor.renderItem.color = "#ff0000";
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return Scene2;
+}((0, _baseScene.BaseScene));
+
+},{"./baseScene":"dsDU5","../items/circle":"1t8sT","../vector/vec2":"9XJHV","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../constrains/circle":"if6MS","../generators/objectsGenerator":"h8l83","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","../items/circleWithText":"2IXVz","../objects/ball":"1Qukc","../items/utils/index2color":"frxih"}],"if6MS":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
+var _constrain = require("./constrain");
+var _vec2 = require("../vector/vec2");
+class CircleConstrain extends (0, _constrain.Constrain) {
+    /**
+     *
+     * @type {Vec2}
+     */ center = (0, _vec2.Vec2).Zero();
+    radius = 0;
+    constructor(center, radius){
+        super();
+        this.center = center;
+        this.radius = radius;
+    }
+    applyConstrain(obj) {
+        const toCenter = obj.currentPosition.diff(this.center);
+        const distance = toCenter.length;
+        const r = obj.radius;
+        if (distance > this.radius - r) {
+            const n = toCenter.ort;
+            obj.moveTo(this.center.sum(n.mul(this.radius - r - 1)));
+        }
+    }
+}
+
+},{"./constrain":"e3ALH","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "MessageType", ()=>MessageType);
 parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
 parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
 parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
+parcelHelpers.export(exports, "MessageEngineEvent", ()=>MessageEngineEvent);
 var __extends = undefined && undefined.__extends || function() {
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || ({
@@ -2273,6 +2428,7 @@ var MessageType;
     MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
     MessageType[MessageType["MessageInit"] = 1] = "MessageInit";
     MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
+    MessageType[MessageType["MessageEngineEvent"] = 3] = "MessageEngineEvent";
 })(MessageType || (MessageType = {}));
 var MessageEvent = /** @class */ function() {
     function MessageEvent() {
@@ -2299,6 +2455,16 @@ var MessageUserInput = /** @class */ function(_super) {
         return _this;
     }
     return MessageUserInput;
+}(MessageEvent);
+var MessageEngineEvent = /** @class */ function(_super) {
+    __extends(MessageEngineEvent, _super);
+    function MessageEngineEvent(event) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageEngineEvent;
+        _this.event = event;
+        return _this;
+    }
+    return MessageEngineEvent;
 }(MessageEvent);
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ccn6U","fXkCw"], "fXkCw", "parcelRequire62ee")

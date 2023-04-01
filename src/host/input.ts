@@ -12,7 +12,9 @@ export interface UIKeyboardEvent {
     keyPressed: string
 }
 
-export type UserInputHandler = (event: UIEvent) => void;
+export type AnyUIEvent = UIMouseEvent | UIKeyboardEvent;
+
+export type UserInputHandler = (event: AnyUIEvent) => void;
 
 export class UserInput {
     _canvas: HTMLCanvasElement;

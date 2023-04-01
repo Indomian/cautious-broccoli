@@ -85,6 +85,10 @@ export class BallsObject extends BaseSolverObject {
         this.currentPosition.addSelf(delta);
     }
 
+    moveTo(position: Vec2) {
+        this.currentPosition = position.copy();
+    }
+
     isPointInsideObject(point: Vec2): boolean {
         return Vec2Math.distance(this.currentPosition, point) < this.radius;
     }

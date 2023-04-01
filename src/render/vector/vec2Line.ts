@@ -42,6 +42,7 @@ export class Vec2Line {
         const sum = l1 + l2;
 
 
+
         return isEqual(this._length, sum, MATH_ERROR);
     }
 

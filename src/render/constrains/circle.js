@@ -18,17 +18,13 @@ export class CircleConstrain extends Constrain {
     }
 
     applyConstrain(obj) {
-        super.applyConstrain(obj);
-
         const toCenter = obj.currentPosition.diff(this.center);
         const distance = toCenter.length;
         const r = obj.radius;
 
         if (distance > (this.radius - r)) {
             const n = toCenter.ort;
-            obj.currentPosition = this.center.sum(
-                n.mul(this.radius - r)
-            );
+            obj.moveTo(this.center.sum(n.mul(this.radius - r - 1)));
         }
     }
 

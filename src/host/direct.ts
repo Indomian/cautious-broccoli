@@ -1,11 +1,13 @@
 import {Render} from "../render";
 import {UIEvent, UserInput} from "./input";
+import {BaseEngine} from "../engine/baseEngine";
 
-export class DirectApplication {
+export class DirectApplication extends BaseEngine {
     render;
     userInput;
 
     constructor(canvas) {
+        super();
         this.render = new Render(canvas);
         this.render.start();
 
@@ -15,5 +17,9 @@ export class DirectApplication {
 
     sendUserInputEvent = (event) => {
         this.render.processUserInput(event)
+    }
+
+    sendEngineEvent = (event) => {
+        this.render.processEngineEvent(event);
     }
 }
