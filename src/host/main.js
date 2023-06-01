@@ -27,6 +27,8 @@ function initApplication() {
 
     const buttonLoadScene1 = getElement('#scene1');
     const buttonLoadScene2 = getElement('#scene2');
+    const buttonLoadScene3 = getElement('#scene3');
+
 
     buttonLoadScene1.addEventListener('click', (e) => {
         e.preventDefault();
@@ -36,6 +38,11 @@ function initApplication() {
     buttonLoadScene2.addEventListener('click', e => {
         e.preventDefault();
         application.loadScene('scene2');
+    })
+
+    buttonLoadScene3.addEventListener('click', e => {
+        e.preventDefault();
+        application.loadScene('scene3');
     })
 }
 

@@ -1,10 +1,11 @@
 import {Item} from "./item";
+import {Vec2} from "../vector/vec2";
 
 export class Circle extends Item {
     r = 0;
     color = '#00ff00';
 
-    constructor(context, position, r, color) {
+    constructor(context: CanvasRenderingContext2D, position: Vec2, r: number, color: string) {
         super(context, position);
 
         if (r) {

@@ -1,13 +1,10 @@
 import {Vec2} from "../vector/vec2";
 
 export class Item {
-    position = Vec2.Zero();
+    context: CanvasRenderingContext2D;
+    position: Vec2 = Vec2.Zero();
 
-    /**
-     *
-     * @param {CanvasRenderingContext2D} context
-     */
-    constructor(context, position) {
+    constructor(context: CanvasRenderingContext2D, position: Vec2) {
         this.context = context;
         this.position = position;
     }

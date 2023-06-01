@@ -3,8 +3,11 @@ import {BallsObject} from "./objects/ball";
 import {BaseSolverObject} from "./objects/object";
 import {Constrain} from "./constrains/constrain";
 import {CollisionCell, CollisionGrid} from "./grid";
+import {Stats} from "./stats";
 
 export class Solver {
+    stats: Stats;
+
     objects: BaseSolverObject[] = []
     constrains: Constrain = null;
     gravity: Vec2 = Vec2.Zero();
@@ -16,7 +19,8 @@ export class Solver {
 
     cellSize: Vec2;
 
-    constructor(worldSize) {
+    constructor(worldSize, stats) {
+        this.stats = stats;
         this.objects = [];
         this.worldSize = worldSize.copy();
 
@@ -97,6 +101,8 @@ export class Solver {
     }
 
     processCollisionsInCell(objA: BaseSolverObject, cell: CollisionCell) {
+        this.stats.addStats('processCollisionsInCell.calls', 1);
+
         cell.objects.forEach(objB => {
             if (objA === objB) {
                 return;
@@ -111,40 +117,17 @@ export class Solver {
     }
 
     processCell(index: number) {
-        this.collisionGrid.cells[index].objects.forEach(objA => {
-            this.processCollisionsInCell(objA, this.collisionGrid.cells[index]); // SELF
+        this.stats.addStats('processCell.calls', 1);
 
-            if (this.collisionGrid.hasCell(index, -1)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index - 1]); // TOP
-            }
+        const currentCell = this.collisionGrid.cells[index];
+        currentCell.objects.forEach(objA => {
+            this.collisionGrid.adjacentCells[index].forEach(cell => {
+                if (cell === currentCell && cell.objects.length === 1) {
+                    return; // We don't need to check collisions if I'm only object in cell
+                }
 
-            if (this.collisionGrid.hasCell(index, 1)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index + 1]); // BOTTOM
-            }
-
-            if (this.collisionGrid.hasCell(index + this.collisionGrid.height, -1)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index + this.collisionGrid.height - 1]); // RIGHT TOP
-            }
-
-            if (this.collisionGrid.hasCell(index + this.collisionGrid.height, 0)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index + this.collisionGrid.height]); // RIGHT
-            }
-
-            if (this.collisionGrid.hasCell(index + this.collisionGrid.height, 1)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index + this.collisionGrid.height + 1]); // RIGHT BOTTOM
-            }
-
-            if (this.collisionGrid.hasCell(index - this.collisionGrid.height, -1)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index - this.collisionGrid.height - 1]); // LEFT TOP
-            }
-
-            if (this.collisionGrid.hasCell(index - this.collisionGrid.height, 0)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index - this.collisionGrid.height]); // LEFT
-            }
-
-            if (this.collisionGrid.hasCell(index - this.collisionGrid.height, 1)) {
-                this.processCollisionsInCell(objA, this.collisionGrid.cells[index - this.collisionGrid.height + 1]); // LEFT BOTTOM
-            }
+                this.processCollisionsInCell(objA, cell);
+            })
         })
     }
 

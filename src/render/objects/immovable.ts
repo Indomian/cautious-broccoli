@@ -1,5 +1,5 @@
 import {BaseSolverObject} from "./object";
 
-export class ImmovableSolverObject extends BaseSolverObject {
+export abstract class ImmovableSolverObject extends BaseSolverObject {
 
 }

@@ -1,8 +1,8 @@
 import {Circle} from "./circle";
 
 export class CircleWithText extends Circle {
-    text = '';
-    textColor = '#ffffff';
+    text:string = '';
+    textColor: string = '#ffffff';
 
     constructor(context, position,r, color, text, textColor) {
         super(context, position, r, color);

@@ -1,4 +1,4 @@
-import { Render } from "../render/index";
+import { Render } from "../render";
 import { MessageType } from "../host/messages";
 
 let render;

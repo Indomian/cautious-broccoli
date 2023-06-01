@@ -34,5 +34,4 @@ export class ImmovableLineObject extends BallsObject {
             this
         );
     }
-
 }

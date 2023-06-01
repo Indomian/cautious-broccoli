@@ -2,6 +2,8 @@ import {Vec2Math} from "../vector/vec2Math";
 import {BallsObject} from "./ball";
 import {SolverObjectTypes} from "./types";
 import {ImmovableLineObject} from "./immovableLine";
+import {ImmovablePolygon} from "./ImmovablePolygon";
+import {Vec2Line} from "../vector/vec2Line";
 
 /**
  * Collision between 2 balls objects
@@ -48,18 +50,13 @@ export function collideBallAndImmovableBall(ball, immovable) {
     }
 }
 
-/**
- * Collision between ball and immovable line
- * @param {BallsObject} ball
- * @param {ImmovableLineObject} line
- */
-export function collideBallAndImmovableLine(ball: BallsObject, line: ImmovableLineObject) {
+function _collideBallAndLine(ball: BallsObject, line: Vec2Line, lineBounce: number) {
     try {
-        const projectionPoint = line._line.getPointProjection(ball.currentPosition);
+        const projectionPoint = line.getPointProjection(ball.currentPosition);
 
         // We definitely know that projection point is on the line, so we just need to check if it's
         // between the ends.
-        if (line._line.inBetweenFast(projectionPoint)) {
+        if (line.inBetweenFast(projectionPoint)) {
             const between = Vec2Math.diff(
                 projectionPoint,
                 ball.currentPosition
@@ -71,12 +68,30 @@ export function collideBallAndImmovableLine(ball: BallsObject, line: ImmovableLi
                 const delta = ball.radius - between.length;
 
                 ball.currentPosition.subSelf(
-                    Vec2Math.mul(normalized, delta * ball.bounceValue * line.bounceValue)
+                    Vec2Math.mul(normalized, delta * ball.bounceValue * lineBounce)
                 )
             }
         }
     } catch (e) {
     }
+}
+
+/**
+ * Collision between ball and immovable line
+ * @param {BallsObject} ball
+ * @param {ImmovableLineObject} line
+ */
+export function collideBallAndImmovableLine(ball: BallsObject, line: ImmovableLineObject) {
+    _collideBallAndLine(ball, line._line, line.bounceValue);
+}
+
+/**
+ * Collision between ball and immovable line
+ * @param {BallsObject} ball
+ * @param {ImmovablePolygon} polygon
+ */
+export function collideBallAndImmovablePolygon(ball: BallsObject, polygon: ImmovablePolygon) {
+    polygon.lines.forEach(line => _collideBallAndLine(ball, line, polygon.bounceValue))
 }
 
 function flipObjects(obj1, obj2) {
@@ -102,6 +117,8 @@ export function collide(a, b) {
             return collideBallAndImmovableBall(obj1, obj2);
         case obj1.type === SolverObjectTypes.TypeBall && obj2.type === SolverObjectTypes.TypeImmovableLine:
             return collideBallAndImmovableLine(obj1, obj2);
+        case obj1.type === SolverObjectTypes.TypeBall && obj2.type === SolverObjectTypes.TypeImmovablePolygon:
+            return collideBallAndImmovablePolygon(obj1, obj2);
         default:
             return;
     }

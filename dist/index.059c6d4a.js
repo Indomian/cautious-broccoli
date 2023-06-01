@@ -580,6 +580,7 @@ function initApplication() {
     }
     const buttonLoadScene1 = (0, _getElement.getElement)("#scene1");
     const buttonLoadScene2 = (0, _getElement.getElement)("#scene2");
+    const buttonLoadScene3 = (0, _getElement.getElement)("#scene3");
     buttonLoadScene1.addEventListener("click", (e)=>{
         e.preventDefault();
         application.loadScene("scene1");
@@ -587,6 +588,10 @@ function initApplication() {
     buttonLoadScene2.addEventListener("click", (e)=>{
         e.preventDefault();
         application.loadScene("scene2");
+    });
+    buttonLoadScene3.addEventListener("click", (e)=>{
+        e.preventDefault();
+        application.loadScene("scene3");
     });
 }
 (0, _onReady.onReady)(initApplication);
@@ -1048,6 +1053,7 @@ var _vec2 = require("./vector/vec2");
 var _solver = require("./solver");
 var _frame = require("./items/frame");
 var _all = require("./scenes/all");
+var _stats = require("./stats");
 var Render = /** @class */ function() {
     function Render(canvas) {
         var _this = this;
@@ -1078,6 +1084,7 @@ var Render = /** @class */ function() {
             _this.tick();
             _this.timeRenderEnd = performance.now();
         };
+        this.stats = new (0, _stats.Stats)();
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
         this.timeRenderStart = performance.now();
@@ -1096,9 +1103,9 @@ var Render = /** @class */ function() {
         this.solver.reset();
     };
     Render.prototype.configure = function() {
-        this.solver = new (0, _solver.Solver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height));
+        this.solver = new (0, _solver.Solver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
         this.context.font = "10px serif";
-        this.loadScene("scene2");
+        this.loadScene("scene3");
     };
     Render.prototype.processUserInput = function(event) {
         var keyboardEvent = event;
@@ -1134,6 +1141,7 @@ var Render = /** @class */ function() {
         if (this.flagRenderGrid) this.renderGrid();
         if (this.flagRenderPreviousPosition) this.renderPreviousPosition();
         this.printFPS();
+        this.stats.resetTick();
         (0, _vec2.Vec2).lengthCallsCount = 0;
         (0, _vec2.Vec2).length2CallsCount = 0;
     };
@@ -1151,6 +1159,7 @@ var Render = /** @class */ function() {
         this.context.fillText(text, x, y);
     };
     Render.prototype.printFPS = function() {
+        var _this = this;
         this.context.fillStyle = "rgba(0,0,0,0.1)";
         this.context.fillRect(0, 0, 100, 60);
         this.printText("".concat(Math.round(this.step), " ms / ").concat(Math.round(1000 / this.step), " FPS"), 0, 10);
@@ -1158,6 +1167,10 @@ var Render = /** @class */ function() {
         this.printText("Lenght2 calls: ".concat((0, _vec2.Vec2).length2CallsCount), 0, 30);
         this.printText("Objects: ".concat(this.objects.length), 0, 40);
         this.printText("Compares per object: ".concat(Math.round((0, _vec2.Vec2).lengthCallsCount / this.objects.length)), 0, 50);
+        var stats = this.stats.getTickData();
+        stats.forEach(function(item, index) {
+            _this.printText("".concat(item.key, ": ").concat(item.value), 0, index * 10 + 60);
+        });
     };
     Render.prototype.clear = function() {
         this.context.fillStyle = "rgba(0, 0, 0, 0.9)";
@@ -1202,7 +1215,7 @@ var Render = /** @class */ function() {
     return Render;
 }();
 
-},{"./vector/vec2":"bp79Y","./solver":"bO5bv","./items/frame":"axM1A","./scenes/all":"bqCRd","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bp79Y":[function(require,module,exports) {
+},{"./vector/vec2":"bp79Y","./solver":"bO5bv","./items/frame":"axM1A","./scenes/all":"bqCRd","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./stats":"8G7on"}],"bp79Y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2", ()=>Vec2);
@@ -1547,12 +1560,13 @@ parcelHelpers.export(exports, "Solver", ()=>Solver);
 var _vec2 = require("./vector/vec2");
 var _grid = require("./grid");
 var Solver = /** @class */ function() {
-    function Solver(worldSize) {
+    function Solver(worldSize, stats) {
         this.objects = [];
         this.constrains = null;
         this.gravity = (0, _vec2.Vec2).Zero();
         this.subSteps = 4;
         this.useFixedTime = true;
+        this.stats = stats;
         this.objects = [];
         this.worldSize = worldSize.copy();
         this.configure();
@@ -1618,6 +1632,7 @@ var Solver = /** @class */ function() {
         });
     };
     Solver.prototype.processCollisionsInCell = function(objA, cell) {
+        this.stats.addStats("processCollisionsInCell.calls", 1);
         cell.objects.forEach(function(objB) {
             if (objA === objB) return;
             if (objA.immovable && objB.immovable) return;
@@ -1626,16 +1641,13 @@ var Solver = /** @class */ function() {
     };
     Solver.prototype.processCell = function(index) {
         var _this = this;
-        this.collisionGrid.cells[index].objects.forEach(function(objA) {
-            _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index]); // SELF
-            if (_this.collisionGrid.hasCell(index, -1)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index - 1]); // TOP
-            if (_this.collisionGrid.hasCell(index, 1)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index + 1]); // BOTTOM
-            if (_this.collisionGrid.hasCell(index + _this.collisionGrid.height, -1)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index + _this.collisionGrid.height - 1]); // RIGHT TOP
-            if (_this.collisionGrid.hasCell(index + _this.collisionGrid.height, 0)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index + _this.collisionGrid.height]); // RIGHT
-            if (_this.collisionGrid.hasCell(index + _this.collisionGrid.height, 1)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index + _this.collisionGrid.height + 1]); // RIGHT BOTTOM
-            if (_this.collisionGrid.hasCell(index - _this.collisionGrid.height, -1)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index - _this.collisionGrid.height - 1]); // LEFT TOP
-            if (_this.collisionGrid.hasCell(index - _this.collisionGrid.height, 0)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index - _this.collisionGrid.height]); // LEFT
-            if (_this.collisionGrid.hasCell(index - _this.collisionGrid.height, 1)) _this.processCollisionsInCell(objA, _this.collisionGrid.cells[index - _this.collisionGrid.height + 1]); // LEFT BOTTOM
+        this.stats.addStats("processCell.calls", 1);
+        var currentCell = this.collisionGrid.cells[index];
+        currentCell.objects.forEach(function(objA) {
+            _this.collisionGrid.adjacentCells[index].forEach(function(cell) {
+                if (cell === currentCell && cell.objects.length === 1) return; // We don't need to check collisions if I'm only object in cell
+                _this.processCollisionsInCell(objA, cell);
+            });
         });
     };
     Solver.prototype.processCollisions = function() {
@@ -1689,6 +1701,8 @@ var CollisionCell = /** @class */ function() {
 var CollisionGrid = /** @class */ function() {
     function CollisionGrid(width, height, cellSize) {
         this.cells = [];
+        this.index2xy = [];
+        this.adjacentCells = [];
         this._width = width;
         this._height = height;
         this.cellSize = cellSize;
@@ -1723,10 +1737,43 @@ var CollisionGrid = /** @class */ function() {
         enumerable: false,
         configurable: true
     });
+    CollisionGrid.prototype.recalculateIndex2xy = function() {
+        this.index2xy = [];
+        for(var i = 0; i < this._size; i++)this.index2xy.push(this.makeVecFromIndex(i));
+    };
+    /**
+     * Calculate cache of collision cells
+     */ CollisionGrid.prototype.recalculateCollisionCells = function() {
+        var _this = this;
+        this.adjacentCells = [];
+        this.cells.forEach(function(cell, index) {
+            var pos = _this.getVecFromIndex(index);
+            var cells = [];
+            cells.push(cell); // Add self
+            if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y - 1)]); //TOP
+            if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y + 1)]); //BOTTOM
+            if (pos.x > 0) {
+                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y - 1)]); //LEFT TOP
+                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y)]); //LEFT
+                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y + 1)]); //LEFT BOTTOM
+            }
+            if (pos.x + 1 < _this._width) {
+                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y - 1)]); //RIGHT TOP
+                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y)]); //RIGHT
+                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y + 1)]); //RIGHT BOTTOM
+            }
+            _this.adjacentCells[index] = cells;
+        });
+    };
+    CollisionGrid.prototype.getVecFromIndex = function(index) {
+        return this.index2xy[index];
+    };
     CollisionGrid.prototype.resize = function() {
         this.cells = [];
         this._size = this._width * this._height;
         for(var i = 0; i < this._size; i++)this.cells.push(new CollisionCell());
+        this.recalculateIndex2xy();
+        this.recalculateCollisionCells();
     };
     CollisionGrid.prototype.addObject = function(worldX, worldY, obj) {
         var x = Math.trunc(worldX / this.cellSize.x);
@@ -1758,15 +1805,16 @@ var CollisionGrid = /** @class */ function() {
         var point2 = (0, _vec2Math.Vec2Math).scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
         var index1 = this.makeIndexFromVec(point1);
         var index2 = this.makeIndexFromVec(point2);
+        var left = Math.min(point1.x, point2.x);
+        var top = Math.min(point1.y, point2.y);
+        var right = Math.max(point1.x, point2.x);
+        var bottom = Math.max(point1.y, point2.y);
+        if (right >= this._width || left < 0 || top < 0 || bottom >= this._height) return;
         if (point1.x === point2.x) // Vertical
         for(var cellIndex = index1; cellIndex < index2; cellIndex++)this.cells[cellIndex].addObject(obj);
         else if (point1.y === point2.y) // Horizontal
         for(var cellIndex = index1; cellIndex < index2; cellIndex += this.height)this.cells[cellIndex].addObject(obj);
         else {
-            var left = Math.min(point1.x, point2.x);
-            var top = Math.min(point1.y, point2.y);
-            var right = Math.max(point1.x, point2.x);
-            var bottom = Math.max(point1.y, point2.y);
             var height = bottom - top;
             var startFrom = this.makeIndexFromCoord(left, top);
             for(var x = 0; x <= right - left; x++)for(var y = 0; y <= height; y++){
@@ -1776,18 +1824,20 @@ var CollisionGrid = /** @class */ function() {
         }
     };
     CollisionGrid.prototype.clear = function() {
-        for(var i = 0; i < this.size; i++)this.cells[i].clear();
+        this.cells.forEach(function(cell) {
+            return cell.clear();
+        });
     };
     CollisionGrid.prototype.forEach = function(callback) {
         var _this = this;
         this.cells.forEach(function(cell, index) {
-            var pos = _this.makeVecFromIndex(index);
+            var pos = _this.getVecFromIndex(index);
             callback(pos.x, pos.y, cell, index);
         });
     };
     CollisionGrid.prototype.hasCell = function(index, dt) {
         if (index < 0 || index >= this.size) return false;
-        var pos = this.makeVecFromIndex(index);
+        var pos = this.getVecFromIndex(index);
         var x = pos.x;
         var y = pos.y;
         if (y <= 0 && dt < 0) // TOP CELL
@@ -1839,27 +1889,25 @@ class Rect extends (0, _item.Item) {
     }
 }
 
-},{"./item":"lfpdN","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"lfpdN":[function(require,module,exports) {
+},{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"62t5i":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Item", ()=>Item);
 var _vec2 = require("../vector/vec2");
-class Item {
-    position = (0, _vec2.Vec2).Zero();
-    /**
-     *
-     * @param {CanvasRenderingContext2D} context
-     */ constructor(context, position){
+var Item = /** @class */ function() {
+    function Item(context, position) {
+        this.position = (0, _vec2.Vec2).Zero();
         this.context = context;
         this.position = position;
     }
     /**
      * Method immediately renders object on context
-     */ render() {}
+     */ Item.prototype.render = function() {};
     /**
      * Method tries to put object in render block
-     */ queue() {}
-}
+     */ Item.prototype.queue = function() {};
+    return Item;
+}();
 
 },{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bqCRd":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1867,12 +1915,14 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ENGINE_SCENES", ()=>ENGINE_SCENES);
 var _scene1 = require("./scene1");
 var _scene2 = require("./scene2");
+var _scene3 = require("./scene3");
 var ENGINE_SCENES = {
     "scene1": (0, _scene1.Scene1),
-    "scene2": (0, _scene2.Scene2)
+    "scene2": (0, _scene2.Scene2),
+    "scene3": (0, _scene3.Scene3)
 };
 
-},{"./scene1":"lS7PG","./scene2":"8vIhi","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"lS7PG":[function(require,module,exports) {
+},{"./scene1":"lS7PG","./scene2":"8vIhi","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./scene3":"ajxWT"}],"lS7PG":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Scene1", ()=>Scene1);
@@ -2008,7 +2058,7 @@ var Scene1 = /** @class */ function(_super) {
     return Scene1;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dRCUa","../generators/totalObjectsGenerator":"h8lsL","../items/circle":"69Os4","../vector/vec2":"bp79Y","../vector/vec2Math":"nZL8C","../objects/ball":"5IfJk","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../renderableObjects/immovableLine":"bihaA","../objects/immovableLine":"f4D1b","../items/line":"b4RnM","../items/circleWithText":"e1vep","../items/utils/index2color":"datdc","../constrains/viewport":"8fyh9","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dRCUa":[function(require,module,exports) {
+},{"./baseScene":"dRCUa","../generators/totalObjectsGenerator":"h8lsL","../items/circle":"c8cAT","../vector/vec2":"bp79Y","../vector/vec2Math":"nZL8C","../objects/ball":"5IfJk","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../renderableObjects/immovableLine":"bihaA","../objects/immovableLine":"f4D1b","../items/line":"b4RnM","../items/circleWithText":"eZiSs","../items/utils/index2color":"datdc","../constrains/viewport":"8fyh9","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dRCUa":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
@@ -2062,28 +2112,51 @@ var ObjectsGenerator = /** @class */ function() {
     return ObjectsGenerator;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"69Os4":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"c8cAT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Circle", ()=>Circle);
 var _item = require("./item");
-class Circle extends (0, _item.Item) {
-    r = 0;
-    color = "#00ff00";
-    constructor(context, position, r, color){
-        super(context, position);
-        if (r) this.r = r;
-        if (color) this.color = color;
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var Circle = /** @class */ function(_super) {
+    __extends(Circle, _super);
+    function Circle(context, position, r, color) {
+        var _this = _super.call(this, context, position) || this;
+        _this.r = 0;
+        _this.color = "#00ff00";
+        if (r) _this.r = r;
+        if (color) _this.color = color;
+        return _this;
     }
-    render() {
+    Circle.prototype.render = function() {
         this.context.beginPath();
         this.context.arc(this.position.x, this.position.y, this.r, 0, 2 * Math.PI);
         this.context.fillStyle = this.color;
         this.context.fill();
-    }
-}
+    };
+    return Circle;
+}((0, _item.Item));
 
-},{"./item":"lfpdN","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5IfJk":[function(require,module,exports) {
+},{"./item":"62t5i","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5IfJk":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BallsObject", ()=>BallsObject);
@@ -2340,6 +2413,7 @@ var SolverObjectTypes;
     SolverObjectTypes[SolverObjectTypes["TypeBall"] = 1] = "TypeBall";
     SolverObjectTypes[SolverObjectTypes["TypeImmovableBall"] = 2] = "TypeImmovableBall";
     SolverObjectTypes[SolverObjectTypes["TypeImmovableLine"] = 3] = "TypeImmovableLine";
+    SolverObjectTypes[SolverObjectTypes["TypeImmovablePolygon"] = 4] = "TypeImmovablePolygon";
 })(SolverObjectTypes || (SolverObjectTypes = {}));
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hKRfe":[function(require,module,exports) {
@@ -2360,6 +2434,11 @@ parcelHelpers.defineInteropFlag(exports);
  * @param {BallsObject} ball
  * @param {ImmovableLineObject} line
  */ parcelHelpers.export(exports, "collideBallAndImmovableLine", ()=>collideBallAndImmovableLine);
+/**
+ * Collision between ball and immovable line
+ * @param {BallsObject} ball
+ * @param {ImmovablePolygon} polygon
+ */ parcelHelpers.export(exports, "collideBallAndImmovablePolygon", ()=>collideBallAndImmovablePolygon);
 parcelHelpers.export(exports, "collide", ()=>collide);
 var _vec2Math = require("../vector/vec2Math");
 var _types = require("./types");
@@ -2384,20 +2463,28 @@ function collideBallAndImmovableBall(ball, immovable) {
         ball.currentPosition.addSelf((0, _vec2Math.Vec2Math).mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue * immovable.bounceValue));
     }
 }
-function collideBallAndImmovableLine(ball, line) {
+function _collideBallAndLine(ball, line, lineBounce) {
     try {
-        var projectionPoint = line._line.getPointProjection(ball.currentPosition);
+        var projectionPoint = line.getPointProjection(ball.currentPosition);
         // We definitely know that projection point is on the line, so we just need to check if it's
         // between the ends.
-        if (line._line.inBetweenFast(projectionPoint)) {
+        if (line.inBetweenFast(projectionPoint)) {
             var between = (0, _vec2Math.Vec2Math).diff(projectionPoint, ball.currentPosition);
             if (between.length2 < ball.radius2) {
                 var normalized = between.ort;
                 var delta = ball.radius - between.length;
-                ball.currentPosition.subSelf((0, _vec2Math.Vec2Math).mul(normalized, delta * ball.bounceValue * line.bounceValue));
+                ball.currentPosition.subSelf((0, _vec2Math.Vec2Math).mul(normalized, delta * ball.bounceValue * lineBounce));
             }
         }
     } catch (e) {}
+}
+function collideBallAndImmovableLine(ball, line) {
+    _collideBallAndLine(ball, line._line, line.bounceValue);
+}
+function collideBallAndImmovablePolygon(ball, polygon) {
+    polygon.lines.forEach(function(line) {
+        return _collideBallAndLine(ball, line, polygon.bounceValue);
+    });
 }
 function flipObjects(obj1, obj2) {
     return {
@@ -2420,6 +2507,8 @@ function collide(a, b) {
             return collideBallAndImmovableBall(obj1, obj2);
         case obj1.type === (0, _types.SolverObjectTypes).TypeBall && obj2.type === (0, _types.SolverObjectTypes).TypeImmovableLine:
             return collideBallAndImmovableLine(obj1, obj2);
+        case obj1.type === (0, _types.SolverObjectTypes).TypeBall && obj2.type === (0, _types.SolverObjectTypes).TypeImmovablePolygon:
+            return collideBallAndImmovablePolygon(obj1, obj2);
         default:
             return;
     }
@@ -2625,29 +2714,52 @@ class Line extends (0, _item.Item) {
     }
 }
 
-},{"./item":"lfpdN","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"e1vep":[function(require,module,exports) {
+},{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eZiSs":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleWithText", ()=>CircleWithText);
 var _circle = require("./circle");
-class CircleWithText extends (0, _circle.Circle) {
-    text = "";
-    textColor = "#ffffff";
-    constructor(context, position, r, color, text, textColor){
-        super(context, position, r, color);
-        this.text = text;
-        if (textColor) this.textColor = textColor;
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var CircleWithText = /** @class */ function(_super) {
+    __extends(CircleWithText, _super);
+    function CircleWithText(context, position, r, color, text, textColor) {
+        var _this = _super.call(this, context, position, r, color) || this;
+        _this.text = "";
+        _this.textColor = "#ffffff";
+        _this.text = text;
+        if (textColor) _this.textColor = textColor;
+        return _this;
     }
-    render() {
-        super.render();
+    CircleWithText.prototype.render = function() {
+        _super.prototype.render.call(this);
         this.context.fillStyle = this.textColor;
         this.context.textBaseline = "middle";
         this.context.textAlign = "center";
         this.context.fillText(this.text, this.position.x, this.position.y);
-    }
-}
+    };
+    return CircleWithText;
+}((0, _circle.Circle));
 
-},{"./circle":"69Os4","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"datdc":[function(require,module,exports) {
+},{"./circle":"c8cAT","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"datdc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "index2color", ()=>index2color);
@@ -2802,7 +2914,7 @@ var Scene2 = /** @class */ function(_super) {
     return Scene2;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dRCUa","../items/circle":"69Os4","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../constrains/circle":"hK3W7","../generators/objectsGenerator":"g4Anj","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../items/circleWithText":"e1vep","../objects/ball":"5IfJk","../items/utils/index2color":"datdc"}],"hK3W7":[function(require,module,exports) {
+},{"./baseScene":"dRCUa","../items/circle":"c8cAT","../items/circleWithText":"eZiSs","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../constrains/circle":"hK3W7","../generators/objectsGenerator":"g4Anj","../objects/ball":"5IfJk","../items/utils/index2color":"datdc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hK3W7":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
@@ -2822,7 +2934,7 @@ class CircleConstrain extends (0, _constrain.Constrain) {
     applyConstrain(obj) {
         const toCenter = obj.currentPosition.diff(this.center);
         const distance = toCenter.length;
-        const r = obj.radius;
+        const r = obj.radius || 0;
         if (distance > this.radius - r) {
             const n = toCenter.ort;
             obj.moveTo(this.center.sum(n.mul(this.radius - r - 1)));
@@ -2830,6 +2942,382 @@ class CircleConstrain extends (0, _constrain.Constrain) {
     }
 }
 
-},{"./constrain":"jvBxb","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["lxFny","hb2Bw"], "hb2Bw", "parcelRequire62ee")
+},{"./constrain":"jvBxb","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ajxWT":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Scene3", ()=>Scene3);
+var _baseScene = require("./baseScene");
+var _circle = require("../items/circle");
+var _circleWithText = require("../items/circleWithText");
+var _vec2 = require("../vector/vec2");
+var _object = require("../renderableObjects/object");
+var _circle1 = require("../constrains/circle");
+var _objectsGenerator = require("../generators/objectsGenerator");
+var _ball = require("../objects/ball");
+var _index2Color = require("../items/utils/index2color");
+var _triangle = require("../primitives/triangle");
+var _immovablePolygon = require("../objects/ImmovablePolygon");
+var _polygon = require("../items/polygon");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var Scene3 = /** @class */ function(_super) {
+    __extends(Scene3, _super);
+    function Scene3(engine) {
+        var _this = _super.call(this, engine) || this;
+        _this._createBalls = false;
+        _this.timePassedSinceLastBallCreated = 0;
+        _this.ballIndex = 0;
+        _this.ballsViews = [];
+        _this.center = new (0, _vec2.Vec2)(_this.engine.canvas.width / 2, _this.engine.canvas.height / 2);
+        _this.radius = Math.min(_this.center.x, _this.center.y);
+        _this.generator = new (0, _objectsGenerator.ObjectsGenerator)(_this.engine.solver);
+        _this.createActor();
+        _this.initConstrain();
+        return _this;
+    }
+    Scene3.prototype.createBall = function() {
+        var baseBallVelocity = new (0, _vec2.Vec2)(0, 0);
+        var ballGeneratorPoint = this.actor.ballsObject.currentPosition;
+        var toCenter = ballGeneratorPoint.diff(this.center);
+        var n = toCenter.ort;
+        var ballVelocity = n.mul(-1);
+        var ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 7, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
+        this.ballsViews.push(ballView);
+        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), 5).setVelocity(ballVelocity), ballView);
+        this.engine.addObject(obj);
+        this.ballIndex++;
+    };
+    Scene3.prototype.createActor = function() {
+        var trianglePoints = (0, _triangle.createTriangle)(60);
+        var polygonObject = new (0, _immovablePolygon.ImmovablePolygon)(this.center, trianglePoints);
+        var polygonView = new (0, _polygon.Polygon)(this.engine.context, (0, _vec2.Vec2).Zero(), polygonObject.lines, "#ff0000");
+        this.actor = new (0, _object.RenderableObject)(polygonObject, polygonView);
+        this.engine.addObject(this.actor);
+    };
+    Scene3.prototype.initConstrain = function() {
+        this.engine.constrain = new (0, _circle1.CircleConstrain)(this.center, this.radius);
+        this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#ffffff"));
+    };
+    Scene3.prototype.getActor = function() {
+        return this.actor;
+    };
+    Scene3.prototype.tick = function(timePassed) {
+        if (this.createBalls) {
+            this.timePassedSinceLastBallCreated += timePassed;
+            if (this.timePassedSinceLastBallCreated > 0.05) {
+                this.timePassedSinceLastBallCreated = 0;
+                this.createBall();
+            }
+        }
+        this.ballsViews.forEach(function(ballView) {
+            ballView.color = (0, _index2Color.index2color)(ballView.position.y);
+        });
+    };
+    Scene3.prototype.processUserInput = function(event) {
+        var mouseEvent = event;
+        if (mouseEvent.leftButtonDown) {
+            if (this.actor.ballsObject.isPointInsideObject(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY))) this.createBalls = true;
+        } else this.createBalls = false;
+        if (mouseEvent.screenX || mouseEvent.screenY) this.actor.ballsObject.moveTo(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY));
+    };
+    Object.defineProperty(Scene3.prototype, "createBalls", {
+        get: function() {
+            return this._createBalls;
+        },
+        set: function(can) {
+            this._createBalls = can;
+            if (can) this.actor.renderItem.color = "#00ff00";
+            else this.actor.renderItem.color = "#ff0000";
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return Scene3;
+}((0, _baseScene.BaseScene));
+
+},{"./baseScene":"dRCUa","../items/circle":"c8cAT","../items/circleWithText":"eZiSs","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../constrains/circle":"hK3W7","../generators/objectsGenerator":"g4Anj","../objects/ball":"5IfJk","../items/utils/index2color":"datdc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../primitives/triangle":"2kNMb","../objects/ImmovablePolygon":"iluwZ","../items/polygon":"bKrz3"}],"2kNMb":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "createTriangle", ()=>createTriangle);
+var _vec2 = require("../vector/vec2");
+function createTriangle(size) {
+    var height = size * Math.sqrt(3) / 2;
+    var center = new (0, _vec2.Vec2)(size / 2, size / 2 * (1 / Math.sqrt(3)));
+    return [
+        new (0, _vec2.Vec2)(-center.x, -center.y),
+        new (0, _vec2.Vec2)(0, height - center.y),
+        new (0, _vec2.Vec2)(center.x, -center.y)
+    ];
+}
+
+},{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iluwZ":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ImmovablePolygon", ()=>ImmovablePolygon);
+var _immovable = require("./immovable");
+var _types = require("./types");
+var _vec2Line = require("../vector/vec2Line");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var __spreadArray = undefined && undefined.__spreadArray || function(to, from, pack) {
+    if (pack || arguments.length === 2) {
+        for(var i = 0, l = from.length, ar; i < l; i++)if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+var ImmovablePolygon = /** @class */ function(_super) {
+    __extends(ImmovablePolygon, _super);
+    function ImmovablePolygon(position, points) {
+        var _this = _super.call(this) || this;
+        _this._points = [];
+        _this._lines = [];
+        _this.type = (0, _types.SolverObjectTypes).TypeImmovablePolygon;
+        _this.immovable = true;
+        _this.bounceValue = 1;
+        _this.currentPosition = position.copy();
+        _this.previousPosition = position.copy();
+        _this._fixedPosition = position.copy();
+        points.forEach(function(point) {
+            return _this._points.push(point.copy());
+        });
+        _this._recreateLines();
+        return _this;
+    }
+    ImmovablePolygon.prototype._recreateLines = function() {
+        var pointsToProcess = __spreadArray([], this._points, true);
+        var firstPoint = pointsToProcess.shift();
+        var secondPoint;
+        var lastPoint = firstPoint;
+        this._lines.splice(0, this._lines.length);
+        while(secondPoint = pointsToProcess.shift()){
+            this._lines.push(new (0, _vec2Line.Vec2Line)(this._fixedPosition.sum(lastPoint), this._fixedPosition.sum(secondPoint)));
+            lastPoint = secondPoint;
+        }
+        this._lines.push(new (0, _vec2Line.Vec2Line)(this._fixedPosition.sum(lastPoint), this._fixedPosition.sum(firstPoint)));
+    };
+    ImmovablePolygon.prototype.update = function(step) {
+        this.currentPosition = this._fixedPosition;
+        this.previousPosition = this._fixedPosition;
+    };
+    ImmovablePolygon.prototype.addToGrid = function(collisionGrid) {
+        var _this = this;
+        try {
+            this._lines.forEach(function(line) {
+                collisionGrid.addObjectToCells(line.vec1, line.vec2, _this);
+            });
+        } catch (e) {
+            debugger;
+            console.log(e, this._lines);
+        }
+    };
+    ImmovablePolygon.prototype.isPointInsideObject = function(point) {
+        return true;
+    };
+    ImmovablePolygon.prototype.moveBy = function(delta) {
+        this.currentPosition.addSelf(delta);
+        this.previousPosition.addSelf(delta);
+        this._fixedPosition.addSelf(delta);
+        this._lines.forEach(function(line) {
+            return line.moveBy(delta);
+        });
+    };
+    ImmovablePolygon.prototype.moveTo = function(position) {
+        this._fixedPosition = position.copy();
+        this.currentPosition = position.copy();
+        this.previousPosition = position.copy();
+        this._recreateLines();
+    };
+    Object.defineProperty(ImmovablePolygon.prototype, "lines", {
+        get: function() {
+            return this._lines;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return ImmovablePolygon;
+}((0, _immovable.ImmovableSolverObject));
+
+},{"./immovable":"5OzDg","./types":"7Eyh2","../vector/vec2Line":"k0EZw","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5OzDg":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ImmovableSolverObject", ()=>ImmovableSolverObject);
+var _object = require("./object");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var ImmovableSolverObject = /** @class */ function(_super) {
+    __extends(ImmovableSolverObject, _super);
+    function ImmovableSolverObject() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return ImmovableSolverObject;
+}((0, _object.BaseSolverObject));
+
+},{"./object":"66Aay","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bKrz3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Polygon", ()=>Polygon);
+var _item = require("./item");
+var _vec2 = require("../vector/vec2");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var Polygon = /** @class */ function(_super) {
+    __extends(Polygon, _super);
+    function Polygon(context, position, lines, color) {
+        var _this = _super.call(this, context, position) || this;
+        _this.direction = (0, _vec2.Vec2).Zero();
+        _this.color = "#00ff00";
+        _this.lines = lines;
+        if (color) _this.color = color;
+        return _this;
+    }
+    Polygon.prototype.render = function() {
+        var _this = this;
+        this.context.strokeStyle = this.color;
+        this.context.beginPath(); // Start a new path
+        this.lines.forEach(function(line) {
+            _this.context.moveTo(line.vec1.x, line.vec1.y);
+            _this.context.lineTo(line.vec2.x, line.vec2.y);
+        });
+        this.context.stroke(); // Render the path
+    };
+    return Polygon;
+}((0, _item.Item));
+
+},{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8G7on":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Stats", ()=>Stats);
+var Stats = /** @class */ function() {
+    function Stats() {
+        this.tickData = [];
+        this.totalData = [];
+        this.keys = new Map();
+    }
+    Stats.prototype.resetTick = function() {
+        var _this = this;
+        this.tickData.forEach(function(value, index) {
+            return _this.tickData[index] = 0;
+        });
+    };
+    Stats.prototype.writeStats = function(key, value) {
+        var index = this.registerKey(key);
+        this.tickData[index] = value;
+        this.totalData[index] = value;
+    };
+    Stats.prototype.addStats = function(key, value) {
+        var index = this.registerKey(key);
+        this.tickData[index] += value;
+        this.totalData[index] += value;
+    };
+    Stats.prototype.registerKey = function(key) {
+        if (this.keys.has(key)) return this.keys.get(key);
+        this.tickData.push(0);
+        this.totalData.push(0);
+        this.keys.set(key, this.tickData.length - 1);
+        return this.tickData.length - 1;
+    };
+    Stats.prototype.getStats = function(key) {
+        if (!this.keys.has(key)) return {
+            key: key,
+            total: 0,
+            tick: 0
+        };
+        var index = this.keys.get(key);
+        return {
+            key: key,
+            total: this.totalData[index],
+            tick: this.tickData[index]
+        };
+    };
+    Stats.prototype.getTickData = function() {
+        var _this = this;
+        var result = [];
+        this.keys.forEach(function(index, key) {
+            result.push({
+                key: key,
+                value: _this.tickData[index]
+            });
+        });
+        return result;
+    };
+    return Stats;
+}();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["lxFny","hb2Bw"], "hb2Bw", "parcelRequire62ee")
 
 //# sourceMappingURL=index.059c6d4a.js.map

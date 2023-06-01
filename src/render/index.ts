@@ -9,6 +9,7 @@ import {AnyUIEvent, UIKeyboardEvent} from "../host/input";
 import { Item } from "./items/item";
 import {AnyEngineEvent, LoadSceneEngineEvent} from "./events/engine";
 import {ENGINE_SCENES} from "./scenes/all";
+import {Stats, StatsItem} from "./stats";
 
 export class Render {
     /**
@@ -41,8 +42,10 @@ export class Render {
     items: Item[];
 
     scene: BaseScene;
+    stats: Stats;
 
     constructor(canvas) {
+        this.stats = new Stats();
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
 
@@ -73,12 +76,13 @@ export class Render {
             new Vec2(
                 this.canvas.width,
                 this.canvas.height
-            )
+            ),
+            this.stats
         );
 
         this.context.font = '10px serif';
 
-        this.loadScene("scene2");
+        this.loadScene("scene3");
     }
 
     processUserInput(event: AnyUIEvent) {
@@ -143,6 +147,7 @@ export class Render {
         }
 
         this.printFPS();
+        this.stats.resetTick();
 
         Vec2.lengthCallsCount = 0;
         Vec2.length2CallsCount = 0;
@@ -192,6 +197,11 @@ export class Render {
         this.printText(`Lenght2 calls: ${Vec2.length2CallsCount}`, 0 , 30);
         this.printText(`Objects: ${this.objects.length}`, 0, 40);
         this.printText(`Compares per object: ${Math.round(Vec2.lengthCallsCount / this.objects.length)}`, 0, 50);
+
+        const stats = this.stats.getTickData();
+        stats.forEach((item: StatsItem, index: number) => {
+           this.printText(`${item.key}: ${item.value}`, 0, index * 10 + 60);
+        });
     }
 
     clear() {

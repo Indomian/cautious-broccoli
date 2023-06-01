@@ -20,7 +20,7 @@ export class CircleConstrain extends Constrain {
     applyConstrain(obj) {
         const toCenter = obj.currentPosition.diff(this.center);
         const distance = toCenter.length;
-        const r = obj.radius;
+        const r = obj.radius || 0;
 
         if (distance > (this.radius - r)) {
             const n = toCenter.ort;
