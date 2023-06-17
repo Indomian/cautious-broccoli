@@ -10,13 +10,14 @@ import { Item } from "./items/item";
 import {AnyEngineEvent, LoadSceneEngineEvent} from "./events/engine";
 import {ENGINE_SCENES} from "./scenes/all";
 import {Stats, StatsItem} from "./stats";
+import {BaseSolverObject} from "./objects/object";
 
 export class Render {
     /**
      * List of balls
      * @type {RenderableObject[]}
      */
-    objects = []
+    objects: RenderableObject<BaseSolverObject, Item>[] = [];
 
     /**
      * @type {Constrain}
@@ -27,7 +28,7 @@ export class Render {
      * Solver for physics
      * @type {Solver}
      */
-    solver = null;
+    solver:Solver = null;
 
     flagRenderGrid = false;
     flagRenderPreviousPosition = false;
@@ -116,9 +117,9 @@ export class Render {
     /**
      * @param {RenderableObject} obj
      */
-    addObject(obj) {
+    addObject(obj: RenderableObject<BaseSolverObject, Item>) {
         this.objects.push(obj);
-        this.solver.addObject(obj.ballsObject);
+        this.solver.addObject(obj.solverObject);
     }
 
     update(time) {
@@ -180,7 +181,7 @@ export class Render {
 
     renderItems() {
         this.items.forEach(item => item.render());
-        this.objects.forEach((obj: RenderableObject) => obj.render());
+        this.objects.forEach((obj) => obj.render());
     }
 
     printText(text, x, y) {
@@ -244,11 +245,13 @@ export class Render {
                 cellPosition.y + this.solver.cellSize.y / 2
             )
         })
+
+        this.solver.objects.forEach(object => object.debugRender(this.context));
     }
 
     renderPreviousPosition() {
-        this.objects.forEach((renderableObject: RenderableObject) => {
-            const position = renderableObject.ballsObject.previousPosition;
+        this.objects.forEach((renderableObject) => {
+            const position = renderableObject.solverObject.previousPosition;
             this.context.fillStyle = 'rgba(0, 0, 255, 0.5)';
             this.context.beginPath()
             this.context.arc(

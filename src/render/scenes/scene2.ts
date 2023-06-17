@@ -35,12 +35,12 @@ export class Scene2 extends BaseScene {
 
     createBall() {
         const baseBallVelocity = new Vec2(0, 0);
-        const ballGeneratorPoint = this.actor.ballsObject.currentPosition;
+        const ballGeneratorPoint = this.actor.solverObject.currentPosition;
         const toCenter = ballGeneratorPoint.diff(this.center);
         const n = toCenter.ort;
 
         const ballVelocity = n.mul(-1);
-        const obj = new RenderableObject(
+        const obj = new RenderableObject<BallsObject, CircleWithText>(
             (new BallsObject(
                 ballGeneratorPoint.diff(n.mul(40)),
                 5
@@ -60,7 +60,7 @@ export class Scene2 extends BaseScene {
     }
 
     createActor() {
-        this.actor = new RenderableObject(
+        this.actor = new RenderableObject<ImmovableBallsObject, Circle>(
             new ImmovableBallsObject(new Vec2(230, 50), 30),
             new Circle(this.engine.context, Vec2.Zero(), 30, '#ff0000')
         );
@@ -102,7 +102,7 @@ export class Scene2 extends BaseScene {
         const mouseEvent = event as UIMouseEvent;
 
         if (mouseEvent.leftButtonDown) {
-            if (this.actor.ballsObject.isPointInsideObject(
+            if (this.actor.solverObject.isPointInsideObject(
                 new Vec2(
                     mouseEvent.screenX,
                     mouseEvent.screenY
@@ -119,7 +119,7 @@ export class Scene2 extends BaseScene {
         }
 
         if (mouseEvent.screenX || mouseEvent.screenY) {
-            this.actor.ballsObject.moveTo(
+            this.actor.solverObject.moveTo(
                 new Vec2(
                     mouseEvent.screenX,
                     mouseEvent.screenY

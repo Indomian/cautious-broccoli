@@ -81,6 +81,7 @@ export class Solver {
         this.collisionGrid.clear();
         this.objects.forEach((obj, index) => {
             obj.addToGrid(this.collisionGrid);
+            this.stats.addStats(`Solver object: ${obj.toString()}`)
         });
     }
 
@@ -101,7 +102,7 @@ export class Solver {
     }
 
     processCollisionsInCell(objA: BaseSolverObject, cell: CollisionCell) {
-        this.stats.addStats('processCollisionsInCell.calls', 1);
+        this.stats.addStats('processCollisionsInCell.calls');
 
         cell.objects.forEach(objB => {
             if (objA === objB) {

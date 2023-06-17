@@ -24,7 +24,7 @@ export class CircleConstrain extends Constrain {
 
         if (distance > (this.radius - r)) {
             const n = toCenter.ort;
-            obj.moveTo(this.center.sum(n.mul(this.radius - r - 1)));
+            obj.moveTo(this.center.sum(n.mul(this.radius - r)));
         }
     }
 

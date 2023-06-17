@@ -57,6 +57,7 @@ function _collideBallAndLine(ball: BallsObject, line: Vec2Line, lineBounce: numb
         // We definitely know that projection point is on the line, so we just need to check if it's
         // between the ends.
         if (line.inBetweenFast(projectionPoint)) {
+
             const between = Vec2Math.diff(
                 projectionPoint,
                 ball.currentPosition
@@ -91,7 +92,7 @@ export function collideBallAndImmovableLine(ball: BallsObject, line: ImmovableLi
  * @param {ImmovablePolygon} polygon
  */
 export function collideBallAndImmovablePolygon(ball: BallsObject, polygon: ImmovablePolygon) {
-    polygon.lines.forEach(line => _collideBallAndLine(ball, line, polygon.bounceValue))
+    polygon.lines.forEach(line => _collideBallAndLine(ball, line._line, line.bounceValue))
 }
 
 function flipObjects(obj1, obj2) {

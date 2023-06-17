@@ -184,13 +184,13 @@ export class CollisionGrid {
         const point1 = Vec2Math.scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
         const point2 = Vec2Math.scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
 
-        const index1 = this.makeIndexFromVec(point1);
-        const index2 = this.makeIndexFromVec(point2);
+        let left = Math.max(Math.min(point1.x, point2.x), 0);
+        let top = Math.max(Math.min(point1.y, point2.y), 0);
+        let right = Math.min(Math.max(point1.x, point2.x), this._width - 1);
+        let bottom = Math.min(Math.max(point1.y, point2.y), this._height - 1);
 
-        let left = Math.min(point1.x, point2.x);
-        let top = Math.min(point1.y, point2.y);
-        let right = Math.max(point1.x, point2.x);
-        let bottom = Math.max(point1.y, point2.y);
+        const index1 = this.makeIndexFromCoord(left, top);
+        const index2 = this.makeIndexFromCoord(right, bottom);
 
         if (right >= this._width || left < 0 || top < 0 || bottom >= this._height) {
             return
@@ -198,12 +198,12 @@ export class CollisionGrid {
 
         if (point1.x === point2.x) {
             // Vertical
-            for (let cellIndex = index1; cellIndex < index2; cellIndex++) {
+            for (let cellIndex = index1; cellIndex <= index2; cellIndex++) {
                 this.cells[cellIndex].addObject(obj);
             }
         } else if (point1.y === point2.y) {
             // Horizontal
-            for (let cellIndex = index1; cellIndex < index2; cellIndex+=this.height) {
+            for (let cellIndex = index1; cellIndex <= index2; cellIndex+=this.height) {
                 this.cells[cellIndex].addObject(obj);
             }
         } else {

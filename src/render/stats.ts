@@ -28,7 +28,7 @@ export class Stats {
         this.totalData[index] = value;
     }
 
-    addStats(key, value) {
+    addStats(key, value = 1) {
         const index = this.registerKey(key);
         this.tickData[index] += value;
         this.totalData[index] += value;

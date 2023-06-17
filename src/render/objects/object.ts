@@ -10,7 +10,8 @@ export abstract class BaseSolverObject {
     currentPosition = Vec2.Zero();
 
     constructor() {
-        this.index = BaseSolverObject.index++;
+        BaseSolverObject.index += 1;
+        this.index = BaseSolverObject.index;
     }
 
     update(step) {
@@ -27,6 +28,14 @@ export abstract class BaseSolverObject {
 
     addToGrid(collisionGrid) {
 
+    }
+
+    debugRender(context: CanvasRenderingContext2D) {
+
+    }
+
+    toString() {
+        return 'BaseSolverObject';
     }
 
     abstract moveBy(delta: Vec2);

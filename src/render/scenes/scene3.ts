@@ -4,7 +4,6 @@ import {Circle} from "../items/circle";
 import { CircleWithText } from "../items/circleWithText";
 import {Vec2} from "../vector/vec2";
 import {RenderableObject} from "../renderableObjects/object";
-import {ImmovableBallsObject} from "../objects/immovableBall";
 import { CircleConstrain } from "../constrains/circle";
 import {ObjectsGenerator} from "../generators/objectsGenerator";
 import {AnyUIEvent, UIMouseEvent} from "../../host/input";
@@ -13,6 +12,9 @@ import {index2color} from "../items/utils/index2color";
 import {createTriangle} from "../primitives/triangle";
 import {ImmovablePolygon} from "../objects/ImmovablePolygon";
 import {Polygon} from "../items/polygon";
+import {PolygonRainbow} from "../items/polygonRainbow";
+
+type Scene3Actor = RenderableObject<ImmovablePolygon, Polygon>;
 
 export class Scene3 extends BaseScene {
     _createBalls: boolean = false;
@@ -21,6 +23,10 @@ export class Scene3 extends BaseScene {
     center: Vec2;
     radius: number;
     ballsViews: CircleWithText[] = [];
+
+    actor: Scene3Actor;
+
+    nextTickActorPosition: Vec2;
 
     constructor(engine: Render) {
         super(engine)
@@ -39,7 +45,7 @@ export class Scene3 extends BaseScene {
 
     createBall() {
         const baseBallVelocity = new Vec2(0, 0);
-        const ballGeneratorPoint = this.actor.ballsObject.currentPosition;
+        const ballGeneratorPoint = this.actor.solverObject.currentPosition;
         const toCenter = ballGeneratorPoint.diff(this.center);
         const n = toCenter.ort;
 
@@ -56,7 +62,7 @@ export class Scene3 extends BaseScene {
 
         this.ballsViews.push(ballView);
 
-        const obj = new RenderableObject(
+        const obj = new RenderableObject<BallsObject, CircleWithText>(
             (new BallsObject(
                 ballGeneratorPoint.diff(n.mul(40)),
                 5
@@ -71,19 +77,21 @@ export class Scene3 extends BaseScene {
     createActor() {
         const trianglePoints = createTriangle(60);
 
+        this.nextTickActorPosition = this.center;
+
         const polygonObject = new ImmovablePolygon(
             this.center,
             trianglePoints
         )
 
-        const polygonView = new Polygon(
+        const polygonView = new PolygonRainbow(
             this.engine.context,
             Vec2.Zero(),
-            polygonObject.lines,
+            trianglePoints,
             '#ff0000'
         )
 
-        this.actor = new RenderableObject(
+        this.actor = new RenderableObject<ImmovablePolygon, Polygon>(
             polygonObject,
             polygonView
         );
@@ -112,6 +120,10 @@ export class Scene3 extends BaseScene {
     }
 
     tick(timePassed: number) {
+        this.actor.solverObject.moveTo(
+            this.nextTickActorPosition
+        );
+
         if (this.createBalls) {
             this.timePassedSinceLastBallCreated += timePassed;
 
@@ -130,7 +142,7 @@ export class Scene3 extends BaseScene {
         const mouseEvent = event as UIMouseEvent;
 
         if (mouseEvent.leftButtonDown) {
-            if (this.actor.ballsObject.isPointInsideObject(
+            if (this.actor.solverObject.isPointInsideObject(
                 new Vec2(
                     mouseEvent.screenX,
                     mouseEvent.screenY
@@ -144,11 +156,9 @@ export class Scene3 extends BaseScene {
         }
 
         if (mouseEvent.screenX || mouseEvent.screenY) {
-            this.actor.ballsObject.moveTo(
-                new Vec2(
-                    mouseEvent.screenX,
-                    mouseEvent.screenY
-                )
+            this.nextTickActorPosition = new Vec2(
+                mouseEvent.screenX,
+                mouseEvent.screenY
             )
         }
     }

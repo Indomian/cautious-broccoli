@@ -3,10 +3,12 @@ import {SolverObjectTypes} from "./types";
 import {Vec2Line} from "../vector/vec2Line";
 import {CollisionGrid} from "../grid";
 import {Vec2} from "../vector/vec2";
+import {createImmovableLineFrom2Points, ImmovableLineObject} from "./immovableLine";
+import {Vec2Math} from "../vector/vec2Math";
 
 export class ImmovablePolygon extends ImmovableSolverObject {
-    _points: Vec2[] = [];
-    _lines: Vec2Line[] = [];
+    _localPoints: Vec2[] = [];
+    _lines: ImmovableLineObject[] = [];
     _fixedPosition: Vec2;
 
     type = SolverObjectTypes.TypeImmovablePolygon;
@@ -22,12 +24,14 @@ export class ImmovablePolygon extends ImmovableSolverObject {
 
         this._fixedPosition = position.copy();
 
-        points.forEach(point => this._points.push(point.copy()));
+        points.forEach(point => {
+            this._localPoints.push(point.copy());
+        });
         this._recreateLines();
     }
 
     private _recreateLines() {
-        const pointsToProcess = [...this._points];
+        const pointsToProcess = [...this._localPoints];
         let firstPoint: Vec2 = pointsToProcess.shift();
         let secondPoint: Vec2;
         let lastPoint: Vec2 = firstPoint;
@@ -35,18 +39,22 @@ export class ImmovablePolygon extends ImmovableSolverObject {
         this._lines.splice(0, this._lines.length);
 
         while (secondPoint = pointsToProcess.shift()) {
-            this._lines.push(new Vec2Line(
+            const line = createImmovableLineFrom2Points(
                 this._fixedPosition.sum(lastPoint),
                 this._fixedPosition.sum(secondPoint)
-            ));
+            );
+
+            this._lines.push(line);
 
             lastPoint = secondPoint;
         }
 
-        this._lines.push(new Vec2Line(
+        const line = createImmovableLineFrom2Points(
             this._fixedPosition.sum(lastPoint),
             this._fixedPosition.sum(firstPoint)
-        ));
+        )
+
+        this._lines.push(line);
     }
 
     update(step) {
@@ -56,13 +64,7 @@ export class ImmovablePolygon extends ImmovableSolverObject {
 
     addToGrid(collisionGrid: CollisionGrid) {
         try {
-            this._lines.forEach((line: Vec2Line) => {
-                collisionGrid.addObjectToCells(
-                    line.vec1,
-                    line.vec2,
-                    this
-                );
-            });
+            this._lines.forEach((line: ImmovableLineObject) => line.addToGrid(collisionGrid));
         } catch (e) {
             debugger
             console.log(e, this._lines);
@@ -74,22 +76,25 @@ export class ImmovablePolygon extends ImmovableSolverObject {
     }
 
     moveBy(delta: Vec2) {
-        this.currentPosition.addSelf(delta);
-        this.previousPosition.addSelf(delta);
         this._fixedPosition.addSelf(delta);
-
-        this._lines.forEach((line: Vec2Line) => line.moveBy(delta));
+        this._lines.forEach((line: ImmovableLineObject) => line.moveBy(delta));
     }
 
     moveTo(position: Vec2) {
-        this._fixedPosition = position.copy();
-        this.currentPosition = position.copy();
-        this.previousPosition = position.copy();
-
-        this._recreateLines();
+        const delta = Vec2Math.diff(position, this._fixedPosition);
+        this.moveBy(delta);
     }
 
-    get lines(): Vec2Line[] {
+    toString() {
+        return 'ImmovablePolygon';
+    }
+
+    debugRender(context: CanvasRenderingContext2D) {
+        context.strokeStyle = '#00FF00';
+        this._lines.forEach(line => line.debugRender(context));
+    }
+
+    get lines(): ImmovableLineObject[] {
         return this._lines;
     }
 }

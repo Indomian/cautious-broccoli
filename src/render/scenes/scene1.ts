@@ -75,7 +75,7 @@ export class Scene1 extends BaseScene {
             1700,
             7,
             (index) => {
-                const obj = new RenderableObject(
+                const obj = new RenderableObject<BallsObject, CircleWithText>(
                     (new BallsObject(
                         ballGeneratorPoint,
                         5
@@ -90,7 +90,7 @@ export class Scene1 extends BaseScene {
                     )
                 )
 
-                const obj2 = new RenderableObject(
+                const obj2 = new RenderableObject<BallsObject, CircleWithText>(
                     (new BallsObject(
                         ballGeneratorPoint.sum(
                             Vec2.Down(20)
@@ -107,7 +107,7 @@ export class Scene1 extends BaseScene {
                     )
                 )
 
-                const obj3 = new RenderableObject(
+                const obj3 = new RenderableObject<BallsObject, CircleWithText>(
                     (new BallsObject(
                         ballGeneratorPoint.sum(
                             Vec2.Down(-20)
@@ -124,7 +124,7 @@ export class Scene1 extends BaseScene {
                     )
                 )
 
-                const obj4 = new RenderableObject(
+                const obj4 = new RenderableObject<BallsObject, CircleWithText>(
                     (new BallsObject(
                         ballGeneratorPoint.sum(
                             Vec2.Right(-40)
@@ -196,7 +196,7 @@ export class Scene1 extends BaseScene {
     }
 
     createActor() {
-        this.actor = new RenderableObject(
+        this.actor = new RenderableObject<ImmovableBallsObject, Circle>(
             new ImmovableBallsObject(new Vec2(230, 50), 30),
             new Circle(this.engine.context, Vec2.Zero(), 30, '#ff0000')
         );
@@ -218,7 +218,7 @@ export class Scene1 extends BaseScene {
         const mouseEvent = event as UIMouseEvent;
 
         if (mouseEvent.leftButtonDown) {
-            if (this.actor.ballsObject.isPointInsideObject(
+            if (this.actor.solverObject.isPointInsideObject(
                 new Vec2(
                     mouseEvent.screenX,
                     mouseEvent.screenY
@@ -228,7 +228,7 @@ export class Scene1 extends BaseScene {
             }
 
             if (this.canMoveRedObject) {
-                this.actor.ballsObject.moveBy(
+                this.actor.solverObject.moveBy(
                     new Vec2(
                         mouseEvent.dx,
                         mouseEvent.dy

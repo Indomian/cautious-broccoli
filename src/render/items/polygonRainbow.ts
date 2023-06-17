@@ -1,22 +1,10 @@
 import {Item} from "./item";
 import {Vec2} from "../vector/vec2";
 import {Vec2Line} from "../vector/vec2Line";
+import {Polygon} from "./polygon";
+import {index2color} from "./utils/index2color";
 
-export class Polygon extends Item {
-    direction = Vec2.Zero();
-    points: Vec2[];
-    color = '#00ff00';
-
-    constructor(context: CanvasRenderingContext2D, position: Vec2, points: Vec2[], color) {
-        super(context, position);
-
-        this.points = points;
-
-        if (color) {
-            this.color = color;
-        }
-    }
-
+export class PolygonRainbow extends Polygon {
     render() {
         this.context.strokeStyle = this.color;
         this.context.beginPath(); // Start a new path
@@ -34,19 +22,22 @@ export class Polygon extends Item {
 
         while (index < this.points.length) {
             currentPointWorld = this.points[index].sum(this.position);
+
+            this.context.strokeStyle = index2color(index * 100);
             this.context.lineTo(
                 currentPointWorld.x,
                 currentPointWorld.y
             );
+            this.context.stroke();
 
             index+=1;
         }
 
+        this.context.strokeStyle = index2color(index * 100);
         this.context.lineTo(
             firstPointWorld.x,
             firstPointWorld.y
         )
-
-        this.context.stroke(); // Render the path
+        this.context.stroke();
     }
 }

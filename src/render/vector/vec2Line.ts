@@ -19,7 +19,7 @@ export class Vec2Line {
     private _k: number = 0;
     private _b: number = 0;
 
-    constructor(vec1, vec2) {
+    constructor(vec1: Vec2, vec2: Vec2) {
         this._vec1 = vec1;
         this._vec2 = vec2;
 

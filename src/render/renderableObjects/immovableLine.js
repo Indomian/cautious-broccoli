@@ -4,16 +4,16 @@ export class ImmovableLineRenderableObject extends RenderableObject {
     /**
      * @type {ImmovableLineObject}
      */
-    ballsObject = null;
+    solverObject = null;
 
     constructor(ballsObject, renderItem) {
         super(ballsObject);
-        this.ballsObject = ballsObject;
+        this.solverObject = ballsObject;
         this.renderItem = renderItem;
     }
 
     update() {
         super.update();
-        this.renderItem.direction = this.ballsObject._direction;
+        this.renderItem.direction = this.solverObject._direction;
     }
 }

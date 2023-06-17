@@ -1,24 +1,17 @@
 import {Item} from "../items/item";
-import {BallsObject} from "../objects/ball";
+import {BaseSolverObject} from "../objects/object";
 
-export class RenderableObject {
-    /**
-     * @type {BallsObject}
-     */
-    ballsObject: BallsObject = null;
+export class RenderableObject<SolverObject extends BaseSolverObject, DrawItem extends Item> {
+    solverObject: SolverObject = null;
+    renderItem: DrawItem = null;
 
-    /**
-     * @type {Item}
-     */
-    renderItem: Item = null;
-
-    constructor(ballsObject, renderItem) {
-        this.ballsObject = ballsObject;
+    constructor(solverObject: SolverObject, renderItem: DrawItem) {
+        this.solverObject = solverObject;
         this.renderItem = renderItem;
     }
 
     update() {
-        this.renderItem.position = this.ballsObject.currentPosition;
+        this.renderItem.position = this.solverObject.currentPosition;
     }
 
     render() {
