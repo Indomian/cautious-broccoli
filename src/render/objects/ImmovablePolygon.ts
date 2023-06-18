@@ -1,7 +1,7 @@
 import {ImmovableSolverObject} from "./immovable";
 import {SolverObjectTypes} from "./types";
 import {Vec2Line} from "../vector/vec2Line";
-import {CollisionGrid} from "../grid";
+import {BaseSolverSpace} from "../solver/baseSolverSpace";
 import {Vec2} from "../vector/vec2";
 import {createImmovableLineFrom2Points, ImmovableLineObject} from "./immovableLine";
 import {Vec2Math} from "../vector/vec2Math";
@@ -62,9 +62,9 @@ export class ImmovablePolygon extends ImmovableSolverObject {
         this.previousPosition = this._fixedPosition;
     }
 
-    addToGrid(collisionGrid: CollisionGrid) {
+    addToSpace(solverSpace: BaseSolverSpace) {
         try {
-            this._lines.forEach((line: ImmovableLineObject) => line.addToGrid(collisionGrid));
+            this._lines.forEach((line: ImmovableLineObject) => line.addToSpace(solverSpace));
         } catch (e) {
             debugger
             console.log(e, this._lines);

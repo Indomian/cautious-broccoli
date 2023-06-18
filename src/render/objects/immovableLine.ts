@@ -1,7 +1,7 @@
 import { BallsObject } from "./ball";
 import { Vec2Line } from "../vector/vec2Line";
 import {SolverObjectTypes} from "./types";
-import {CollisionGrid} from "../grid";
+import {BaseSolverSpace} from "../solver/baseSolverSpace";
 import {Vec2} from "../vector/vec2";
 import {Vec2Math} from "../vector/vec2Math";
 
@@ -29,8 +29,8 @@ export class ImmovableLineObject extends BallsObject {
         this.previousPosition = this._line.vec2;
     }
 
-    addToGrid(collisionGrid: CollisionGrid) {
-        collisionGrid.addObjectToCells(
+    addToSpace(solverSpace: BaseSolverSpace) {
+        solverSpace.addRectangularObject(
             this._line.vec1,
             this._line.vec2,
             this

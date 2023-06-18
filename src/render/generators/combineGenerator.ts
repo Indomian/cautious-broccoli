@@ -1,6 +1,6 @@
 import { ObjectsGenerator } from "./objectsGenerator";
 import { RenderableObject } from "../renderableObjects/object";
-import {Solver} from "../solver";
+import {Solver} from "../solver/gridSolver";
 
 export class CombineGenerator extends ObjectsGenerator {
     generators: ObjectsGenerator[] = []

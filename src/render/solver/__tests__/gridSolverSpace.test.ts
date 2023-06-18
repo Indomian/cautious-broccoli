@@ -1,10 +1,10 @@
-import {CollisionGrid} from "../grid";
-import {Vec2} from "../vector/vec2";
-import {ImmovableLineObject} from "../objects/immovableLine";
+import {GridSolverSpace} from "../gridSolverSpace";
+import {Vec2} from "../../vector/vec2";
+import {ImmovableLineObject} from "../../objects/immovableLine";
 
 describe('Test has cell', () => {
     it('Should process correctly', () => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             4, 4, new Vec2(10, 10)
         );
 
@@ -21,7 +21,7 @@ describe('Test has cell', () => {
 
 describe('Test calculate adjasentCells', () => {
     it('Should correctly calculate 1x1 grid', () => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             1,
             1,
             new Vec2(10, 10)
@@ -30,7 +30,7 @@ describe('Test calculate adjasentCells', () => {
     });
 
     it('Should have size 4 for all cells in 2x2 grid', () => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             2,
             2,
             new Vec2(10, 10)
@@ -40,7 +40,7 @@ describe('Test calculate adjasentCells', () => {
     });
 
     it('Should have sizes 4, 6, 9 in 3x3', () => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             3,
             3,
             new Vec2(10, 10)
@@ -56,7 +56,7 @@ describe('Test calculate adjasentCells', () => {
 
 describe('Test getVecFromIndex', () => {
     it('Should correctly return coord', () => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             3,
             3,
             new Vec2(10, 10)
@@ -76,13 +76,13 @@ describe('Test addObjectsToCells', () => {
         point1: Vec2,
         point2: Vec2
     ) => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             10,
             10,
             new Vec2(10, 10)
         );
 
-        grid.addObjectToCells(
+        grid.addRectangularObject(
             point1,
             point2,
             new ImmovableLineObject(new Vec2(5, 5), new Vec2(90, 0))
@@ -101,13 +101,13 @@ describe('Test addObjectsToCells', () => {
         point1: Vec2,
         point2: Vec2
     ) => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             10,
             10,
             new Vec2(10, 10)
         );
 
-        grid.addObjectToCells(
+        grid.addRectangularObject(
             point1,
             point2,
             new ImmovableLineObject(new Vec2(5, 5), new Vec2(0, 90))
@@ -125,19 +125,21 @@ describe('Test addObjectsToCells', () => {
         point1: Vec2,
         point2: Vec2
     ) => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             10,
             10,
             new Vec2(10, 10)
         );
 
-        grid.addObjectToCells(
+        grid.addRectangularObject(
             point1,
             point2,
             new ImmovableLineObject(new Vec2(5, 5), new Vec2(0, 90))
         );
 
         expect(grid.cells[0].objects).toHaveLength(1);
+
+
         expect(grid.cells[90].objects).toHaveLength(1);
     });
 
@@ -147,13 +149,13 @@ describe('Test addObjectsToCells', () => {
         point1: Vec2,
         point2: Vec2
     ) => {
-        const grid = new CollisionGrid(
+        const grid = new GridSolverSpace(
             10,
             10,
             new Vec2(10, 10)
         );
 
-        grid.addObjectToCells(
+        grid.addRectangularObject(
             point1,
             point2,
             new ImmovableLineObject(new Vec2(5, 5), new Vec2(0, 90))

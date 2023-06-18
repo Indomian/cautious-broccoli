@@ -1,5 +1,5 @@
 import {Vec2} from "./vector/vec2";
-import {Solver} from "./solver";
+import {GridOptimizedSolver} from "./solver/gridSolver";
 import {RenderableObject} from "./renderableObjects/object";
 import {Frame} from "./items/frame";
 import {Scene1} from "./scenes/scene1";
@@ -11,6 +11,8 @@ import {AnyEngineEvent, LoadSceneEngineEvent} from "./events/engine";
 import {ENGINE_SCENES} from "./scenes/all";
 import {Stats, StatsItem} from "./stats";
 import {BaseSolverObject} from "./objects/object";
+import {BaseSolver} from "./solver/baseSolver";
+import {QuadTreeSolver} from "./solver/quadTreeSolver";
 
 export class Render {
     /**
@@ -26,9 +28,9 @@ export class Render {
 
     /**
      * Solver for physics
-     * @type {Solver}
+     * @type {BaseSolver}
      */
-    solver:Solver = null;
+    solver:BaseSolver = null;
 
     flagRenderGrid = false;
     flagRenderPreviousPosition = false;
@@ -73,7 +75,7 @@ export class Render {
     }
 
     configure() {
-        this.solver = new Solver(
+        this.solver = new GridOptimizedSolver(
             new Vec2(
                 this.canvas.width,
                 this.canvas.height
@@ -83,7 +85,7 @@ export class Render {
 
         this.context.font = '10px serif';
 
-        this.loadScene("scene3");
+        this.loadScene("scene1");
     }
 
     processUserInput(event: AnyUIEvent) {
@@ -220,32 +222,7 @@ export class Render {
     }
 
     renderGrid() {
-        this.solver.collisionGrid.forEach((column, row, cell, index) => {
-            const cellPosition = new Vec2(
-                column * this.solver.cellSize.x,
-                row * this.solver.cellSize.y,
-            );
-            const rect = new Frame(
-                this.context,
-                cellPosition,
-                this.solver.cellSize.diff(new Vec2(5, 5)),
-                cell.count > 0 ? '#ff0000' : '#00ff00'
-            )
-
-            if (cell.highlight) {
-                this.context.lineWidth = 10;
-            }
-
-            rect.render();
-
-            this.context.lineWidth = 1;
-            this.printText(
-                index,
-                cellPosition.x + this.solver.cellSize.x / 2,
-                cellPosition.y + this.solver.cellSize.y / 2
-            )
-        })
-
+        this.solver.debugRender(this.context);
         this.solver.objects.forEach(object => object.debugRender(this.context));
     }
 

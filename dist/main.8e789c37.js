@@ -580,8 +580,7 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
 var _vec2 = require("./vector/vec2");
-var _solver = require("./solver");
-var _frame = require("./items/frame");
+var _gridSolver = require("./solver/gridSolver");
 var _all = require("./scenes/all");
 var _stats = require("./stats");
 var Render = /** @class */ function() {
@@ -596,7 +595,7 @@ var Render = /** @class */ function() {
          */ this._constrains = null;
         /**
          * Solver for physics
-         * @type {Solver}
+         * @type {BaseSolver}
          */ this.solver = null;
         this.flagRenderGrid = false;
         this.flagRenderPreviousPosition = false;
@@ -633,9 +632,9 @@ var Render = /** @class */ function() {
         this.solver.reset();
     };
     Render.prototype.configure = function() {
-        this.solver = new (0, _solver.Solver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
+        this.solver = new (0, _gridSolver.GridOptimizedSolver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
         this.context.font = "10px serif";
-        this.loadScene("scene3");
+        this.loadScene("scene1");
     };
     Render.prototype.processUserInput = function(event) {
         var keyboardEvent = event;
@@ -712,14 +711,7 @@ var Render = /** @class */ function() {
     };
     Render.prototype.renderGrid = function() {
         var _this = this;
-        this.solver.collisionGrid.forEach(function(column, row, cell, index) {
-            var cellPosition = new (0, _vec2.Vec2)(column * _this.solver.cellSize.x, row * _this.solver.cellSize.y);
-            var rect = new (0, _frame.Frame)(_this.context, cellPosition, _this.solver.cellSize.diff(new (0, _vec2.Vec2)(5, 5)), cell.count > 0 ? "#ff0000" : "#00ff00");
-            if (cell.highlight) _this.context.lineWidth = 10;
-            rect.render();
-            _this.context.lineWidth = 1;
-            _this.printText(index, cellPosition.x + _this.solver.cellSize.x / 2, cellPosition.y + _this.solver.cellSize.y / 2);
-        });
+        this.solver.debugRender(this.context);
         this.solver.objects.forEach(function(object) {
             return object.debugRender(_this.context);
         });
@@ -748,7 +740,7 @@ var Render = /** @class */ function() {
     return Render;
 }();
 
-},{"./vector/vec2":"9XJHV","./solver":"jiRu0","./items/frame":"fuQ1z","./scenes/all":"ghYpR","./stats":"dKRct","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"9XJHV":[function(require,module,exports) {
+},{"./vector/vec2":"9XJHV","./scenes/all":"ghYpR","./stats":"dKRct","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","./solver/gridSolver":"7zdk7"}],"9XJHV":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2", ()=>Vec2);
@@ -1116,364 +1108,7 @@ function isEqual(a, b, error) {
     return Math.abs(a - b) < error;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"jiRu0":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Solver", ()=>Solver);
-var _vec2 = require("./vector/vec2");
-var _grid = require("./grid");
-var Solver = /** @class */ function() {
-    function Solver(worldSize, stats) {
-        this.objects = [];
-        this.constrains = null;
-        this.gravity = (0, _vec2.Vec2).Zero();
-        this.subSteps = 4;
-        this.useFixedTime = true;
-        this.stats = stats;
-        this.objects = [];
-        this.worldSize = worldSize.copy();
-        this.configure();
-    }
-    Solver.prototype.reset = function() {
-        this.objects = [];
-        this.collisionGrid.clear();
-    };
-    Solver.prototype.configure = function() {
-        this.gravity = new (0, _vec2.Vec2)(0, 100);
-        this.useFixedTime = true;
-        this.step = 0.017 / this.subSteps;
-        var cellSize = 16;
-        var gridX = Math.round(this.worldSize.x / cellSize);
-        var gridY = Math.round(this.worldSize.y / cellSize);
-        this.cellSize = new (0, _vec2.Vec2)(this.worldSize.x / gridX, this.worldSize.y / gridY);
-        this.collisionGrid = new (0, _grid.CollisionGrid)(gridX, gridY, this.cellSize);
-    };
-    /**
-     *
-     * @param {BallsObject} obj
-     */ Solver.prototype.addObject = function(obj) {
-        this.objects.push(obj);
-    };
-    /**
-     * Update the simulation by given step.
-     * @param {number} time amount of seconds passed since last update.
-     */ Solver.prototype.update = function(time) {
-        var subTime = this.useFixedTime ? this.step : time / this.subSteps;
-        for(var i = 0; i < this.subSteps; i++){
-            this.addObjectsToGrid();
-            this.processCollisions();
-            this.applyGravity();
-            this.updateObjects(subTime);
-            this.applyConstrains();
-        }
-    };
-    Solver.prototype.addObjectsToGrid = function() {
-        var _this = this;
-        this.collisionGrid.clear();
-        this.objects.forEach(function(obj, index) {
-            obj.addToGrid(_this.collisionGrid);
-            _this.stats.addStats("Solver object: ".concat(obj.toString()));
-        });
-    };
-    /**
-     * Update objects state
-     * @param {number} time amount of seconds passed since last update
-     */ Solver.prototype.updateObjects = function(time) {
-        this.objects.forEach(function(obj) {
-            return obj.update(time);
-        });
-    };
-    Solver.prototype.applyGravity = function() {
-        var _this = this;
-        this.objects.forEach(function(obj) {
-            return obj.accelerate(_this.gravity);
-        });
-    };
-    Solver.prototype.applyConstrains = function() {
-        var _this = this;
-        this.objects.forEach(function(obj) {
-            return _this.constrains.applyConstrain(obj);
-        });
-    };
-    Solver.prototype.processCollisionsInCell = function(objA, cell) {
-        this.stats.addStats("processCollisionsInCell.calls");
-        cell.objects.forEach(function(objB) {
-            if (objA === objB) return;
-            if (objA.immovable && objB.immovable) return;
-            objA.collide(objB);
-        });
-    };
-    Solver.prototype.processCell = function(index) {
-        var _this = this;
-        this.stats.addStats("processCell.calls", 1);
-        var currentCell = this.collisionGrid.cells[index];
-        currentCell.objects.forEach(function(objA) {
-            _this.collisionGrid.adjacentCells[index].forEach(function(cell) {
-                if (cell === currentCell && cell.objects.length === 1) return; // We don't need to check collisions if I'm only object in cell
-                _this.processCollisionsInCell(objA, cell);
-            });
-        });
-    };
-    Solver.prototype.processCollisions = function() {
-        for(var index = 0; index < this.collisionGrid.size; index++)this.processCell(index);
-    };
-    return Solver;
-}();
-function makeKey(obj1, obj2) {
-    return [
-        obj1.index,
-        obj2.index
-    ].sort().join("-");
-}
-
-},{"./vector/vec2":"9XJHV","./grid":"8w6aC","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8w6aC":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "CollisionCell", ()=>CollisionCell);
-parcelHelpers.export(exports, "CollisionGrid", ()=>CollisionGrid);
-var _vec2 = require("./vector/vec2");
-var _vec2Math = require("./vector/vec2Math");
-var CollisionCell = /** @class */ function() {
-    function CollisionCell() {
-        this.objects = [];
-        this.highlight = false;
-    }
-    CollisionCell.prototype.addObject = function(obj) {
-        if (this.objects.length >= CollisionCell.MAX_OBJECT_IN_CELL) return;
-        this.objects.push(obj);
-    };
-    CollisionCell.prototype.clear = function() {
-        this.objects = [];
-        this.highlight = false;
-    };
-    CollisionCell.prototype.remove = function(index) {
-        var objectIndex = this.objects.findIndex(function(obj) {
-            return obj.index === index;
-        });
-        if (objectIndex !== -1) this.objects.splice(objectIndex, 1);
-    };
-    Object.defineProperty(CollisionCell.prototype, "count", {
-        get: function() {
-            return this.objects.length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    CollisionCell.MAX_OBJECT_IN_CELL = 100;
-    return CollisionCell;
-}();
-var CollisionGrid = /** @class */ function() {
-    function CollisionGrid(width, height, cellSize) {
-        this.cells = [];
-        this.index2xy = [];
-        this.adjacentCells = [];
-        this._width = width;
-        this._height = height;
-        this.cellSize = cellSize;
-        this.resize();
-    }
-    Object.defineProperty(CollisionGrid.prototype, "size", {
-        get: function() {
-            return this._size;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(CollisionGrid.prototype, "width", {
-        get: function() {
-            return this._width;
-        },
-        set: function(w) {
-            this._width = w;
-            this.resize();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(CollisionGrid.prototype, "height", {
-        get: function() {
-            return this._height;
-        },
-        set: function(h) {
-            this._height = h;
-            this.resize();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    CollisionGrid.prototype.recalculateIndex2xy = function() {
-        this.index2xy = [];
-        for(var i = 0; i < this._size; i++)this.index2xy.push(this.makeVecFromIndex(i));
-    };
-    /**
-     * Calculate cache of collision cells
-     */ CollisionGrid.prototype.recalculateCollisionCells = function() {
-        var _this = this;
-        this.adjacentCells = [];
-        this.cells.forEach(function(cell, index) {
-            var pos = _this.getVecFromIndex(index);
-            var cells = [];
-            cells.push(cell); // Add self
-            if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y - 1)]); //TOP
-            if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y + 1)]); //BOTTOM
-            if (pos.x > 0) {
-                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y - 1)]); //LEFT TOP
-                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y)]); //LEFT
-                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y + 1)]); //LEFT BOTTOM
-            }
-            if (pos.x + 1 < _this._width) {
-                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y - 1)]); //RIGHT TOP
-                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y)]); //RIGHT
-                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y + 1)]); //RIGHT BOTTOM
-            }
-            _this.adjacentCells[index] = cells;
-        });
-    };
-    CollisionGrid.prototype.getVecFromIndex = function(index) {
-        return this.index2xy[index];
-    };
-    CollisionGrid.prototype.resize = function() {
-        this.cells = [];
-        this._size = this._width * this._height;
-        for(var i = 0; i < this._size; i++)this.cells.push(new CollisionCell());
-        this.recalculateIndex2xy();
-        this.recalculateCollisionCells();
-    };
-    CollisionGrid.prototype.addObject = function(worldX, worldY, obj) {
-        var x = Math.trunc(worldX / this.cellSize.x);
-        var y = Math.trunc(worldY / this.cellSize.y);
-        var index = x * this._height + y;
-        this.addObjectByIndex(index, obj);
-    };
-    CollisionGrid.prototype.addObjectByIndex = function(index, obj) {
-        if (!isNaN(index) && index >= 0 && index < this.size) this.cells[index].addObject(obj);
-    };
-    CollisionGrid.prototype.makeIndexFromVec = function(vec) {
-        return vec.x * this._height + vec.y;
-    };
-    CollisionGrid.prototype.makeIndexFromCoord = function(x, y) {
-        return x * this._height + y;
-    };
-    CollisionGrid.prototype.makeVecFromIndex = function(index) {
-        var x = Math.trunc(index / this._height);
-        var y = index - x * this._height;
-        return new (0, _vec2.Vec2)(x, y);
-    };
-    /**
-     * Adds object to all cells between given coords
-     * @param worldLeftTop
-     * @param worldRightBottom
-     * @param obj
-     */ CollisionGrid.prototype.addObjectToCells = function(worldLeftTop, worldRightBottom, obj) {
-        var point1 = (0, _vec2Math.Vec2Math).scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
-        var point2 = (0, _vec2Math.Vec2Math).scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
-        var left = Math.max(Math.min(point1.x, point2.x), 0);
-        var top = Math.max(Math.min(point1.y, point2.y), 0);
-        var right = Math.min(Math.max(point1.x, point2.x), this._width - 1);
-        var bottom = Math.min(Math.max(point1.y, point2.y), this._height - 1);
-        var index1 = this.makeIndexFromCoord(left, top);
-        var index2 = this.makeIndexFromCoord(right, bottom);
-        if (right >= this._width || left < 0 || top < 0 || bottom >= this._height) return;
-        if (point1.x === point2.x) // Vertical
-        for(var cellIndex = index1; cellIndex <= index2; cellIndex++)this.cells[cellIndex].addObject(obj);
-        else if (point1.y === point2.y) // Horizontal
-        for(var cellIndex = index1; cellIndex <= index2; cellIndex += this.height)this.cells[cellIndex].addObject(obj);
-        else {
-            var height = bottom - top;
-            var startFrom = this.makeIndexFromCoord(left, top);
-            for(var x = 0; x <= right - left; x++)for(var y = 0; y <= height; y++){
-                var cellIndex = startFrom + this.makeIndexFromCoord(x, y);
-                this.addObjectByIndex(cellIndex, obj);
-            }
-        }
-    };
-    CollisionGrid.prototype.clear = function() {
-        this.cells.forEach(function(cell) {
-            return cell.clear();
-        });
-    };
-    CollisionGrid.prototype.forEach = function(callback) {
-        var _this = this;
-        this.cells.forEach(function(cell, index) {
-            var pos = _this.getVecFromIndex(index);
-            callback(pos.x, pos.y, cell, index);
-        });
-    };
-    CollisionGrid.prototype.hasCell = function(index, dt) {
-        if (index < 0 || index >= this.size) return false;
-        var pos = this.getVecFromIndex(index);
-        var x = pos.x;
-        var y = pos.y;
-        if (y <= 0 && dt < 0) // TOP CELL
-        return false;
-        if (y === this.height - 1 && dt > 0) // Bottom cell
-        return false;
-        if (x === 0 && dt < 0) // left cell
-        return false;
-        if (x >= this.width - 1 && dt > 0) // right cell;
-        return false;
-        return true;
-    };
-    return CollisionGrid;
-}();
-
-},{"./vector/vec2":"9XJHV","./vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fuQ1z":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Frame", ()=>Frame);
-var _rect = require("./rect");
-class Frame extends (0, _rect.Rect) {
-    constructor(context, position, size, color){
-        super(context, position, size, color);
-    }
-    render() {
-        this.context.strokeStyle = this.color;
-        this.context.strokeRect(this.position.x, this.position.y, this.size.x, this.size.y);
-    }
-    queue() {}
-}
-
-},{"./rect":"d4B3G","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"d4B3G":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Rect", ()=>Rect);
-var _item = require("./item");
-var _vec2 = require("../vector/vec2");
-class Rect extends (0, _item.Item) {
-    size = (0, _vec2.Vec2).Zero();
-    color = "#00ff00";
-    constructor(context, position, size, color){
-        super(context, position);
-        this.size = size;
-        if (color) this.color = color;
-    }
-    render() {
-        this.context.fillStyle = this.color;
-        this.context.fillRect(this.position.x, this.position.y, this.position.x + this.size.x, this.position.y + this.size.y);
-    }
-}
-
-},{"./item":"2MaQk","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2MaQk":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Item", ()=>Item);
-var _vec2 = require("../vector/vec2");
-var Item = /** @class */ function() {
-    function Item(context, position) {
-        this.position = (0, _vec2.Vec2).Zero();
-        this.context = context;
-        this.position = position;
-    }
-    /**
-     * Method immediately renders object on context
-     */ Item.prototype.render = function() {};
-    /**
-     * Method tries to put object in render block
-     */ Item.prototype.queue = function() {};
-    return Item;
-}();
-
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ghYpR":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ghYpR":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ENGINE_SCENES", ()=>ENGINE_SCENES);
@@ -1720,7 +1355,27 @@ var Circle = /** @class */ function(_super) {
     return Circle;
 }((0, _item.Item));
 
-},{"./item":"2MaQk","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1Qukc":[function(require,module,exports) {
+},{"./item":"2MaQk","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2MaQk":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Item", ()=>Item);
+var _vec2 = require("../vector/vec2");
+var Item = /** @class */ function() {
+    function Item(context, position) {
+        this.position = (0, _vec2.Vec2).Zero();
+        this.context = context;
+        this.position = position;
+    }
+    /**
+     * Method immediately renders object on context
+     */ Item.prototype.render = function() {};
+    /**
+     * Method tries to put object in render block
+     */ Item.prototype.queue = function() {};
+    return Item;
+}();
+
+},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1Qukc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BallsObject", ()=>BallsObject);
@@ -1763,7 +1418,7 @@ var BallsObject = /** @class */ function(_super) {
         _this.acc = (0, _vec2.Vec2).Zero();
         _this.radius = 10;
         _this.bounceValue = 1.1;
-        _this.motionReduce = 1;
+        _this.motionReduce = 0.999;
         _this.type = (0, _types.SolverObjectTypes).TypeBall;
         _this.immovable = false;
         _this.previousPosition = position.copy();
@@ -1796,8 +1451,8 @@ var BallsObject = /** @class */ function(_super) {
      */ BallsObject.prototype.collide = function(obj) {
         (0, _collisionModels.collide)(this, obj);
     };
-    BallsObject.prototype.addToGrid = function(collisionGrid) {
-        collisionGrid.addObject(Math.floor(this.currentPosition.x), Math.floor(this.currentPosition.y), this);
+    BallsObject.prototype.addToSpace = function(collisionGrid) {
+        collisionGrid.addPointObject(Math.floor(this.currentPosition.x), Math.floor(this.currentPosition.y), this);
     };
     BallsObject.prototype.moveBy = function(delta) {
         this.currentPosition.addSelf(delta);
@@ -2095,7 +1750,9 @@ var BaseSolverObject = /** @class */ function() {
     BaseSolverObject.prototype.update = function(step) {};
     BaseSolverObject.prototype.accelerate = function(acc) {};
     BaseSolverObject.prototype.collide = function(obj) {};
-    BaseSolverObject.prototype.addToGrid = function(collisionGrid) {};
+    BaseSolverObject.prototype.inside = function(boundary) {
+        return this.currentPosition.x >= boundary.left && this.currentPosition.x <= boundary.right && this.currentPosition.y >= boundary.top && this.currentPosition.y <= boundary.bottom;
+    };
     BaseSolverObject.prototype.debugRender = function(context) {};
     BaseSolverObject.prototype.toString = function() {
         return "BaseSolverObject";
@@ -2174,11 +1831,11 @@ var ImmovableBallsObject = /** @class */ function(_super) {
         this.currentPosition = this._fixedPosition;
         this.previousPosition = this._fixedPosition;
     };
-    ImmovableBallsObject.prototype.addToGrid = function(collisionGrid) {
+    ImmovableBallsObject.prototype.addToSpace = function(solverSpace) {
         var vec = new (0, _vec2.Vec2)(this.radius * (0, _math.SQRT2), this.radius * (0, _math.SQRT2));
         var leftTop = this.currentPosition.sum(vec);
         var rightBottom = this.currentPosition.diff(vec);
-        collisionGrid.addObjectToCells(leftTop, rightBottom, this);
+        solverSpace.addRectangularObject(leftTop, rightBottom, this);
     };
     ImmovableBallsObject.prototype.moveTo = function(position) {
         this.currentPosition = position.copy();
@@ -2253,8 +1910,8 @@ var ImmovableLineObject = /** @class */ function(_super) {
         this.currentPosition = this._line.vec1;
         this.previousPosition = this._line.vec2;
     };
-    ImmovableLineObject.prototype.addToGrid = function(collisionGrid) {
-        collisionGrid.addObjectToCells(this._line.vec1, this._line.vec2, this);
+    ImmovableLineObject.prototype.addToSpace = function(solverSpace) {
+        solverSpace.addRectangularObject(this._line.vec1, this._line.vec2, this);
     };
     ImmovableLineObject.prototype.moveBy = function(delta) {
         this.currentPosition.addSelf(delta);
@@ -2764,10 +2421,10 @@ var ImmovablePolygon = /** @class */ function(_super) {
         this.currentPosition = this._fixedPosition;
         this.previousPosition = this._fixedPosition;
     };
-    ImmovablePolygon.prototype.addToGrid = function(collisionGrid) {
+    ImmovablePolygon.prototype.addToSpace = function(solverSpace) {
         try {
             this._lines.forEach(function(line) {
-                return line.addToGrid(collisionGrid);
+                return line.addToSpace(solverSpace);
             });
         } catch (e) {
             debugger;
@@ -3007,6 +2664,407 @@ var Stats = /** @class */ function() {
     };
     return Stats;
 }();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"7zdk7":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "GridOptimizedSolver", ()=>GridOptimizedSolver);
+var _vec2 = require("../vector/vec2");
+var _gridSolverSpace = require("./gridSolverSpace");
+var _baseSolver = require("./baseSolver");
+var _vec2Math = require("../vector/vec2Math");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var GridOptimizedSolver = /** @class */ function(_super) {
+    __extends(GridOptimizedSolver, _super);
+    function GridOptimizedSolver(worldSize, stats) {
+        var _this = _super.call(this, worldSize, stats) || this;
+        _this.gravity = (0, _vec2.Vec2).Zero();
+        _this.gravityCenter = (0, _vec2.Vec2).Zero();
+        _this.configure();
+        return _this;
+    }
+    GridOptimizedSolver.prototype.reset = function() {
+        _super.prototype.reset.call(this);
+        this.collisionGrid.clear();
+    };
+    GridOptimizedSolver.prototype.configure = function() {
+        _super.prototype.configure.call(this);
+        this.gravity = new (0, _vec2.Vec2)(0, 100);
+        this.gravityCenter = new (0, _vec2.Vec2)(this.worldSize.x / 2, this.worldSize.y / 2);
+        var cellSize = 16;
+        var gridX = Math.round(this.worldSize.x / cellSize);
+        var gridY = Math.round(this.worldSize.y / cellSize);
+        this.cellSize = new (0, _vec2.Vec2)(this.worldSize.x / gridX, this.worldSize.y / gridY);
+        this.collisionGrid = new (0, _gridSolverSpace.GridSolverSpace)(gridX, gridY, this.cellSize);
+    };
+    GridOptimizedSolver.prototype.processOptimizations = function() {
+        var _this = this;
+        this.collisionGrid.clear();
+        this.objects.forEach(function(obj, index) {
+            obj.addToSpace(_this.collisionGrid);
+            _this.stats.addStats("Solver object: ".concat(obj.toString()));
+        });
+    };
+    GridOptimizedSolver.prototype.applyForces = function() {
+        var _this = this;
+        this.objects.forEach(function(obj) {
+            var direction = (0, _vec2Math.Vec2Math).diff(obj.currentPosition, _this.gravityCenter);
+            obj.accelerate(direction.ort.mul(-100));
+        //obj.accelerate(this.gravity)
+        });
+    };
+    GridOptimizedSolver.prototype.processCollisionsInCell = function(objA, cell) {
+        this.stats.addStats("processCollisionsInCell.calls");
+        cell.objects.forEach(function(objB) {
+            if (objA === objB) return;
+            if (objA.immovable && objB.immovable) return;
+            objA.collide(objB);
+        });
+    };
+    GridOptimizedSolver.prototype.processCell = function(index) {
+        var _this = this;
+        this.stats.addStats("processCell.calls", 1);
+        var currentCell = this.collisionGrid.cells[index];
+        currentCell.objects.forEach(function(objA) {
+            _this.collisionGrid.adjacentCells[index].forEach(function(cell) {
+                if (cell === currentCell && cell.objects.length === 1) return; // We don't need to check collisions if I'm only object in cell
+                _this.processCollisionsInCell(objA, cell);
+            });
+        });
+    };
+    GridOptimizedSolver.prototype.processCollisions = function() {
+        for(var index = 0; index < this.collisionGrid.size; index++)this.processCell(index);
+    };
+    GridOptimizedSolver.prototype.debugRender = function(context) {
+        this.collisionGrid.debugRender(context);
+    };
+    return GridOptimizedSolver;
+}((0, _baseSolver.BaseSolver));
+function makeKey(obj1, obj2) {
+    return [
+        obj1.index,
+        obj2.index
+    ].sort().join("-");
+}
+
+},{"../vector/vec2":"9XJHV","./gridSolverSpace":"cFvqk","./baseSolver":"86ZeH","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","../vector/vec2Math":"j4cED"}],"cFvqk":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "CollisionCell", ()=>CollisionCell);
+parcelHelpers.export(exports, "GridSolverSpace", ()=>GridSolverSpace);
+var _vec2 = require("../vector/vec2");
+var _vec2Math = require("../vector/vec2Math");
+var _baseSolverSpace = require("./baseSolverSpace");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var CollisionCell = /** @class */ function() {
+    function CollisionCell() {
+        this.objects = [];
+        this.highlight = false;
+    }
+    CollisionCell.prototype.addObject = function(obj) {
+        if (this.objects.length >= CollisionCell.MAX_OBJECT_IN_CELL) return;
+        this.objects.push(obj);
+    };
+    CollisionCell.prototype.clear = function() {
+        this.objects = [];
+        this.highlight = false;
+    };
+    CollisionCell.prototype.remove = function(index) {
+        var objectIndex = this.objects.findIndex(function(obj) {
+            return obj.index === index;
+        });
+        if (objectIndex !== -1) this.objects.splice(objectIndex, 1);
+    };
+    Object.defineProperty(CollisionCell.prototype, "count", {
+        get: function() {
+            return this.objects.length;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    CollisionCell.MAX_OBJECT_IN_CELL = 100;
+    return CollisionCell;
+}();
+var GridSolverSpace = /** @class */ function(_super) {
+    __extends(GridSolverSpace, _super);
+    function GridSolverSpace(width, height, cellSize) {
+        var _this = _super.call(this) || this;
+        _this.cells = [];
+        _this.index2xy = [];
+        _this.adjacentCells = [];
+        _this._width = width;
+        _this._height = height;
+        _this.cellSize = cellSize;
+        _this.resize();
+        return _this;
+    }
+    Object.defineProperty(GridSolverSpace.prototype, "size", {
+        get: function() {
+            return this._size;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GridSolverSpace.prototype, "width", {
+        get: function() {
+            return this._width;
+        },
+        set: function(w) {
+            this._width = w;
+            this.resize();
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GridSolverSpace.prototype, "height", {
+        get: function() {
+            return this._height;
+        },
+        set: function(h) {
+            this._height = h;
+            this.resize();
+        },
+        enumerable: false,
+        configurable: true
+    });
+    GridSolverSpace.prototype.recalculateIndex2xy = function() {
+        this.index2xy = [];
+        for(var i = 0; i < this._size; i++)this.index2xy.push(this.makeVecFromIndex(i));
+    };
+    /**
+     * Calculate cache of collision cells
+     */ GridSolverSpace.prototype.recalculateCollisionCells = function() {
+        var _this = this;
+        this.adjacentCells = [];
+        this.cells.forEach(function(cell, index) {
+            var pos = _this.getVecFromIndex(index);
+            var cells = [];
+            cells.push(cell); // Add self
+            if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y - 1)]); //TOP
+            if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y + 1)]); //BOTTOM
+            if (pos.x > 0) {
+                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y - 1)]); //LEFT TOP
+                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y)]); //LEFT
+                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y + 1)]); //LEFT BOTTOM
+            }
+            if (pos.x + 1 < _this._width) {
+                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y - 1)]); //RIGHT TOP
+                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y)]); //RIGHT
+                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y + 1)]); //RIGHT BOTTOM
+            }
+            _this.adjacentCells[index] = cells;
+        });
+    };
+    GridSolverSpace.prototype.getVecFromIndex = function(index) {
+        return this.index2xy[index];
+    };
+    GridSolverSpace.prototype.resize = function() {
+        this.cells = [];
+        this._size = this._width * this._height;
+        for(var i = 0; i < this._size; i++)this.cells.push(new CollisionCell());
+        this.recalculateIndex2xy();
+        this.recalculateCollisionCells();
+    };
+    GridSolverSpace.prototype.addObject = function(obj) {
+        this.addObjectByIndex(0, obj);
+    };
+    GridSolverSpace.prototype.addPointObject = function(worldX, worldY, obj) {
+        var x = Math.trunc(worldX / this.cellSize.x);
+        var y = Math.trunc(worldY / this.cellSize.y);
+        var index = this.makeIndexFromCoord(x, y);
+        this.addObjectByIndex(index, obj);
+    };
+    GridSolverSpace.prototype.addObjectByIndex = function(index, obj) {
+        if (!isNaN(index) && index >= 0 && index < this.size) this.cells[index].addObject(obj);
+    };
+    GridSolverSpace.prototype.makeIndexFromVec = function(vec) {
+        return vec.x * this._height + vec.y;
+    };
+    GridSolverSpace.prototype.makeIndexFromCoord = function(x, y) {
+        return x * this._height + y;
+    };
+    GridSolverSpace.prototype.makeVecFromIndex = function(index) {
+        var x = Math.trunc(index / this._height);
+        var y = index - x * this._height;
+        return new (0, _vec2.Vec2)(x, y);
+    };
+    /**
+     * Adds object to all cells between given coords
+     * @param worldLeftTop
+     * @param worldRightBottom
+     * @param obj
+     */ GridSolverSpace.prototype.addRectangularObject = function(worldLeftTop, worldRightBottom, obj) {
+        var point1 = (0, _vec2Math.Vec2Math).scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
+        var point2 = (0, _vec2Math.Vec2Math).scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
+        var left = Math.max(Math.min(point1.x, point2.x), 0);
+        var top = Math.max(Math.min(point1.y, point2.y), 0);
+        var right = Math.min(Math.max(point1.x, point2.x), this._width - 1);
+        var bottom = Math.min(Math.max(point1.y, point2.y), this._height - 1);
+        var index1 = this.makeIndexFromCoord(left, top);
+        var index2 = this.makeIndexFromCoord(right, bottom);
+        if (right >= this._width || left < 0 || top < 0 || bottom >= this._height) return;
+        if (point1.x === point2.x) // Vertical
+        for(var cellIndex = index1; cellIndex <= index2; cellIndex++)this.cells[cellIndex].addObject(obj);
+        else if (point1.y === point2.y) // Horizontal
+        for(var cellIndex = index1; cellIndex <= index2; cellIndex += this.height)this.cells[cellIndex].addObject(obj);
+        else {
+            var height = bottom - top;
+            var startFrom = this.makeIndexFromCoord(left, top);
+            for(var x = 0; x <= right - left; x++)for(var y = 0; y <= height; y++){
+                var cellIndex = startFrom + this.makeIndexFromCoord(x, y);
+                this.addObjectByIndex(cellIndex, obj);
+            }
+        }
+    };
+    GridSolverSpace.prototype.clear = function() {
+        this.cells.forEach(function(cell) {
+            return cell.clear();
+        });
+    };
+    GridSolverSpace.prototype.forEach = function(callback) {
+        var _this = this;
+        this.cells.forEach(function(cell, index) {
+            var pos = _this.getVecFromIndex(index);
+            callback(pos.x, pos.y, cell, index);
+        });
+    };
+    GridSolverSpace.prototype.hasCell = function(index, dt) {
+        if (index < 0 || index >= this.size) return false;
+        var pos = this.getVecFromIndex(index);
+        var x = pos.x;
+        var y = pos.y;
+        if (y <= 0 && dt < 0) // TOP CELL
+        return false;
+        if (y === this.height - 1 && dt > 0) // Bottom cell
+        return false;
+        if (x === 0 && dt < 0) // left cell
+        return false;
+        if (x >= this.width - 1 && dt > 0) // right cell;
+        return false;
+        return true;
+    };
+    GridSolverSpace.prototype.debugRender = function(context) {
+        var _this = this;
+        this.forEach(function(column, row, cell, index) {
+            var cellPosition = new (0, _vec2.Vec2)(column * _this.cellSize.x, row * _this.cellSize.y);
+            context.strokeStyle = cell.count > 0 ? "#ff0000" : "#00ff00";
+            context.lineWidth = cell.highlight ? 10 : 1;
+            context.strokeRect(cellPosition.x, cellPosition.y, _this.cellSize.x - 1, _this.cellSize.y - 1);
+            context.fillStyle = "#ffffff";
+            context.textAlign = "start";
+            context.fillText("".concat(index), cellPosition.x + _this.cellSize.x / 2, cellPosition.y + _this.cellSize.y / 2);
+        });
+    };
+    return GridSolverSpace;
+}((0, _baseSolverSpace.BaseSolverSpace));
+
+},{"../vector/vec2":"9XJHV","../vector/vec2Math":"j4cED","./baseSolverSpace":"htZHw","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"htZHw":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "BaseSolverSpace", ()=>BaseSolverSpace);
+var BaseSolverSpace = /** @class */ function() {
+    function BaseSolverSpace() {}
+    return BaseSolverSpace;
+}();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"86ZeH":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "BaseSolver", ()=>BaseSolver);
+var BaseSolver = /** @class */ function() {
+    function BaseSolver(worldSize, stats) {
+        this.objects = [];
+        this.constrains = null;
+        this.subSteps = 4;
+        this.useFixedTime = true;
+        this.stats = stats;
+        this.objects = [];
+        this.worldSize = worldSize.copy();
+        this.configure();
+    }
+    BaseSolver.prototype.reset = function() {
+        this.objects = [];
+    };
+    BaseSolver.prototype.configure = function() {
+        this.useFixedTime = true;
+        this.step = 0.017 / this.subSteps;
+    };
+    BaseSolver.prototype.addObject = function(obj) {
+        this.objects.push(obj);
+    };
+    /**
+     * Update the simulation by given step.
+     * @param {number} time amount of seconds passed since last update.
+     */ BaseSolver.prototype.update = function(time) {
+        var subTime = this.useFixedTime ? this.step : time / this.subSteps;
+        for(var i = 0; i < this.subSteps; i++){
+            this.processOptimizations();
+            this.processCollisions();
+            this.applyForces();
+            this.updateObjects(subTime);
+            this.applyConstrains();
+        }
+    };
+    /**
+     * Update objects state
+     * @param {number} time amount of seconds passed since last update
+     */ BaseSolver.prototype.updateObjects = function(time) {
+        this.objects.forEach(function(obj) {
+            return obj.update(time);
+        });
+    };
+    BaseSolver.prototype.applyConstrains = function() {
+        var _this = this;
+        this.objects.forEach(function(obj) {
+            return _this.constrains.applyConstrain(obj);
+        });
+    };
+    return BaseSolver;
+}();
+function makeKey(obj1, obj2) {
+    return [
+        obj1.index,
+        obj2.index
+    ].sort().join("-");
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");

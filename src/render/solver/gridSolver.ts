@@ -1,42 +1,30 @@
-import {Vec2} from "./vector/vec2";
-import {BallsObject} from "./objects/ball";
-import {BaseSolverObject} from "./objects/object";
-import {Constrain} from "./constrains/constrain";
-import {CollisionCell, CollisionGrid} from "./grid";
-import {Stats} from "./stats";
+import {Vec2} from "../vector/vec2";
+import {BaseSolverObject} from "../objects/object";
+import {CollisionCell, GridSolverSpace} from "./gridSolverSpace";
+import {BaseSolver} from "./baseSolver";
+import {Vec2Math} from "../vector/vec2Math";
 
-export class Solver {
-    stats: Stats;
-
-    objects: BaseSolverObject[] = []
-    constrains: Constrain = null;
+export class GridOptimizedSolver extends BaseSolver {
     gravity: Vec2 = Vec2.Zero();
-    subSteps: number = 4;
-    useFixedTime: boolean = true;
-    step: number;
-    collisionGrid: CollisionGrid;
-    worldSize: Vec2;
+    gravityCenter: Vec2 = Vec2.Zero();
+    collisionGrid: GridSolverSpace;
 
     cellSize: Vec2;
 
     constructor(worldSize, stats) {
-        this.stats = stats;
-        this.objects = [];
-        this.worldSize = worldSize.copy();
-
+        super(worldSize, stats);
         this.configure();
     }
 
     reset() {
-        this.objects = [];
+        super.reset();
         this.collisionGrid.clear();
     }
 
     configure() {
+        super.configure();
         this.gravity = new Vec2(0, 100);
-
-        this.useFixedTime = true;
-        this.step = 0.017 / this.subSteps;
+        this.gravityCenter = new Vec2(this.worldSize.x / 2, this.worldSize.y / 2);
 
         const cellSize = 16;
 
@@ -48,57 +36,26 @@ export class Solver {
             this.worldSize.y / gridY
         );
 
-        this.collisionGrid = new CollisionGrid(
+        this.collisionGrid = new GridSolverSpace(
             gridX, gridY,
             this.cellSize
         )
     }
 
-    /**
-     *
-     * @param {BallsObject} obj
-     */
-    addObject(obj) {
-        this.objects.push(obj);
-    }
-
-    /**
-     * Update the simulation by given step.
-     * @param {number} time amount of seconds passed since last update.
-     */
-    update(time) {
-        const subTime = this.useFixedTime ? this.step : time / this.subSteps;
-        for (let i = 0; i < this.subSteps; i++) {
-            this.addObjectsToGrid();
-            this.processCollisions();
-            this.applyGravity();
-            this.updateObjects(subTime);
-            this.applyConstrains();
-        }
-    }
-
-    addObjectsToGrid() {
+    processOptimizations() {
         this.collisionGrid.clear();
         this.objects.forEach((obj, index) => {
-            obj.addToGrid(this.collisionGrid);
+            obj.addToSpace(this.collisionGrid);
             this.stats.addStats(`Solver object: ${obj.toString()}`)
         });
     }
 
-    /**
-     * Update objects state
-     * @param {number} time amount of seconds passed since last update
-     */
-    updateObjects(time) {
-        this.objects.forEach(obj => obj.update(time))
-    }
-
-    applyGravity() {
-        this.objects.forEach(obj => obj.accelerate(this.gravity))
-    }
-
-    applyConstrains() {
-        this.objects.forEach(obj => this.constrains.applyConstrain(obj))
+    applyForces() {
+        this.objects.forEach(obj => {
+            const direction = Vec2Math.diff(obj.currentPosition, this.gravityCenter);
+            obj.accelerate(direction.ort.mul(-100));
+            //obj.accelerate(this.gravity)
+        })
     }
 
     processCollisionsInCell(objA: BaseSolverObject, cell: CollisionCell) {
@@ -136,6 +93,10 @@ export class Solver {
         for (let index = 0; index < this.collisionGrid.size; index++) {
             this.processCell(index);
         }
+    }
+
+    debugRender(context: CanvasRenderingContext2D) {
+        this.collisionGrid.debugRender(context);
     }
 }
 

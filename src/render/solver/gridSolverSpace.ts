@@ -1,6 +1,7 @@
-import { Vec2 } from "./vector/vec2";
-import {BaseSolverObject} from "./objects/object";
-import {Vec2Math} from "./vector/vec2Math";
+import { Vec2 } from "../vector/vec2";
+import {BaseSolverObject} from "../objects/object";
+import {Vec2Math} from "../vector/vec2Math";
+import {BaseSolverSpace} from "./baseSolverSpace";
 
 export class CollisionCell {
     objects: BaseSolverObject[] = [];
@@ -38,7 +39,7 @@ type CollisionCellArray = CollisionCell[];
 
 type GridIndex = number;
 
-export class CollisionGrid {
+export class GridSolverSpace extends BaseSolverSpace {
     cells: CollisionCell[] = [];
     _width: number;
     _height: number;
@@ -48,6 +49,7 @@ export class CollisionGrid {
     adjacentCells: CollisionCellArray[] = []
 
     constructor(width, height, cellSize: Vec2) {
+        super();
         this._width = width;
         this._height = height;
 
@@ -146,11 +148,15 @@ export class CollisionGrid {
         this.recalculateCollisionCells();
     }
 
-    addObject(worldX, worldY, obj) {
+    addObject(obj: BaseSolverObject) {
+        this.addObjectByIndex(0, obj);
+    }
+
+    addPointObject(worldX, worldY, obj) {
         const x = Math.trunc(worldX / this.cellSize.x);
         const y = Math.trunc(worldY / this.cellSize.y);
 
-        const index: GridIndex = x * this._height + y;
+        const index: GridIndex = this.makeIndexFromCoord(x, y);
         this.addObjectByIndex(index, obj);
     }
 
@@ -180,7 +186,7 @@ export class CollisionGrid {
      * @param worldRightBottom
      * @param obj
      */
-    addObjectToCells(worldLeftTop: Vec2, worldRightBottom: Vec2, obj: BaseSolverObject) {
+    addRectangularObject(worldLeftTop: Vec2, worldRightBottom: Vec2, obj: BaseSolverObject) {
         const point1 = Vec2Math.scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
         const point2 = Vec2Math.scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
 
@@ -261,5 +267,34 @@ export class CollisionGrid {
         }
 
         return true;
+    }
+
+    debugRender(context: CanvasRenderingContext2D) {
+        this.forEach((column, row, cell, index) => {
+            const cellPosition = new Vec2(
+                column * this.cellSize.x,
+                row * this.cellSize.y,
+            );
+
+            context.strokeStyle = cell.count > 0 ? '#ff0000' : '#00ff00';
+            context.lineWidth = cell.highlight ? 10 : 1;
+
+            context.strokeRect(
+                cellPosition.x,
+                cellPosition.y,
+                this.cellSize.x-1,
+                this.cellSize.y-1
+            )
+
+
+
+            context.fillStyle = "#ffffff";
+            context.textAlign = "start";
+            context.fillText(
+                `${index}`,
+                cellPosition.x + this.cellSize.x / 2,
+                cellPosition.y + this.cellSize.y / 2
+            );
+        });
     }
 }

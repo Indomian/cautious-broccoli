@@ -1,6 +1,6 @@
 import {BallsObject} from "./ball";
 import {SolverObjectTypes} from "./types";
-import {CollisionGrid} from "../grid";
+import {BaseSolverSpace} from "../solver/baseSolverSpace";
 import {SQRT2} from "../vector/math";
 import {Vec2} from "../vector/vec2";
 
@@ -29,7 +29,7 @@ export class ImmovableBallsObject extends BallsObject {
         this.previousPosition = this._fixedPosition;
     }
 
-    addToGrid(collisionGrid: CollisionGrid) {
+    addToSpace(solverSpace: BaseSolverSpace) {
         const vec = new Vec2(
             this.radius * SQRT2,
             this.radius * SQRT2
@@ -38,7 +38,7 @@ export class ImmovableBallsObject extends BallsObject {
         const leftTop = this.currentPosition.sum(vec);
         const rightBottom = this.currentPosition.diff(vec);
 
-        collisionGrid.addObjectToCells(
+        solverSpace.addRectangularObject(
             leftTop,
             rightBottom,
             this

@@ -4,7 +4,7 @@ import { Vec2Math } from "../vector/vec2Math";
 import {SolverObjectTypes} from "./types";
 import { collide } from "./collisionModels";
 import {BaseSolverObject} from "./object";
-import {CollisionGrid} from "../grid";
+import {BaseSolverSpace} from "../solver/baseSolverSpace";
 
 const MAX_VELOCITY = 10;
 const MAX_VELOCITY2 = MAX_VELOCITY ** 2;
@@ -14,7 +14,7 @@ export class BallsObject extends BaseSolverObject {
 
     radius = 10;
     bounceValue = 1.1;
-    motionReduce = 1;
+    motionReduce = 0.999;
 
     type = SolverObjectTypes.TypeBall;
     immovable = false;
@@ -73,8 +73,8 @@ export class BallsObject extends BaseSolverObject {
         collide(this, obj)
     }
 
-    addToGrid(collisionGrid: CollisionGrid) {
-        collisionGrid.addObject(
+    addToSpace(collisionGrid: BaseSolverSpace) {
+        collisionGrid.addPointObject(
             Math.floor(this.currentPosition.x),
             Math.floor(this.currentPosition.y),
             this
