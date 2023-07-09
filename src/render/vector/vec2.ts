@@ -11,9 +11,13 @@ export class Vec2 {
     static lengthCallsCount = 0;
     static length2CallsCount = 0;
 
-    constructor(x: number, y: number, l?: number) {
+    constructor(x: number, y?: number, l?: number) {
         this._x = x;
-        this._y = y;
+        if (y === undefined) {
+            this._y = x;
+        } else {
+            this._y = y;
+        }
 
         if (l) {
             this._length = l;
@@ -31,12 +35,12 @@ export class Vec2 {
 
     set x(x: number) {
         this._x = x;
-        this._length = null;
+        this.reset();
     }
 
     set y(y:number) {
         this._y = y;
-        this._length = null;
+        this.reset();
     }
 
     get length(): number {
@@ -60,6 +64,23 @@ export class Vec2 {
         return this._length2;
     }
 
+    moveTo(x: number | Vec2, y?: number) {
+        if (x instanceof Vec2) {
+            this._x = x.x;
+            this._y = x.y;
+        } else {
+            this._x = x;
+            this._y = y;
+        }
+
+        this.reset();
+    }
+
+    reset() {
+        this._length = null;
+        this._length2 = null;
+    }
+
     /**
      * Adds vec2 to current vector
      * @param {Vec2} vec2
@@ -70,6 +91,10 @@ export class Vec2 {
         this._y += vec2.y;
         this._length = null;
         return this;
+    }
+
+    moveBy(delta: Vec2) {
+        this.addSelf(delta)
     }
 
     /**
@@ -176,6 +201,16 @@ export class Vec2 {
     get ort() {
         const l = this.length;
         return new Vec2(this.x / l, this.y / l, 1);
+    }
+
+    /**
+     * Returns new vector with absolute values for X and Y
+     */
+    get abs(): Vec2 {
+        return new Vec2(
+            Math.abs(this.x),
+            Math.abs(this.y)
+        )
     }
 
     get perpendicular() {

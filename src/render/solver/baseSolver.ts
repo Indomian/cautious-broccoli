@@ -2,6 +2,7 @@ import {Vec2} from "../vector/vec2";
 import {BaseSolverObject} from "../objects/object";
 import {Constrain} from "../constrains/constrain";
 import {Stats} from "../stats";
+import {BaseRender} from "../render/baseRender";
 
 export abstract class BaseSolver {
     stats: Stats;
@@ -13,7 +14,7 @@ export abstract class BaseSolver {
 
     worldSize: Vec2;
 
-    constructor(worldSize, stats) {
+    protected constructor(worldSize, stats) {
         this.stats = stats;
         this.objects = [];
         this.worldSize = worldSize.copy();
@@ -66,7 +67,7 @@ export abstract class BaseSolver {
     }
 
     abstract processCollisions();
-    abstract debugRender(context: CanvasRenderingContext2D);
+    abstract debugRender(context: BaseRender);
 }
 
 function makeKey(obj1, obj2) {

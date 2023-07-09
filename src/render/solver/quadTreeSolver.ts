@@ -3,6 +3,8 @@ import {BaseSolverObject} from "../objects/object";
 import {CollisionCell, GridSolverSpace} from "./gridSolverSpace";
 import {BaseSolver} from "./baseSolver";
 import {QuadTreeSolverSpace} from "./quadTreeSolverSpace";
+import {BaseRender} from "../render/baseRender";
+import {Vec2Rect} from "../vector/vec2Rect";
 
 export class QuadTreeSolver extends BaseSolver {
     gravity: Vec2 = Vec2.Zero();
@@ -41,10 +43,28 @@ export class QuadTreeSolver extends BaseSolver {
     }
 
     processCollisions() {
+        this.objects.forEach(objA => {
+            const range = objA.getCollisionRange();
+            const possibleObjects = this.space.root.query(range);
+            this.stats.addStats('processCollisions.queryPossibleObjects.calls');
+            possibleObjects.forEach(objB => {
+                if (objA === objB) {
+                    return;
+                }
+
+                if (objA.immovable && objB.immovable) {
+                    return;
+                }
+
+                this.stats.addStats('processCollisions.calls');
+                objA.collide(objB);
+            })
+        });
     }
 
-    debugRender(context: CanvasRenderingContext2D) {
+    debugRender(context: BaseRender) {
         this.space.debugRender(context);
+        this.objects.forEach(object => object.debugRender(context))
     }
 }
 

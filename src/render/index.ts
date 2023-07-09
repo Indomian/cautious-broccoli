@@ -13,6 +13,8 @@ import {Stats, StatsItem} from "./stats";
 import {BaseSolverObject} from "./objects/object";
 import {BaseSolver} from "./solver/baseSolver";
 import {QuadTreeSolver} from "./solver/quadTreeSolver";
+import {BaseRender} from "./render/baseRender";
+import {Canvas2DRender} from "./render/canvas2DRender";
 
 export class Render {
     /**
@@ -24,7 +26,7 @@ export class Render {
     /**
      * @type {Constrain}
      */
-    _constrains = null;
+    _constrains: Constrain = null;
 
     /**
      * Solver for physics
@@ -34,9 +36,10 @@ export class Render {
 
     flagRenderGrid = false;
     flagRenderPreviousPosition = false;
+    flagSwitchSolver = false;
 
     canvas: HTMLCanvasElement;
-    context: CanvasRenderingContext2D;
+    context: BaseRender;
 
     timeRenderStart: number;
     timeRenderEnd: number;
@@ -50,7 +53,7 @@ export class Render {
     constructor(canvas) {
         this.stats = new Stats();
         this.canvas = canvas;
-        this.context = this.canvas.getContext("2d");
+        this.context = new Canvas2DRender(this.canvas.getContext("2d"));
 
         this.timeRenderStart = performance.now();
         this.timeRenderEnd = performance.now();
@@ -74,8 +77,8 @@ export class Render {
         this.solver.reset();
     }
 
-    configure() {
-        this.solver = new GridOptimizedSolver(
+    switchToGridSolver() {
+        const newSolver = new GridOptimizedSolver(
             new Vec2(
                 this.canvas.width,
                 this.canvas.height
@@ -83,7 +86,35 @@ export class Render {
             this.stats
         );
 
-        this.context.font = '10px serif';
+        if (this.solver) {
+            this.solver.objects.forEach(obj => newSolver.addObject(obj));
+            newSolver.constrains = this._constrains;
+        }
+
+        this.solver = newSolver;
+    }
+
+    switchToQuadSolver() {
+        const newSolver = new QuadTreeSolver(
+            new Vec2(
+                this.canvas.width,
+                this.canvas.height
+            ),
+            this.stats
+        );
+
+        if (this.solver) {
+            this.solver.objects.forEach(obj => newSolver.addObject(obj));
+            newSolver.constrains = this._constrains;
+        }
+
+        this.solver = newSolver;
+    }
+
+    configure() {
+        this.switchToGridSolver();
+
+        this.context.font('10px serif');
 
         this.loadScene("scene1");
     }
@@ -96,6 +127,10 @@ export class Render {
 
         if (keyboardEvent.keyPressed === 'p') {
             this.flagRenderPreviousPosition = !this.flagRenderPreviousPosition;
+        }
+
+        if (keyboardEvent.keyPressed === 's') {
+            this.flagSwitchSolver = true;
         }
 
         this.scene.processUserInput(event);
@@ -154,6 +189,16 @@ export class Render {
 
         Vec2.lengthCallsCount = 0;
         Vec2.length2CallsCount = 0;
+
+        if (this.flagSwitchSolver) {
+            if (this.solver instanceof GridOptimizedSolver) {
+                this.switchToQuadSolver();
+            } else {
+                this.switchToGridSolver();
+            }
+
+            this.flagSwitchSolver = false;
+        }
     }
 
     nextFrame = (time) => {
@@ -186,31 +231,24 @@ export class Render {
         this.objects.forEach((obj) => obj.render());
     }
 
-    printText(text, x, y) {
-        this.context.fillStyle = "#ffffff";
-        this.context.textAlign = "start";
-        this.context.fillText(text, x, y);
-    }
-
     printFPS() {
-        this.context.fillStyle = 'rgba(0,0,0,0.1)';
+        this.context.fillStyle('rgba(0,0,0,0.1)');
         this.context.fillRect(0, 0, 100, 60);
-        this.printText(`${Math.round(this.step)} ms / ${Math.round(1000/this.step)} FPS`, 0, 10);
-        this.printText(`Length calls: ${Vec2.lengthCallsCount}`, 0 , 20);
-        this.printText(`Lenght2 calls: ${Vec2.length2CallsCount}`, 0 , 30);
-        this.printText(`Objects: ${this.objects.length}`, 0, 40);
-        this.printText(`Compares per object: ${Math.round(Vec2.lengthCallsCount / this.objects.length)}`, 0, 50);
+        this.context.text(`${Math.round(this.step)} ms / ${Math.round(1000/this.step)} FPS`, 0, 10);
+        this.context.text(`Length calls: ${Vec2.lengthCallsCount}`, 0 , 20);
+        this.context.text(`Lenght2 calls: ${Vec2.length2CallsCount}`, 0 , 30);
+        this.context.text(`Objects: ${this.objects.length}`, 0, 40);
+        this.context.text(`Compares per object: ${Math.round(Vec2.lengthCallsCount / this.objects.length)}`, 0, 50);
 
         const stats = this.stats.getTickData();
         stats.forEach((item: StatsItem, index: number) => {
-           this.printText(`${item.key}: ${item.value}`, 0, index * 10 + 60);
+           this.context.text(`${item.key}: ${item.value}`, 0, index * 10 + 60);
         });
     }
 
     clear() {
-        this.context.fillStyle = "rgba(0, 0, 0, 0.9)";
+        this.context.fillStyle("rgba(0, 0, 0, 0.9)");
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
     }
 
     start() {
@@ -223,22 +261,13 @@ export class Render {
 
     renderGrid() {
         this.solver.debugRender(this.context);
-        this.solver.objects.forEach(object => object.debugRender(this.context));
     }
 
     renderPreviousPosition() {
         this.objects.forEach((renderableObject) => {
             const position = renderableObject.solverObject.previousPosition;
-            this.context.fillStyle = 'rgba(0, 0, 255, 0.5)';
-            this.context.beginPath()
-            this.context.arc(
-                position.x,
-                position.y,
-                10,
-                0,
-                2 * Math.PI
-            )
-            this.context.fill();
+            this.context.fillStyle('rgba(0, 0, 255, 0.5)');
+            this.context.fillCircle(10, position);
         })
     }
 

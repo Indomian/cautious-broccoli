@@ -2,12 +2,15 @@ import {BaseSolverSpace} from "./baseSolverSpace";
 import {BaseSolverObject} from "../objects/object";
 import {Vec2Rect} from "../vector/vec2Rect";
 import {Vec2} from "../vector/vec2";
+import {BaseRender} from "../render/baseRender";
+import {ImmovableLineObject} from "../objects/immovableLine";
 
 export class QuadTree {
     boundary: Vec2Rect;
     capacity: number;
     objects: BaseSolverObject[];
     divided: boolean = false;
+    minimumDiag: number = 10;
     nodes: QuadTree[];
 
     constructor(boundary: Vec2Rect, capacity: number) {
@@ -19,9 +22,17 @@ export class QuadTree {
     }
 
     clear() {
-        this.objects = [];
-        this.nodes = [];
+        if (this.objects.length > 0) {
+            this.objects.splice(0);
+        }
+        if (this.divided) {
+            this.nodes.forEach(node => node.clear());
+        }
         this.divided = false;
+    }
+
+    get canSubdivide(): boolean {
+        return this.boundary.diag > this.minimumDiag;
     }
 
     insert(obj: BaseSolverObject): boolean {
@@ -30,6 +41,11 @@ export class QuadTree {
         }
 
         if (this.objects.length < this.capacity) {
+            this.objects.push(obj);
+            return true;
+        }
+
+        if (!this.canSubdivide) {
             this.objects.push(obj);
             return true;
         }
@@ -58,18 +74,37 @@ export class QuadTree {
         this.nodes[QuadTree.SW] = new QuadTree(this.boundary.sw, this.capacity);
     }
 
-    debugRender(context: CanvasRenderingContext2D) {
-        context.strokeStyle = this.objects.length > 0 ? '#ff0000' : '#00ff00';
+    query(range: Vec2Rect): BaseSolverObject[] {
+        let result = []
+        if (!this.boundary.intersect(range)) {
+            return result
+        }
 
-        context.strokeRect(
+        this.objects.forEach(obj => {
+            if (obj.intersects(range)) {
+                result.push(obj);
+            }
+        });
+
+        if (this.divided) {
+            this.nodes.forEach(subTree => subTree.query(range).forEach(obj => result.push(obj)))
+        }
+
+        return result;
+    }
+
+    debugRender(render: BaseRender) {
+        render.strokeStyle(this.objects.length > 0 ? '#ff0000' : '#00ff00');
+
+        render.rect(
             this.boundary.left,
             this.boundary.top,
-            this.boundary.size.x,
-            this.boundary.size.y
+            this.boundary.width-2,
+            this.boundary.height-2
         )
 
         if (this.divided) {
-            this.nodes.forEach(subTree => subTree.debugRender(context));
+            this.nodes.forEach(subTree => subTree.debugRender(render));
         }
     }
 
@@ -110,7 +145,7 @@ export class QuadTreeSolverSpace extends BaseSolverSpace {
         this.root.insert(obj);
     }
 
-    debugRender(context: CanvasRenderingContext2D) {
-        this.root.debugRender(context);
+    debugRender(render:BaseRender) {
+        this.root.debugRender(render);
     }
 }

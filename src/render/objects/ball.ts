@@ -5,6 +5,8 @@ import {SolverObjectTypes} from "./types";
 import { collide } from "./collisionModels";
 import {BaseSolverObject} from "./object";
 import {BaseSolverSpace} from "../solver/baseSolverSpace";
+import {Vec2Rect} from "../vector/vec2Rect";
+import {BaseRender} from "../render/baseRender";
 
 const MAX_VELOCITY = 10;
 const MAX_VELOCITY2 = MAX_VELOCITY ** 2;
@@ -21,6 +23,9 @@ export class BallsObject extends BaseSolverObject {
 
     private _radius2;
 
+    protected collisionRange: Vec2Rect;
+    protected boundary: Vec2Rect;
+
     /**
      * Creates balls object
      * @param {Vec2} position
@@ -30,11 +35,14 @@ export class BallsObject extends BaseSolverObject {
         super();
         this.previousPosition = position.copy();
         this.currentPosition = position.copy();
+
         if (radius !== undefined) {
             this.radius = radius
         }
 
         this._radius2 = this.radius * this.radius;
+        this.collisionRange = new Vec2Rect(this.currentPosition, new Vec2(this.radius * 4));
+        this.boundary = new Vec2Rect(this.currentPosition, new Vec2(this.radius * 2));
     }
 
     /**
@@ -47,7 +55,7 @@ export class BallsObject extends BaseSolverObject {
             velocity = velocity.ort.mul(MAX_VELOCITY);
         }
         this.previousPosition = this.currentPosition.copy();
-        this.currentPosition.addSelf(
+        this.moveBy(
             velocity.addSelf(
                 this.acc.mul(step * step)
             )
@@ -82,11 +90,13 @@ export class BallsObject extends BaseSolverObject {
     }
 
     moveBy(delta: Vec2) {
-        this.currentPosition.addSelf(delta);
+        this.currentPosition.moveBy(delta);
+        this.collisionRange.moveBy(delta);
     }
 
     moveTo(position: Vec2) {
-        this.currentPosition = position.copy();
+        this.currentPosition.moveTo(position);
+        this.collisionRange.moveTo(this.currentPosition);
     }
 
     isPointInsideObject(point: Vec2): boolean {
@@ -114,5 +124,20 @@ export class BallsObject extends BaseSolverObject {
 
     get radius2() {
         return this._radius2;
+    }
+
+    intersects(range: Vec2Rect): boolean {
+        const myRect = new Vec2Rect(this.currentPosition, new Vec2(this.radius, this.radius))
+        return myRect.intersect(range);
+    }
+
+    getCollisionRange(): Vec2Rect {
+        return this.collisionRange;
+    }
+
+    debugRender(context: BaseRender) {
+        context.strokeStyle('#FF0000');
+        const range = this.getCollisionRange();
+        context.rect(range.left, range.top, range.width, range.height);
     }
 }

@@ -2,6 +2,7 @@ import { Vec2 } from "../vector/vec2";
 import {BaseSolverObject} from "../objects/object";
 import {Vec2Math} from "../vector/vec2Math";
 import {BaseSolverSpace} from "./baseSolverSpace";
+import {BaseRender} from "../render/baseRender";
 
 export class CollisionCell {
     objects: BaseSolverObject[] = [];
@@ -269,32 +270,27 @@ export class GridSolverSpace extends BaseSolverSpace {
         return true;
     }
 
-    debugRender(context: CanvasRenderingContext2D) {
+    debugRender(render: BaseRender) {
         this.forEach((column, row, cell, index) => {
             const cellPosition = new Vec2(
                 column * this.cellSize.x,
                 row * this.cellSize.y,
             );
 
-            context.strokeStyle = cell.count > 0 ? '#ff0000' : '#00ff00';
-            context.lineWidth = cell.highlight ? 10 : 1;
+            render.strokeStyle(cell.count > 0 ? '#ff0000' : '#00ff00');
+            render.lineWidth(cell.highlight ? 10 : 1);
 
-            context.strokeRect(
+            render.rect(
                 cellPosition.x,
                 cellPosition.y,
                 this.cellSize.x-1,
                 this.cellSize.y-1
             )
 
-
-
-            context.fillStyle = "#ffffff";
-            context.textAlign = "start";
-            context.fillText(
-                `${index}`,
-                cellPosition.x + this.cellSize.x / 2,
-                cellPosition.y + this.cellSize.y / 2
-            );
+            render.fillStyle("#ffffff");
+            render.text(`${index}`,
+                cellPosition.sum(this.cellSize.mul(0.5))
+            )
         });
     }
 }

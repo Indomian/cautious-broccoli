@@ -14,9 +14,9 @@ export class CircleWithText extends Circle {
 
     render() {
         super.render();
-        this.context.fillStyle = this.textColor;
-        this.context.textBaseline = "middle";
-        this.context.textAlign = "center";
-        this.context.fillText(this.text, this.position.x, this.position.y);
+        if (this.text !== '') {
+            this.renderer.fillStyle(this.textColor);
+            this.renderer.text(this.text, this.position);
+        }
     }
 }

@@ -1,11 +1,12 @@
 import {Vec2} from "../vector/vec2";
+import {BaseRender} from "../render/baseRender";
 
 export class Item {
-    context: CanvasRenderingContext2D;
+    renderer: BaseRender;
     position: Vec2 = Vec2.Zero();
 
-    constructor(context: CanvasRenderingContext2D, position: Vec2) {
-        this.context = context;
+    constructor(renderer: BaseRender, position: Vec2) {
+        this.renderer = renderer;
         this.position = position;
     }
 

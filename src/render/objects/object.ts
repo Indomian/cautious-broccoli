@@ -2,6 +2,7 @@ import {SolverObjectTypes} from "./types";
 import {Vec2} from "../vector/vec2";
 import {BaseSolverSpace} from "../solver/baseSolverSpace";
 import {Vec2Rect} from "../vector/vec2Rect";
+import {BaseRender} from "../render/baseRender";
 
 export abstract class BaseSolverObject {
     readonly type: SolverObjectTypes = SolverObjectTypes.TypeNull;
@@ -37,7 +38,7 @@ export abstract class BaseSolverObject {
 
     abstract addToSpace(solverSpace: BaseSolverSpace);
 
-    debugRender(context: CanvasRenderingContext2D) {
+    debugRender(context: BaseRender) {
 
     }
 
@@ -49,6 +50,9 @@ export abstract class BaseSolverObject {
     abstract moveTo(position: Vec2);
 
     abstract isPointInsideObject(point: Vec2): boolean;
+
+    abstract intersects(range: Vec2Rect): boolean;
+    abstract getCollisionRange(): Vec2Rect;
 
     static index = 0;
 }

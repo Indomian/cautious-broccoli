@@ -3,6 +3,7 @@ import {BaseSolverObject} from "../objects/object";
 import {CollisionCell, GridSolverSpace} from "./gridSolverSpace";
 import {BaseSolver} from "./baseSolver";
 import {Vec2Math} from "../vector/vec2Math";
+import {BaseRender} from "../render/baseRender";
 
 export class GridOptimizedSolver extends BaseSolver {
     gravity: Vec2 = Vec2.Zero();
@@ -53,7 +54,7 @@ export class GridOptimizedSolver extends BaseSolver {
     applyForces() {
         this.objects.forEach(obj => {
             const direction = Vec2Math.diff(obj.currentPosition, this.gravityCenter);
-            obj.accelerate(direction.ort.mul(-100));
+            obj.accelerate(direction.ort.mul(-this.gravity.length));
             //obj.accelerate(this.gravity)
         })
     }
@@ -70,6 +71,7 @@ export class GridOptimizedSolver extends BaseSolver {
                 return;
             }
 
+            this.stats.addStats('processCollisions.calls');
             objA.collide(objB);
         })
     }
@@ -95,8 +97,9 @@ export class GridOptimizedSolver extends BaseSolver {
         }
     }
 
-    debugRender(context: CanvasRenderingContext2D) {
+    debugRender(context: BaseRender) {
         this.collisionGrid.debugRender(context);
+        this.objects.forEach(object => object.debugRender(context));
     }
 }
 

@@ -27,6 +27,7 @@ export class ImmovableBallsObject extends BallsObject {
     update(step) {
         this.currentPosition = this._fixedPosition;
         this.previousPosition = this._fixedPosition;
+        this.collisionRange.moveTo(this.currentPosition);
     }
 
     addToSpace(solverSpace: BaseSolverSpace) {

@@ -72,7 +72,7 @@ export class Scene1 extends BaseScene {
 
         return new TotalObjectsGenerator(
             this.engine.solver,
-            1700,
+            1000,
             7,
             (index) => {
                 const obj = new RenderableObject<BallsObject, CircleWithText>(
@@ -83,7 +83,7 @@ export class Scene1 extends BaseScene {
                     new CircleWithText(
                         this.engine.context,
                         Vec2.Zero(),
-                        7,
+                        5,
                         index2color(index+200),
                         '',
                         '#000000'
@@ -100,7 +100,7 @@ export class Scene1 extends BaseScene {
                     new CircleWithText(
                         this.engine.context,
                         Vec2.Zero(),
-                        7,
+                        5,
                         index2color(index+100),
                         '',
                         '#000000'
@@ -117,7 +117,7 @@ export class Scene1 extends BaseScene {
                     new CircleWithText(
                         this.engine.context,
                         Vec2.Zero(),
-                        7,
+                        5,
                         index2color(index),
                         '',
                         '#000000'
@@ -134,7 +134,7 @@ export class Scene1 extends BaseScene {
                     new CircleWithText(
                         this.engine.context,
                         Vec2.Zero(),
-                        7,
+                        5,
                         index2color(index-100),
                         '',
                         '#000000'

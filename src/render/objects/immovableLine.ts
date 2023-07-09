@@ -4,9 +4,12 @@ import {SolverObjectTypes} from "./types";
 import {BaseSolverSpace} from "../solver/baseSolverSpace";
 import {Vec2} from "../vector/vec2";
 import {Vec2Math} from "../vector/vec2Math";
+import {BaseRender} from "../render/baseRender";
+import {ImmovableSolverObject} from "./immovable";
+import {Vec2Rect} from "../vector/vec2Rect";
 
-export class ImmovableLineObject extends BallsObject {
-    _direction;
+export class ImmovableLineObject extends ImmovableSolverObject {
+    _direction: Vec2;
     _line: Vec2Line;
 
     type = SolverObjectTypes.TypeImmovableLine;
@@ -14,14 +17,24 @@ export class ImmovableLineObject extends BallsObject {
 
     bounceValue = 1;
 
+    private collisionRange: Vec2Rect;
+
     constructor(position, direction) {
-        super(position, 0);
+        super();
+        this.currentPosition = position.copy();
+        this.previousPosition = position.copy();
+
         this._direction = direction;
 
         this._line = new Vec2Line(
             this.currentPosition.copy(),
             this.currentPosition.copy().sum(this._direction)
         )
+
+        this.collisionRange = new Vec2Rect(
+            this.currentPosition.sum(this._direction.mul(0.5)),
+            this._direction.abs
+        );
     }
 
     update(step) {
@@ -41,6 +54,10 @@ export class ImmovableLineObject extends BallsObject {
         this.currentPosition.addSelf(delta);
         this.previousPosition.addSelf(delta);
         this._line.moveBy(delta)
+        this.collisionRange = new Vec2Rect(
+            this.currentPosition.sum(this._direction.mul(0.5)),
+            this._direction.abs
+        );
     }
 
     moveTo(position: Vec2) {
@@ -48,26 +65,64 @@ export class ImmovableLineObject extends BallsObject {
         this.moveBy(delta);
     }
 
-    debugRender(context: CanvasRenderingContext2D) {
-        context.strokeStyle = '#00FF00';
-        context.beginPath(); // Start a new path
-        context.moveTo(this._line.vec1.x, this._line.vec1.y);
-        context.lineTo(this._line.vec2.x, this._line.vec2.y);
-        context.stroke(); // Render the path
+    debugRender(context: BaseRender) {
+        context.strokeStyle('#00FF00');
+        context.line(this._line.vec1, this._line.vec2);
+        context.text(`${this.index}`, this._line.vec1);
 
-        context.fillStyle = '#000000';
-        context.fillRect(
-            this._line.vec1.x, this._line.vec1.y+5,
-            10,
-            -16
-        )
-        context.fillStyle = "#ffffff";
-        context.textAlign = "start";
-        context.fillText(`${this.index}`, this._line.vec1.x, this._line.vec1.y);
+        context.strokeStyle('#FF0000');
+        context.rect(
+            this.collisionRange.left,
+            this.collisionRange.top,
+            this.collisionRange.width,
+            this.collisionRange.height
+        );
     }
 
     toString() {
         return 'ImmovableLine';
+    }
+
+    inside(boundary: Vec2Rect):boolean {
+        return boundary.intersect(this.collisionRange);
+    }
+
+    intersects(range: Vec2Rect): boolean {
+        if (!range.intersect(this.collisionRange)) {
+            return false;
+        }
+
+        if (range.contains(this._line.vec1) || range.contains(this._line.vec2)) {
+            return true;
+        }
+
+        if (this.collisionRange.top < range.top && this.collisionRange.bottom > range.top) {
+            // TOP CROSS
+            return true;
+        }
+
+        if (this.collisionRange.top < range.bottom && this.collisionRange.bottom > range.bottom) {
+            // BOTTOM CROSS
+            return true;
+        }
+
+        if (this.collisionRange.left < range.left && this.collisionRange.right > range.left) {
+            // LEFT CROSS
+            return true;
+        }
+
+        if (this.collisionRange.left < range.right && this.collisionRange.right > range.right) {
+            // RIGHT
+            return true;
+        }
+    }
+
+    isPointInsideObject(point: Vec2): boolean {
+        return false;
+    }
+
+    getCollisionRange(): Vec2Rect {
+        return this.collisionRange;
     }
 }
 

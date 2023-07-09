@@ -18,12 +18,8 @@ export function collideBallAndBall(obj1: BallsObject, obj2: BallsObject) {
     if (distance < requiredDistance) {
         const normalized = between.ort;
         const delta = requiredDistance - distance;
-        obj1.currentPosition.addSelf(
-            Vec2Math.mul(normalized, obj1.radius / requiredDistance * delta * obj1.bounceValue)
-        );
-        obj2.currentPosition.subSelf(
-            Vec2Math.mul(normalized, obj2.radius / requiredDistance * delta * obj2.bounceValue)
-        );
+        obj1.moveBy(Vec2Math.mul(normalized, obj1.radius / requiredDistance * delta * obj1.bounceValue));
+        obj2.moveBy(Vec2Math.mul(normalized, -obj2.radius / requiredDistance * delta * obj2.bounceValue));
     }
 }
 
@@ -32,7 +28,7 @@ export function collideBallAndBall(obj1: BallsObject, obj2: BallsObject) {
  * @param {BallsObject} ball
  * @param {ImmovableBallsObject} immovable
  */
-export function collideBallAndImmovableBall(ball, immovable) {
+export function collideBallAndImmovableBall(ball: BallsObject, immovable) {
     const between = Vec2Math.diff(
         ball.currentPosition,
         immovable.currentPosition
@@ -44,9 +40,7 @@ export function collideBallAndImmovableBall(ball, immovable) {
     if (distance < requiredDistance) {
         const normalized = between.ort;
         const delta = requiredDistance - distance;
-        ball.currentPosition.addSelf(
-            Vec2Math.mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue * immovable.bounceValue)
-        );
+        ball.moveBy(Vec2Math.mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue * immovable.bounceValue))
     }
 }
 
@@ -68,9 +62,7 @@ function _collideBallAndLine(ball: BallsObject, line: Vec2Line, lineBounce: numb
 
                 const delta = ball.radius - between.length;
 
-                ball.currentPosition.subSelf(
-                    Vec2Math.mul(normalized, delta * ball.bounceValue * lineBounce)
-                )
+                ball.moveBy(Vec2Math.mul(normalized, -delta * ball.bounceValue * lineBounce));
             }
         }
     } catch (e) {
