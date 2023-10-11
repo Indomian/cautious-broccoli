@@ -50,5 +50,6 @@ export class ImmovableBallsObject extends BallsObject {
         this.currentPosition = position.copy();
         this.previousPosition = position.copy();
         this._fixedPosition = position.copy();
+        super.moveTo(position);
     }
 }

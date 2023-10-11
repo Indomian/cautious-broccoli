@@ -19,12 +19,18 @@ export class ImmovableLineObject extends ImmovableSolverObject {
 
     private collisionRange: Vec2Rect;
 
-    constructor(position, direction) {
+    constructor(position: Vec2|Vec2Line, direction?: Vec2) {
         super();
-        this.currentPosition = position.copy();
-        this.previousPosition = position.copy();
+        if (position instanceof Vec2Line) {
+            this.currentPosition = position.vec1.copy();
+            this.previousPosition = position.vec1.copy();
+            this._direction = position.direction.copy().flipSelf();
+        } else {
+            this.currentPosition = position.copy();
+            this.previousPosition = position.copy();
 
-        this._direction = direction;
+            this._direction = direction;
+        }
 
         this._line = new Vec2Line(
             this.currentPosition.copy(),
@@ -69,6 +75,13 @@ export class ImmovableLineObject extends ImmovableSolverObject {
         context.strokeStyle('#00FF00');
         context.line(this._line.vec1, this._line.vec2);
         context.text(`${this.index}`, this._line.vec1);
+
+        context.strokeStyle('#FFFFFF');
+        context.lineWidth(10);
+        const point2 = this.currentPosition.sum(this._line.normal.flipSelf().mul(100));
+        context.line(this.currentPosition.x, this.currentPosition.y, point2.x, point2.y);
+
+        context.lineWidth(1);
 
         context.strokeStyle('#FF0000');
         context.rect(

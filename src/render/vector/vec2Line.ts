@@ -20,8 +20,8 @@ export class Vec2Line {
     private _b: number = 0;
 
     constructor(vec1: Vec2, vec2: Vec2) {
-        this._vec1 = vec1;
-        this._vec2 = vec2;
+        this._vec1 = vec1.copy();
+        this._vec2 = vec2.copy();
 
         this._direction = Vec2Math.diff(this._vec1, this._vec2);
         this._length = this._direction.length;
@@ -40,8 +40,6 @@ export class Vec2Line {
         const l1 = Vec2Math.diff(vec, this._vec1).length;
         const l2 = Vec2Math.diff(this._vec2, vec).length;
         const sum = l1 + l2;
-
-
 
         return isEqual(this._length, sum, MATH_ERROR);
     }
@@ -80,10 +78,11 @@ export class Vec2Line {
         )
     }
 
-    moveBy(vec) {
+    moveBy(vec): Vec2Line {
         this._vec1.addSelf(vec);
         this._vec2.addSelf(vec);
         this.calculateKB();
+        return this;
     }
 
     getPointProjection(vec) {
@@ -122,6 +121,10 @@ export class Vec2Line {
 
     get vec2() {
         return this._vec2;
+    }
+
+    get normal(): Vec2 {
+        return this._vec2.diff(this._vec1).perpendicular;
     }
 
     static Vertical(x) {

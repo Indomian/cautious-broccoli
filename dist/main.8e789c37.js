@@ -758,7 +758,7 @@ var Render = /** @class */ function() {
     return Render;
 }();
 
-},{"./vector/vec2":"9XJHV","./solver/gridSolver":"7zdk7","./scenes/all":"ghYpR","./stats":"dKRct","./render/canvas2DRender":"8bceJ","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","./solver/quadTreeSolver":"exI4W"}],"9XJHV":[function(require,module,exports) {
+},{"./vector/vec2":"9XJHV","./solver/gridSolver":"7zdk7","./scenes/all":"ghYpR","./stats":"dKRct","./solver/quadTreeSolver":"exI4W","./render/canvas2DRender":"8bceJ","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"9XJHV":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2", ()=>Vec2);
@@ -910,6 +910,9 @@ var Vec2 = /** @class */ function() {
      */ Vec2.prototype.mul = function(value) {
         return new Vec2(this.x * value, this.y * value);
     };
+    Vec2.prototype.dot = function(vec) {
+        return this.x * vec.x + this.y * vec.y;
+    };
     Vec2.prototype.copy = function() {
         return new Vec2(this.x, this.y);
     };
@@ -961,7 +964,7 @@ var Vec2 = /** @class */ function() {
                 if (this.x > 0) return Vec2.Vertical().ort;
                 else if (this.x < 0) return Vec2.Vertical().ort.flipSelf();
             }
-            return new Vec2(-this.y / this.x, 1).ort;
+            return new Vec2(-this.y, this.x).ort;
         },
         enumerable: false,
         configurable: true
@@ -1587,7 +1590,6 @@ var _baseScene = require("./baseScene");
 var _totalObjectsGenerator = require("../generators/totalObjectsGenerator");
 var _circle = require("../items/circle");
 var _vec2 = require("../vector/vec2");
-var _vec2Math = require("../vector/vec2Math");
 var _ball = require("../objects/ball");
 var _object = require("../renderableObjects/object");
 var _immovableBall = require("../objects/immovableBall");
@@ -1597,6 +1599,7 @@ var _line = require("../items/line");
 var _circleWithText = require("../items/circleWithText");
 var _index2Color = require("../items/utils/index2color");
 var _viewport = require("../constrains/viewport");
+var _milkshake = require("../primitives/milkshake");
 var __extends = undefined && undefined.__extends || function() {
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || ({
@@ -1617,26 +1620,6 @@ var __extends = undefined && undefined.__extends || function() {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 }();
-var milkShakePoints = [
-    new (0, _vec2.Vec2)(0, 0),
-    new (0, _vec2.Vec2)(70, 380),
-    new (0, _vec2.Vec2)(270, 380),
-    new (0, _vec2.Vec2)(340, 0)
-];
-var milkShakeLines = [
-    [
-        milkShakePoints[0],
-        (0, _vec2Math.Vec2Math).diff(milkShakePoints[0], milkShakePoints[1]).flipSelf()
-    ],
-    [
-        milkShakePoints[1],
-        (0, _vec2Math.Vec2Math).diff(milkShakePoints[1], milkShakePoints[2]).flipSelf()
-    ],
-    [
-        milkShakePoints[2],
-        (0, _vec2Math.Vec2Math).diff(milkShakePoints[2], milkShakePoints[3]).flipSelf()
-    ]
-];
 var ballsColors = {
     57: "#ffffff",
     78: "#ffffff",
@@ -1684,8 +1667,11 @@ var Scene1 = /** @class */ function(_super) {
     };
     Scene1.prototype.createMilkShake = function(canvasCenter) {
         var _this = this;
-        milkShakeLines.forEach(function(line) {
-            _this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line[0].sum(canvasCenter.diff(new (0, _vec2.Vec2)(170, 190))), line[1]), new (0, _line.Line)(_this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
+        (0, _milkshake.createMilkshake)(1, canvasCenter).forEach(function(line) {
+            _this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line), new (0, _line.Line)(_this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
+        });
+        (0, _milkshake.createMilkshake)(0.5, canvasCenter).forEach(function(line) {
+            _this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line), new (0, _line.Line)(_this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#0000ff")));
         });
     };
     Scene1.prototype.initConstrain = function() {
@@ -1700,6 +1686,8 @@ var Scene1 = /** @class */ function(_super) {
     };
     Scene1.prototype.tick = function(timePassed) {
         var _this = this;
+        this.engine.stats.addStats("Time passed", timePassed);
+        if (timePassed > 0.017) return;
         var newBalls = this.generator.getNextObjects(timePassed);
         if (newBalls) newBalls.forEach(function(ball) {
             return _this.engine.addObject(ball);
@@ -1715,7 +1703,7 @@ var Scene1 = /** @class */ function(_super) {
     return Scene1;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"86Vr1","../vector/vec2":"9XJHV","../vector/vec2Math":"j4cED","../objects/ball":"1Qukc","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"4yw9f","../items/circleWithText":"i8zZK","../items/utils/index2color":"frxih","../constrains/viewport":"8AY7d","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"dsDU5":[function(require,module,exports) {
+},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"86Vr1","../vector/vec2":"9XJHV","../objects/ball":"1Qukc","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"4yw9f","../items/circleWithText":"i8zZK","../items/utils/index2color":"frxih","../constrains/viewport":"8AY7d","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","../primitives/milkshake":"58RkW"}],"dsDU5":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
@@ -1917,10 +1905,12 @@ var BallsObject = /** @class */ function(_super) {
     BallsObject.prototype.moveBy = function(delta) {
         this.currentPosition.moveBy(delta);
         this.collisionRange.moveBy(delta);
+        this.boundary.moveBy(delta);
     };
     BallsObject.prototype.moveTo = function(position) {
         this.currentPosition.moveTo(position);
         this.collisionRange.moveTo(this.currentPosition);
+        this.boundary.moveTo(this.currentPosition);
     };
     BallsObject.prototype.isPointInsideObject = function(point) {
         return (0, _vec2Math.Vec2Math).distance(this.currentPosition, point) < this.radius;
@@ -1959,6 +1949,9 @@ var BallsObject = /** @class */ function(_super) {
     BallsObject.prototype.getCollisionRange = function() {
         return this.collisionRange;
     };
+    BallsObject.prototype.getBoundary = function() {
+        return this.boundary;
+    };
     BallsObject.prototype.debugRender = function(context) {
         context.strokeStyle("#FF0000");
         var range = this.getCollisionRange();
@@ -1967,7 +1960,7 @@ var BallsObject = /** @class */ function(_super) {
     return BallsObject;
 }((0, _object.BaseSolverObject));
 
-},{"../vector/vec2":"9XJHV","../vector/vec2Line":"fsq6M","../vector/vec2Math":"j4cED","./types":"46hd3","./collisionModels":"iDnZq","./object":"evzjS","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","../vector/vec2Rect":"8Upj6"}],"fsq6M":[function(require,module,exports) {
+},{"../vector/vec2":"9XJHV","../vector/vec2Line":"fsq6M","../vector/vec2Math":"j4cED","./types":"46hd3","./collisionModels":"iDnZq","./object":"evzjS","../vector/vec2Rect":"8Upj6","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fsq6M":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Line", ()=>Vec2Line);
@@ -1983,8 +1976,8 @@ var Vec2Line = /** @class */ function() {
          * @type {number}
          */ this._k = 0;
         this._b = 0;
-        this._vec1 = vec1;
-        this._vec2 = vec2;
+        this._vec1 = vec1.copy();
+        this._vec2 = vec2.copy();
         this._direction = (0, _vec2Math.Vec2Math).diff(this._vec1, this._vec2);
         this._length = this._direction.length;
         this._length2 = this._direction.length2;
@@ -2031,6 +2024,7 @@ var Vec2Line = /** @class */ function() {
         this._vec1.addSelf(vec);
         this._vec2.addSelf(vec);
         this.calculateKB();
+        return this;
     };
     Vec2Line.prototype.getPointProjection = function(vec) {
         var a = this.direction;
@@ -2087,6 +2081,13 @@ var Vec2Line = /** @class */ function() {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Vec2Line.prototype, "normal", {
+        get: function() {
+            return this._vec2.diff(this._vec1).perpendicular;
+        },
+        enumerable: false,
+        configurable: true
+    });
     Vec2Line.Vertical = function(x) {
         return new Vec2Line(new (0, _vec2.Vec2)(x, 0), new (0, _vec2.Vec2)(x, Number.MAX_SAFE_INTEGER));
     };
@@ -2136,6 +2137,7 @@ parcelHelpers.export(exports, "collide", ()=>collide);
 var _vec2Math = require("../vector/vec2Math");
 var _types = require("./types");
 function collideBallAndBall(obj1, obj2) {
+    if (!obj1.getBoundary().intersect(obj2.getBoundary())) return;
     var between = (0, _vec2Math.Vec2Math).diff(obj1.currentPosition, obj2.currentPosition);
     var distance = between.length;
     var requiredDistance = obj1.radius + obj2.radius;
@@ -2147,6 +2149,7 @@ function collideBallAndBall(obj1, obj2) {
     }
 }
 function collideBallAndImmovableBall(ball, immovable) {
+    if (!ball.getBoundary().intersect(immovable.getBoundary())) return;
     var between = (0, _vec2Math.Vec2Math).diff(ball.currentPosition, immovable.currentPosition);
     var distance = between.length;
     var requiredDistance = ball.radius + immovable.radius;
@@ -2165,16 +2168,19 @@ function _collideBallAndLine(ball, line, lineBounce) {
             var between = (0, _vec2Math.Vec2Math).diff(projectionPoint, ball.currentPosition);
             if (between.length2 < ball.radius2) {
                 var normalized = between.ort;
-                var delta = ball.radius - between.length;
+                var sign = normalized.dot(line.normal) > 0 ? 1 : -1;
+                var delta = sign * (ball.radius - between.length);
                 ball.moveBy((0, _vec2Math.Vec2Math).mul(normalized, -delta * ball.bounceValue * lineBounce));
             }
         }
     } catch (e) {}
 }
 function collideBallAndImmovableLine(ball, line) {
+    if (!ball.getBoundary().intersect(line.getCollisionRange())) return;
     _collideBallAndLine(ball, line._line, line.bounceValue);
 }
 function collideBallAndImmovablePolygon(ball, polygon) {
+    if (!ball.getBoundary().intersect(polygon.getCollisionRange())) return;
     polygon.lines.forEach(function(line) {
         return _collideBallAndLine(ball, line._line, line.bounceValue);
     });
@@ -2353,7 +2359,7 @@ var Vec2Rect = /** @class */ function() {
     return Vec2Rect;
 }();
 
-},{"./vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","./exceptions":"a3jqY"}],"2ms9R":[function(require,module,exports) {
+},{"./vec2":"9XJHV","./exceptions":"a3jqY","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2ms9R":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "RenderableObject", ()=>RenderableObject);
@@ -2434,6 +2440,7 @@ var ImmovableBallsObject = /** @class */ function(_super) {
         this.currentPosition = position.copy();
         this.previousPosition = position.copy();
         this._fixedPosition = position.copy();
+        _super.prototype.moveTo.call(this, position);
     };
     return ImmovableBallsObject;
 }((0, _ball.BallsObject));
@@ -2496,9 +2503,15 @@ var ImmovableLineObject = /** @class */ function(_super) {
         _this.type = (0, _types.SolverObjectTypes).TypeImmovableLine;
         _this.immovable = true;
         _this.bounceValue = 1;
-        _this.currentPosition = position.copy();
-        _this.previousPosition = position.copy();
-        _this._direction = direction;
+        if (position instanceof (0, _vec2Line.Vec2Line)) {
+            _this.currentPosition = position.vec1.copy();
+            _this.previousPosition = position.vec1.copy();
+            _this._direction = position.direction.copy().flipSelf();
+        } else {
+            _this.currentPosition = position.copy();
+            _this.previousPosition = position.copy();
+            _this._direction = direction;
+        }
         _this._line = new (0, _vec2Line.Vec2Line)(_this.currentPosition.copy(), _this.currentPosition.copy().sum(_this._direction));
         _this.collisionRange = new (0, _vec2Rect.Vec2Rect)(_this.currentPosition.sum(_this._direction.mul(0.5)), _this._direction.abs);
         return _this;
@@ -2524,6 +2537,11 @@ var ImmovableLineObject = /** @class */ function(_super) {
         context.strokeStyle("#00FF00");
         context.line(this._line.vec1, this._line.vec2);
         context.text("".concat(this.index), this._line.vec1);
+        context.strokeStyle("#FFFFFF");
+        context.lineWidth(10);
+        var point2 = this.currentPosition.sum(this._line.normal.flipSelf().mul(100));
+        context.line(this.currentPosition.x, this.currentPosition.y, point2.x, point2.y);
+        context.lineWidth(1);
         context.strokeStyle("#FF0000");
         context.rect(this.collisionRange.left, this.collisionRange.top, this.collisionRange.width, this.collisionRange.height);
     };
@@ -2560,7 +2578,7 @@ function createImmovableLineFrom2Points(point1, point2) {
     return new ImmovableLineObject(point1, (0, _vec2Math.Vec2Math).diff(point2, point1));
 }
 
-},{"../vector/vec2Line":"fsq6M","./types":"46hd3","../vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","./immovable":"4MrrS","../vector/vec2Rect":"8Upj6"}],"4MrrS":[function(require,module,exports) {
+},{"../vector/vec2Line":"fsq6M","./types":"46hd3","../vector/vec2Math":"j4cED","./immovable":"4MrrS","../vector/vec2Rect":"8Upj6","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4MrrS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableSolverObject", ()=>ImmovableSolverObject);
@@ -2779,7 +2797,31 @@ var Constrain = /** @class */ function() {
     return Constrain;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"5cPb7":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"58RkW":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "createMilkshake", ()=>createMilkshake);
+var _vec2 = require("../vector/vec2");
+var _vec2Line = require("../vector/vec2Line");
+var p = [
+    new (0, _vec2.Vec2)(0, 0),
+    new (0, _vec2.Vec2)(70, 380),
+    new (0, _vec2.Vec2)(270, 380),
+    new (0, _vec2.Vec2)(340, 0),
+    new (0, _vec2.Vec2)(360, 0),
+    new (0, _vec2.Vec2)(280, 400),
+    new (0, _vec2.Vec2)(60, 400),
+    new (0, _vec2.Vec2)(-20, 0)
+];
+function createMilkshake(size, position) {
+    var center = position.diff(new (0, _vec2.Vec2)(180 * size, 200 * size));
+    var milkShakeLines = [];
+    for(var i = 0; i < p.length - 1; i++)milkShakeLines.push(new (0, _vec2Line.Vec2Line)(p[i].mul(size).sum(center), p[i + 1].mul(size).sum(center)));
+    milkShakeLines.push(new (0, _vec2Line.Vec2Line)(p[p.length - 1].mul(size).sum(center), p[0].mul(size).sum(center)));
+    return milkShakeLines;
+}
+
+},{"../vector/vec2":"9XJHV","../vector/vec2Line":"fsq6M","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"5cPb7":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Scene2", ()=>Scene2);
@@ -3184,7 +3226,7 @@ var ImmovablePolygon = /** @class */ function(_super) {
     return ImmovablePolygon;
 }((0, _immovable.ImmovableSolverObject));
 
-},{"./immovable":"4MrrS","./types":"46hd3","./immovableLine":"4U8jS","../vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","../vector/vec2":"9XJHV","../vector/vec2Rect":"8Upj6"}],"lwDwV":[function(require,module,exports) {
+},{"./immovable":"4MrrS","./types":"46hd3","../vector/vec2":"9XJHV","./immovableLine":"4U8jS","../vector/vec2Math":"j4cED","../vector/vec2Rect":"8Upj6","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lwDwV":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "PolygonRainbow", ()=>PolygonRainbow);
@@ -3324,146 +3366,7 @@ var Stats = /** @class */ function() {
     return Stats;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8bceJ":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Canvas2DRender", ()=>Canvas2DRender);
-var _baseRender = require("./baseRender");
-var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Canvas2DRender = /** @class */ function(_super) {
-    __extends(Canvas2DRender, _super);
-    function Canvas2DRender(context) {
-        var _this = _super.call(this) || this;
-        _this._context = context;
-        return _this;
-    }
-    Canvas2DRender.prototype.getCoord = function(x, y) {
-        var cx, cy;
-        if (x === undefined) {
-            cx = this._position.x;
-            cy = this._position.y;
-        } else if (x instanceof (0, _vec2.Vec2)) {
-            cx = x.x;
-            cy = x.y;
-        } else {
-            cx = x;
-            cy = y;
-        }
-        return [
-            cx,
-            cy
-        ];
-    };
-    Canvas2DRender.prototype.circle = function(radius, x, y) {
-        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
-        this._context.beginPath();
-        this._context.arc(cx, cy, radius, 0, 2 * Math.PI);
-        this._context.stroke();
-    };
-    Canvas2DRender.prototype.fillCircle = function(radius, x, y) {
-        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
-        this._context.beginPath();
-        this._context.arc(cx, cy, radius, 0, 2 * Math.PI);
-        this._context.fill();
-    };
-    Canvas2DRender.prototype.color = function() {};
-    Canvas2DRender.prototype.fillStyle = function(style) {
-        this._context.fillStyle = style;
-    };
-    Canvas2DRender.prototype.fillRect = function(x1, y1, x2, y2) {
-        this._context.fillRect(x1, y1, x2 - x1, y2 - y1);
-    };
-    Canvas2DRender.prototype.line = function(x, y, x2, y2) {
-        var _a, _b, _c;
-        if (y instanceof (0, _vec2.Vec2)) {
-            _a = this.getCoord(x), x = _a[0], y = _a[1];
-            _b = this.getCoord(y), x2 = _b[0], y2 = _b[1];
-        } else _c = this.getCoord(x, y), x = _c[0], y = _c[1];
-        this._context.beginPath();
-        this._context.moveTo(x, y);
-        this._context.lineTo(x2, y2);
-        this._context.stroke();
-    };
-    Canvas2DRender.prototype.vector = function(position, direction) {
-        this._context.beginPath();
-        this._context.moveTo(position.x, position.y);
-        this._context.lineTo(position.x + direction.x, position.y + direction.y);
-        this._context.stroke();
-    };
-    Canvas2DRender.prototype.rect = function(x, y, width, height) {
-        this._context.strokeRect(x, y, width, height);
-    };
-    Canvas2DRender.prototype.text = function(text, x, y) {
-        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
-        this._context.fillStyle = "#ffffff";
-        this._context.textAlign = "start";
-        this._context.fillText(text, cx, cy);
-    };
-    Canvas2DRender.prototype.moveTo = function() {};
-    Canvas2DRender.prototype.font = function(font) {
-        this._context.font = font;
-    };
-    Canvas2DRender.prototype.lineTo = function(x, y) {
-        var _a = this.getCoord(x, y), x2 = _a[0], y2 = _a[1];
-        this._context.moveTo(this._position.x, this._position.y);
-        this._context.lineTo(x2, y2);
-    };
-    Canvas2DRender.prototype.strokeStyle = function(style) {
-        this._context.strokeStyle = style;
-    };
-    Canvas2DRender.prototype.lineWidth = function(width) {
-        this._context.lineWidth = width;
-    };
-    Canvas2DRender.prototype.polygon = function(worldPoints) {
-        this._context.beginPath(); // Start a new path
-        var index = 0;
-        this._context.moveTo(worldPoints[index].x, worldPoints[index].y);
-        while(index < worldPoints.length - 1){
-            index++;
-            this._context.lineTo(worldPoints[index].x, worldPoints[index].y);
-        }
-        this._context.lineTo(worldPoints[0].x, worldPoints[0].y);
-        this._context.stroke();
-    };
-    return Canvas2DRender;
-}((0, _baseRender.BaseRender));
-
-},{"./baseRender":"iKLYR","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"iKLYR":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "BaseRender", ()=>BaseRender);
-var _vec2 = require("../vector/vec2");
-var BaseRender = /** @class */ function() {
-    function BaseRender() {
-        this._position = (0, _vec2.Vec2).Zero();
-    }
-    BaseRender.prototype.moveTo = function(x, y) {
-        this._position.moveTo(x, y);
-    };
-    return BaseRender;
-}();
-
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"exI4W":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"exI4W":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "QuadTreeSolver", ()=>QuadTreeSolver);
@@ -3680,7 +3583,146 @@ var QuadTreeSolverSpace = /** @class */ function(_super) {
     return QuadTreeSolverSpace;
 }((0, _baseSolverSpace.BaseSolverSpace));
 
-},{"./baseSolverSpace":"htZHw","../vector/vec2Rect":"8Upj6","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
+},{"./baseSolverSpace":"htZHw","../vector/vec2Rect":"8Upj6","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8bceJ":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Canvas2DRender", ()=>Canvas2DRender);
+var _baseRender = require("./baseRender");
+var _vec2 = require("../vector/vec2");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var Canvas2DRender = /** @class */ function(_super) {
+    __extends(Canvas2DRender, _super);
+    function Canvas2DRender(context) {
+        var _this = _super.call(this) || this;
+        _this._context = context;
+        return _this;
+    }
+    Canvas2DRender.prototype.getCoord = function(x, y) {
+        var cx, cy;
+        if (x === undefined) {
+            cx = this._position.x;
+            cy = this._position.y;
+        } else if (x instanceof (0, _vec2.Vec2)) {
+            cx = x.x;
+            cy = x.y;
+        } else {
+            cx = x;
+            cy = y;
+        }
+        return [
+            cx,
+            cy
+        ];
+    };
+    Canvas2DRender.prototype.circle = function(radius, x, y) {
+        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
+        this._context.beginPath();
+        this._context.arc(cx, cy, radius, 0, 2 * Math.PI);
+        this._context.stroke();
+    };
+    Canvas2DRender.prototype.fillCircle = function(radius, x, y) {
+        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
+        this._context.beginPath();
+        this._context.arc(cx, cy, radius, 0, 2 * Math.PI);
+        this._context.fill();
+    };
+    Canvas2DRender.prototype.color = function() {};
+    Canvas2DRender.prototype.fillStyle = function(style) {
+        this._context.fillStyle = style;
+    };
+    Canvas2DRender.prototype.fillRect = function(x1, y1, x2, y2) {
+        this._context.fillRect(x1, y1, x2 - x1, y2 - y1);
+    };
+    Canvas2DRender.prototype.line = function(x, y, x2, y2) {
+        var _a, _b, _c;
+        if (y instanceof (0, _vec2.Vec2)) {
+            _a = this.getCoord(x), x = _a[0], y = _a[1];
+            _b = this.getCoord(y), x2 = _b[0], y2 = _b[1];
+        } else _c = this.getCoord(x, y), x = _c[0], y = _c[1];
+        this._context.beginPath();
+        this._context.moveTo(x, y);
+        this._context.lineTo(x2, y2);
+        this._context.stroke();
+    };
+    Canvas2DRender.prototype.vector = function(position, direction) {
+        this._context.beginPath();
+        this._context.moveTo(position.x, position.y);
+        this._context.lineTo(position.x + direction.x, position.y + direction.y);
+        this._context.stroke();
+    };
+    Canvas2DRender.prototype.rect = function(x, y, width, height) {
+        this._context.strokeRect(x, y, width, height);
+    };
+    Canvas2DRender.prototype.text = function(text, x, y) {
+        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
+        this._context.fillStyle = "#ffffff";
+        this._context.textAlign = "start";
+        this._context.fillText(text, cx, cy);
+    };
+    Canvas2DRender.prototype.moveTo = function() {};
+    Canvas2DRender.prototype.font = function(font) {
+        this._context.font = font;
+    };
+    Canvas2DRender.prototype.lineTo = function(x, y) {
+        var _a = this.getCoord(x, y), x2 = _a[0], y2 = _a[1];
+        this._context.moveTo(this._position.x, this._position.y);
+        this._context.lineTo(x2, y2);
+    };
+    Canvas2DRender.prototype.strokeStyle = function(style) {
+        this._context.strokeStyle = style;
+    };
+    Canvas2DRender.prototype.lineWidth = function(width) {
+        this._context.lineWidth = width;
+    };
+    Canvas2DRender.prototype.polygon = function(worldPoints) {
+        this._context.beginPath(); // Start a new path
+        var index = 0;
+        this._context.moveTo(worldPoints[index].x, worldPoints[index].y);
+        while(index < worldPoints.length - 1){
+            index++;
+            this._context.lineTo(worldPoints[index].x, worldPoints[index].y);
+        }
+        this._context.lineTo(worldPoints[0].x, worldPoints[0].y);
+        this._context.stroke();
+    };
+    return Canvas2DRender;
+}((0, _baseRender.BaseRender));
+
+},{"./baseRender":"iKLYR","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"iKLYR":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "BaseRender", ()=>BaseRender);
+var _vec2 = require("../vector/vec2");
+var BaseRender = /** @class */ function() {
+    function BaseRender() {
+        this._position = (0, _vec2.Vec2).Zero();
+    }
+    BaseRender.prototype.moveTo = function(x, y) {
+        this._position.moveTo(x, y);
+    };
+    return BaseRender;
+}();
+
+},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "MessageType", ()=>MessageType);

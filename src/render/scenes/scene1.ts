@@ -15,19 +15,8 @@ import {CircleWithText} from "../items/circleWithText";
 import { index2color } from "../items/utils/index2color";
 import { ViewportConstrain } from "../constrains/viewport";
 import {AnyUIEvent, UIMouseEvent} from "../../host/input";
-
-const milkShakePoints = [
-    new Vec2(0, 0),
-    new Vec2(70, 380),
-    new Vec2(270, 380),
-    new Vec2(340, 0)
-]
-
-const milkShakeLines = [
-    [milkShakePoints[0], Vec2Math.diff(milkShakePoints[0], milkShakePoints[1]).flipSelf()],
-    [milkShakePoints[1], Vec2Math.diff(milkShakePoints[1], milkShakePoints[2]).flipSelf()],
-    [milkShakePoints[2], Vec2Math.diff(milkShakePoints[2], milkShakePoints[3]).flipSelf()]
-]
+import {createMilkshake} from "../primitives/milkshake";
+import {Vec2Line} from "../vector/vec2Line";
 
 const ballsColors = {
     57: '#ffffff',
@@ -173,21 +162,18 @@ export class Scene1 extends BaseScene {
     }
 
     createMilkShake(canvasCenter) {
-        milkShakeLines.forEach(line => {
+        createMilkshake(1, canvasCenter).forEach(line => {
             this.engine.addObject(new ImmovableLineRenderableObject(
-                new ImmovableLineObject(
-                    line[0].sum(
-                        canvasCenter.diff(new Vec2(340/2, 380/2))
-                    ),
-                    line[1]
-                ),
-                new Line(
-                    this.engine.context,
-                    Vec2.Zero(),
-                    Vec2.Zero(),
-                    '#ffffff'
-                )
-            ));
+                new ImmovableLineObject(line),
+                new Line(this.engine.context, Vec2.Zero(), Vec2.Zero(), '#ffffff')
+            ))
+        });
+
+        createMilkshake(0.5, canvasCenter).forEach(line => {
+            this.engine.addObject(new ImmovableLineRenderableObject(
+                new ImmovableLineObject(line),
+                new Line(this.engine.context, Vec2.Zero(), Vec2.Zero(), '#0000ff')
+            ))
         });
     }
 
@@ -208,6 +194,11 @@ export class Scene1 extends BaseScene {
     }
 
     tick(timePassed: number) {
+        this.engine.stats.addStats('Time passed', timePassed)
+
+        if (timePassed > 0.017) {
+            return;
+        }
         const newBalls = this.generator.getNextObjects(timePassed);
         if (newBalls) {
             newBalls.forEach(ball => this.engine.addObject(ball));

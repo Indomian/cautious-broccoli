@@ -170,6 +170,10 @@ export class Vec2 {
         return new Vec2(this.x * value, this.y * value);
     }
 
+    dot(vec: Vec2): number {
+        return this.x * vec.x + this.y * vec.y;
+    }
+
     copy() {
         return new Vec2(this.x, this.y);
     }
@@ -233,8 +237,8 @@ export class Vec2 {
         }
 
         return new Vec2(
-            -this.y / this.x,
-            1
+            -this.y,
+            this.x
         ).ort;
     }
 

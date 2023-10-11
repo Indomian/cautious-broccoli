@@ -11,6 +11,10 @@ import {Vec2Line} from "../vector/vec2Line";
  * @param {BallsObject} obj2
  */
 export function collideBallAndBall(obj1: BallsObject, obj2: BallsObject) {
+    if (!obj1.getBoundary().intersect(obj2.getBoundary())) {
+        return
+    }
+
     const between = Vec2Math.diff(obj1.currentPosition, obj2.currentPosition);
     const distance = between.length;
     const requiredDistance = obj1.radius + obj2.radius;
@@ -29,6 +33,10 @@ export function collideBallAndBall(obj1: BallsObject, obj2: BallsObject) {
  * @param {ImmovableBallsObject} immovable
  */
 export function collideBallAndImmovableBall(ball: BallsObject, immovable) {
+    if (!ball.getBoundary().intersect(immovable.getBoundary())) {
+        return
+    }
+
     const between = Vec2Math.diff(
         ball.currentPosition,
         immovable.currentPosition
@@ -60,7 +68,9 @@ function _collideBallAndLine(ball: BallsObject, line: Vec2Line, lineBounce: numb
             if (between.length2 < ball.radius2) {
                 const normalized = between.ort;
 
-                const delta = ball.radius - between.length;
+                const sign = normalized.dot(line.normal) > 0 ? 1 : -1;
+
+                const delta = sign * (ball.radius - between.length);
 
                 ball.moveBy(Vec2Math.mul(normalized, -delta * ball.bounceValue * lineBounce));
             }
@@ -75,6 +85,10 @@ function _collideBallAndLine(ball: BallsObject, line: Vec2Line, lineBounce: numb
  * @param {ImmovableLineObject} line
  */
 export function collideBallAndImmovableLine(ball: BallsObject, line: ImmovableLineObject) {
+    if (!ball.getBoundary().intersect(line.getCollisionRange())) {
+        return
+    }
+
     _collideBallAndLine(ball, line._line, line.bounceValue);
 }
 
@@ -84,6 +98,10 @@ export function collideBallAndImmovableLine(ball: BallsObject, line: ImmovableLi
  * @param {ImmovablePolygon} polygon
  */
 export function collideBallAndImmovablePolygon(ball: BallsObject, polygon: ImmovablePolygon) {
+    if (!ball.getBoundary().intersect(polygon.getCollisionRange())) {
+        return
+    }
+
     polygon.lines.forEach(line => _collideBallAndLine(ball, line._line, line.bounceValue))
 }
 

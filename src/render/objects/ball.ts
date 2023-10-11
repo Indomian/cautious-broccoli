@@ -92,11 +92,13 @@ export class BallsObject extends BaseSolverObject {
     moveBy(delta: Vec2) {
         this.currentPosition.moveBy(delta);
         this.collisionRange.moveBy(delta);
+        this.boundary.moveBy(delta);
     }
 
     moveTo(position: Vec2) {
         this.currentPosition.moveTo(position);
         this.collisionRange.moveTo(this.currentPosition);
+        this.boundary.moveTo(this.currentPosition);
     }
 
     isPointInsideObject(point: Vec2): boolean {
@@ -133,6 +135,10 @@ export class BallsObject extends BaseSolverObject {
 
     getCollisionRange(): Vec2Rect {
         return this.collisionRange;
+    }
+
+    getBoundary(): Vec2Rect {
+        return this.boundary;
     }
 
     debugRender(context: BaseRender) {
