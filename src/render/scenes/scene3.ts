@@ -51,10 +51,12 @@ export class Scene3 extends BaseScene {
 
         const ballVelocity = n.mul(-1);
 
+        const radius = 20 + Math.random() * 30;
+
         const ballView =  new CircleWithText(
             this.engine.context,
             Vec2.Zero(),
-            7,
+            radius,
             index2color(this.ballIndex+200),
             '',
             '#000000'
@@ -65,7 +67,7 @@ export class Scene3 extends BaseScene {
         const obj = new RenderableObject<BallsObject, CircleWithText>(
             (new BallsObject(
                 ballGeneratorPoint.diff(n.mul(40)),
-                5
+                radius
             )).setVelocity(ballVelocity),
             ballView
         )
@@ -110,7 +112,7 @@ export class Scene3 extends BaseScene {
                 this.engine.context,
                 this.center,
                 this.radius,
-                '#ffffff'
+                '#555555'
             )
         );
     }

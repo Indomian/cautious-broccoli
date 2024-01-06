@@ -33,7 +33,7 @@ export class ImmovablePolygon extends ImmovableSolverObject {
     }
 
     private _recreateLines() {
-        const pointsToProcess = [...this._localPoints];
+        const pointsToProcess = [...this._localPoints].reverse();
         let firstPoint: Vec2 = pointsToProcess.shift();
         let secondPoint: Vec2;
         let lastPoint: Vec2 = firstPoint;

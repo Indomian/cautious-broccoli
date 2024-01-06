@@ -1,7 +1,7 @@
-import { Render } from "../render";
+import { Render } from "../render/index";
 import { MessageType } from "../host/messages";
 
-let render;
+let render: Render;
 
 onmessage = function (event ) {
     switch (event.data.type) {

@@ -2143,7 +2143,7 @@ var Scene1 = /** @class */ function(_super) {
     return Scene1;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dRCUa","../generators/totalObjectsGenerator":"h8lsL","../items/circle":"c8cAT","../vector/vec2":"bp79Y","../objects/ball":"5IfJk","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../renderableObjects/immovableLine":"bihaA","../objects/immovableLine":"f4D1b","../items/line":"eAxYY","../items/circleWithText":"eZiSs","../items/utils/index2color":"datdc","../constrains/viewport":"fOYyc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../primitives/milkshake":"ajvKL"}],"dRCUa":[function(require,module,exports) {
+},{"./baseScene":"dRCUa","../generators/totalObjectsGenerator":"h8lsL","../items/circle":"c8cAT","../vector/vec2":"bp79Y","../objects/ball":"5IfJk","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../renderableObjects/immovableLine":"bihaA","../objects/immovableLine":"f4D1b","../items/line":"eAxYY","../items/circleWithText":"eZiSs","../items/utils/index2color":"datdc","../constrains/viewport":"fOYyc","../primitives/milkshake":"ajvKL","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dRCUa":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
@@ -3470,9 +3470,10 @@ var Scene3 = /** @class */ function(_super) {
         var toCenter = ballGeneratorPoint.diff(this.center);
         var n = toCenter.ort;
         var ballVelocity = n.mul(-1);
-        var ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 7, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
+        var radius = 20 + Math.random() * 30;
+        var ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), radius, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
         this.ballsViews.push(ballView);
-        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), 5).setVelocity(ballVelocity), ballView);
+        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), radius).setVelocity(ballVelocity), ballView);
         this.engine.addObject(obj);
         this.ballIndex++;
     };
@@ -3486,7 +3487,7 @@ var Scene3 = /** @class */ function(_super) {
     };
     Scene3.prototype.initConstrain = function() {
         this.engine.constrain = new (0, _circle1.CircleConstrain)(this.center, this.radius);
-        this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#ffffff"));
+        this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#555555"));
     };
     Scene3.prototype.getActor = function() {
         return this.actor;
@@ -3599,7 +3600,7 @@ var ImmovablePolygon = /** @class */ function(_super) {
         return _this;
     }
     ImmovablePolygon.prototype._recreateLines = function() {
-        var pointsToProcess = __spreadArray([], this._localPoints, true);
+        var pointsToProcess = __spreadArray([], this._localPoints, true).reverse();
         var firstPoint = pointsToProcess.shift();
         var secondPoint;
         var lastPoint = firstPoint;

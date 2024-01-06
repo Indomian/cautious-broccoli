@@ -557,13 +557,13 @@ function hmrAccept(bundle, id) {
 }
 
 },{}],"fXkCw":[function(require,module,exports) {
-var _render = require("../render");
+var _index = require("../render/index");
 var _messages = require("../host/messages");
 var render;
 onmessage = function(event) {
     switch(event.data.type){
         case (0, _messages.MessageType).MessageInit:
-            render = new (0, _render.Render)(event.data.canvas);
+            render = new (0, _index.Render)(event.data.canvas);
             render.start();
             break;
         case (0, _messages.MessageType).MessageUserInput:
@@ -575,7 +575,109 @@ onmessage = function(event) {
     }
 };
 
-},{"../render":"eyyeY","../host/messages":"8fDji"}],"eyyeY":[function(require,module,exports) {
+},{"../host/messages":"8fDji","../render/index":"eyyeY"}],"8fDji":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MessageType", ()=>MessageType);
+parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
+parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
+parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
+parcelHelpers.export(exports, "MessageEngineEvent", ()=>MessageEngineEvent);
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var MessageType;
+(function(MessageType) {
+    MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
+    MessageType[MessageType["MessageInit"] = 1] = "MessageInit";
+    MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
+    MessageType[MessageType["MessageEngineEvent"] = 3] = "MessageEngineEvent";
+})(MessageType || (MessageType = {}));
+var MessageEvent = /** @class */ function() {
+    function MessageEvent() {
+        this.type = MessageType.MessageNone;
+    }
+    return MessageEvent;
+}();
+var MessageInit = /** @class */ function(_super) {
+    __extends(MessageInit, _super);
+    function MessageInit(canvas) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageInit;
+        _this.canvas = canvas;
+        return _this;
+    }
+    return MessageInit;
+}(MessageEvent);
+var MessageUserInput = /** @class */ function(_super) {
+    __extends(MessageUserInput, _super);
+    function MessageUserInput(event) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageUserInput;
+        _this.event = event;
+        return _this;
+    }
+    return MessageUserInput;
+}(MessageEvent);
+var MessageEngineEvent = /** @class */ function(_super) {
+    __extends(MessageEngineEvent, _super);
+    function MessageEngineEvent(event) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageEngineEvent;
+        _this.event = event;
+        return _this;
+    }
+    return MessageEngineEvent;
+}(MessageEvent);
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fn8Fk":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"eyyeY":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
@@ -1114,37 +1216,7 @@ var Vec2ExceptionRectSizeShouldBePositive = /** @class */ function(_super) {
     return Vec2ExceptionRectSizeShouldBePositive;
 }(Vec2Exception);
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fn8Fk":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"efHiM":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"efHiM":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "MATH_ERROR", ()=>MATH_ERROR);
@@ -1703,7 +1775,7 @@ var Scene1 = /** @class */ function(_super) {
     return Scene1;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"86Vr1","../vector/vec2":"9XJHV","../objects/ball":"1Qukc","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"4yw9f","../items/circleWithText":"i8zZK","../items/utils/index2color":"frxih","../constrains/viewport":"8AY7d","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk","../primitives/milkshake":"58RkW"}],"dsDU5":[function(require,module,exports) {
+},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"86Vr1","../vector/vec2":"9XJHV","../objects/ball":"1Qukc","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"4yw9f","../items/circleWithText":"i8zZK","../items/utils/index2color":"frxih","../constrains/viewport":"8AY7d","../primitives/milkshake":"58RkW","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"dsDU5":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
@@ -3030,9 +3102,10 @@ var Scene3 = /** @class */ function(_super) {
         var toCenter = ballGeneratorPoint.diff(this.center);
         var n = toCenter.ort;
         var ballVelocity = n.mul(-1);
-        var ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 7, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
+        var radius = 20 + Math.random() * 30;
+        var ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), radius, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
         this.ballsViews.push(ballView);
-        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), 5).setVelocity(ballVelocity), ballView);
+        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), radius).setVelocity(ballVelocity), ballView);
         this.engine.addObject(obj);
         this.ballIndex++;
     };
@@ -3046,7 +3119,7 @@ var Scene3 = /** @class */ function(_super) {
     };
     Scene3.prototype.initConstrain = function() {
         this.engine.constrain = new (0, _circle1.CircleConstrain)(this.center, this.radius);
-        this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#ffffff"));
+        this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#555555"));
     };
     Scene3.prototype.getActor = function() {
         return this.actor;
@@ -3159,7 +3232,7 @@ var ImmovablePolygon = /** @class */ function(_super) {
         return _this;
     }
     ImmovablePolygon.prototype._recreateLines = function() {
-        var pointsToProcess = __spreadArray([], this._localPoints, true);
+        var pointsToProcess = __spreadArray([], this._localPoints, true).reverse();
         var firstPoint = pointsToProcess.shift();
         var secondPoint;
         var lastPoint = firstPoint;
@@ -3722,78 +3795,6 @@ var BaseRender = /** @class */ function() {
     return BaseRender;
 }();
 
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "MessageType", ()=>MessageType);
-parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
-parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
-parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
-parcelHelpers.export(exports, "MessageEngineEvent", ()=>MessageEngineEvent);
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var MessageType;
-(function(MessageType) {
-    MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
-    MessageType[MessageType["MessageInit"] = 1] = "MessageInit";
-    MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
-    MessageType[MessageType["MessageEngineEvent"] = 3] = "MessageEngineEvent";
-})(MessageType || (MessageType = {}));
-var MessageEvent = /** @class */ function() {
-    function MessageEvent() {
-        this.type = MessageType.MessageNone;
-    }
-    return MessageEvent;
-}();
-var MessageInit = /** @class */ function(_super) {
-    __extends(MessageInit, _super);
-    function MessageInit(canvas) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageInit;
-        _this.canvas = canvas;
-        return _this;
-    }
-    return MessageInit;
-}(MessageEvent);
-var MessageUserInput = /** @class */ function(_super) {
-    __extends(MessageUserInput, _super);
-    function MessageUserInput(event) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageUserInput;
-        _this.event = event;
-        return _this;
-    }
-    return MessageUserInput;
-}(MessageEvent);
-var MessageEngineEvent = /** @class */ function(_super) {
-    __extends(MessageEngineEvent, _super);
-    function MessageEngineEvent(event) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageEngineEvent;
-        _this.event = event;
-        return _this;
-    }
-    return MessageEngineEvent;
-}(MessageEvent);
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ccn6U","fXkCw"], "fXkCw", "parcelRequire62ee")
+},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ccn6U","fXkCw"], "fXkCw", "parcelRequire62ee")
 
 //# sourceMappingURL=main.8e789c37.js.map
