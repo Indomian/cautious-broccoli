@@ -2,12 +2,12 @@
   "name": "balls",
   "version": "0.0.1",
   "description": "Technical demo of basic physics",
-  "source": "src/index.html",
+  "source": "src/index.html v2/index.html",
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "test": "jest",
-    "start": "rm -rf .parcel-cache && yarn parcel",
-    "build": "rm -rf .parcel-cache && yarn parcel build --public-url /cautious-broccoli/ --no-source-maps",
+    "start": "rm -rf .parcel-cache && yarn parcel src/index.html v2/index.html",
+    "build": "rm -rf .parcel-cache && yarn parcel build --public-url /cautious-broccoli/ --no-source-maps src/index.html v2/index.html",
     "build-local": "rm -rf .parcel-cache dist && yarn parcel build --no-source-maps"
   },
   "author": "Egor Bolgov <e.bolgov@semrush.com>",
@@ -22,5 +22,9 @@
     "jest": "^29.5.0",
     "parcel": "^2.8.3",
     "typescript": ">=3.0.0"
+  },
+  "dependencies": {
+    "@types/p5": "^1.7.6",
+    "p5": "^1.9.4"
   }
 }

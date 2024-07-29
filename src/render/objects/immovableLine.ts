@@ -102,6 +102,12 @@ export class ImmovableLineObject extends ImmovableSolverObject {
 
     intersects(range: Vec2Rect): boolean {
         if (!range.intersect(this.collisionRange)) {
+
+
+
+
+
+
             return false;
         }
 

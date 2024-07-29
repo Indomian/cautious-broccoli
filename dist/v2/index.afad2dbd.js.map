@@ -1,0 +1,1 @@
+{"mappings":"AAAA,SAAS,QAAT;IACI,aAAa,KAAK;AACtB;AAEA,SAAS,OAAT;IACI,WAAW;AACf","sources":["v2/js/index.ts"],"sourcesContent":["function setup() {\n    createCanvas(400, 400);\n}\n\nfunction draw() {\n    background(220);\n}\n"],"names":[],"version":3,"file":"index.afad2dbd.js.map","sourceRoot":"/__parcel_source_root/"}

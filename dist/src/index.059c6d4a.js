@@ -142,13 +142,13 @@
       this[globalName] = mainExports;
     }
   }
-})({"ccn6U":[function(require,module,exports) {
+})({"lxFny":[function(require,module,exports) {
 var global = arguments[3];
 var HMR_HOST = null;
 var HMR_PORT = null;
 var HMR_SECURE = false;
-var HMR_ENV_HASH = "a8fb9c35fdafe466";
-module.bundle.HMR_BUNDLE_ID = "c2528bfa8e789c37";
+var HMR_ENV_HASH = "d6ea1d42532a7575";
+module.bundle.HMR_BUNDLE_ID = "97323660059c6d4a";
 "use strict";
 /* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, globalThis, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
 import type {
@@ -556,26 +556,496 @@ function hmrAccept(bundle, id) {
     });
 }
 
-},{}],"fXkCw":[function(require,module,exports) {
-var _index = require("../render/index");
-var _messages = require("../host/messages");
-var render;
-onmessage = function(event) {
-    switch(event.data.type){
-        case (0, _messages.MessageType).MessageInit:
-            render = new (0, _index.Render)(event.data.canvas);
-            render.start();
-            break;
-        case (0, _messages.MessageType).MessageUserInput:
-            if (render) render.processUserInput(event.data.event);
-            break;
-        case (0, _messages.MessageType).MessageEngineEvent:
-            if (render) render.processEngineEvent(event.data.event);
-            break;
+},{}],"hb2Bw":[function(require,module,exports) {
+var _onReady = require("../utils/onReady");
+var _getElement = require("../utils/getElement");
+var _worker = require("./worker");
+var _direct = require("./direct");
+function initApplication() {
+    console.log("Init application");
+    /**
+     * @var {HTMLCanvasElement}
+     */ const canvas = (0, _getElement.getElement)("#image_canvas");
+    const container = (0, _getElement.getElement)("#container");
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+    let application;
+    if (canvas.transferControlToOffscreen) {
+        console.log("Render in worker");
+        application = new (0, _worker.WorkerApplication)(canvas);
+    } else {
+        // There is no support for offscreen render
+        console.log("Render in main thread");
+        application = new (0, _direct.DirectApplication)(canvas);
+    }
+    const buttonLoadScene1 = (0, _getElement.getElement)("#scene1");
+    const buttonLoadScene2 = (0, _getElement.getElement)("#scene2");
+    const buttonLoadScene3 = (0, _getElement.getElement)("#scene3");
+    buttonLoadScene1.addEventListener("click", (e)=>{
+        e.preventDefault();
+        application.loadScene("scene1");
+    });
+    buttonLoadScene2.addEventListener("click", (e)=>{
+        e.preventDefault();
+        application.loadScene("scene2");
+    });
+    buttonLoadScene3.addEventListener("click", (e)=>{
+        e.preventDefault();
+        application.loadScene("scene3");
+    });
+}
+(0, _onReady.onReady)(initApplication);
+
+},{"../utils/onReady":"8DDHo","../utils/getElement":"asMcw","./worker":"169dr","./direct":"BtOcs"}],"8DDHo":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/**
+ * Calls function when webpage is ready
+ * @param {function} callback
+ */ parcelHelpers.export(exports, "onReady", ()=>onReady);
+const DOCUMENT_STATE_LOADING = "loading";
+function onReady(callback) {
+    if (document.readyState !== DOCUMENT_STATE_LOADING) callback();
+    else document.addEventListener("DOMContentLoaded", callback);
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"asMcw":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ElementNotFound", ()=>ElementNotFound);
+parcelHelpers.export(exports, "getElement", ()=>getElement);
+class ElementNotFound extends Error {
+}
+function getElement(selector) {
+    const element = document.querySelector(selector);
+    if (!element) throw new ElementNotFound(selector);
+    return element;
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"169dr":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "WorkerApplication", ()=>WorkerApplication);
+var _input = require("./input");
+var _messages = require("./messages");
+var _workerWorkaroundJs = require("./workerWorkaround.js");
+var _baseEngine = require("../engine/baseEngine");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var WorkerApplication = /** @class */ function(_super) {
+    __extends(WorkerApplication, _super);
+    function WorkerApplication(canvas) {
+        var _this = _super.call(this) || this;
+        _this.sendUserInputEvent = function(event) {
+            _this.worker.postMessage(new (0, _messages.MessageUserInput)(event));
+        };
+        _this.sendEngineEvent = function(event) {
+            _this.worker.postMessage(new (0, _messages.MessageEngineEvent)(event));
+        };
+        _this.worker = (0, _workerWorkaroundJs.createWorker)();
+        var offscreen = canvas.transferControlToOffscreen();
+        _this.worker.postMessage(new (0, _messages.MessageInit)(offscreen), [
+            offscreen
+        ]);
+        _this.userInput = new (0, _input.UserInput)(canvas);
+        _this.userInput.addHandler(_this.sendUserInputEvent);
+        return _this;
+    }
+    return WorkerApplication;
+}((0, _baseEngine.BaseEngine));
+
+},{"./input":"d2HoK","./messages":"8r34k","./workerWorkaround.js":"9q0ah","../engine/baseEngine":"fCHiv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"d2HoK":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "UserInput", ()=>UserInput);
+var UserInput = /** @class */ function() {
+    function UserInput(canvas) {
+        var _this = this;
+        this.keyPress = function(browserEvent) {
+            var event = {
+                keyPressed: browserEvent.key
+            };
+            _this.processEvent(event);
+        };
+        this.mouseEnter = function(browserEvent) {
+            var event = _this.createMouseEvent(browserEvent);
+            _this.processEvent(event);
+        };
+        this.mouseLeave = function(browserEvent) {
+            var event = _this.createMouseEvent(browserEvent);
+            _this.processEvent(event);
+        };
+        this.mouseMove = function(browserEvent) {
+            var event = _this.createMouseEvent(browserEvent);
+            _this.processEvent(event);
+        };
+        this.mouseDown = function(browserEvent) {
+            _this._leftButtonDown = true;
+            var event = _this.createMouseEvent(browserEvent);
+            _this.processEvent(event);
+        };
+        this.mouseUp = function(browserEvent) {
+            _this._leftButtonDown = false;
+            var event = _this.createMouseEvent(browserEvent);
+            _this.processEvent(event);
+        };
+        this.click = function(browserEvent) {
+            var event = _this.createMouseEvent(browserEvent);
+            _this.processEvent(event);
+        };
+        this.touchStart = function(browserEvent) {
+            browserEvent.preventDefault();
+            if (browserEvent.touches.length === 0) return;
+            _this._leftButtonDown = true;
+            var touch = browserEvent.touches.item(0);
+            var event = {
+                screenX: touch.pageX,
+                screenY: touch.pageY,
+                dx: 0,
+                dy: 0,
+                leftButtonDown: _this._leftButtonDown
+            };
+            _this.processEvent(event);
+        };
+        this.touchMove = function(browserEvent) {
+            browserEvent.preventDefault();
+            var event = _this.createTouchEvent(browserEvent);
+            if (event) _this.processEvent(event);
+        };
+        this.touchEnd = function(browserEvent) {
+            browserEvent.preventDefault();
+            _this._leftButtonDown = false;
+            var event = _this.createTouchEndEvent();
+            if (event) _this.processEvent(event);
+        };
+        this.touchCancel = function(browserEvent) {
+            browserEvent.preventDefault();
+            _this._leftButtonDown = false;
+            var event = _this.createTouchEndEvent();
+            if (event) _this.processEvent(event);
+        };
+        this._canvas = canvas;
+        this._handlers = new Set();
+        this._leftButtonDown = false;
+        this.addHandlers();
+    }
+    UserInput.prototype.addHandlers = function() {
+        this._canvas.addEventListener("mouseenter", this.mouseEnter);
+        this._canvas.addEventListener("mouseleave", this.mouseLeave);
+        this._canvas.addEventListener("mousemove", this.mouseMove);
+        this._canvas.addEventListener("mousedown", this.mouseDown);
+        this._canvas.addEventListener("mouseup", this.mouseUp);
+        this._canvas.addEventListener("click", this.click);
+        // Touch events
+        this._canvas.addEventListener("touchstart", this.touchStart, {
+            passive: false
+        });
+        this._canvas.addEventListener("touchmove", this.touchMove, {
+            passive: false
+        });
+        this._canvas.addEventListener("touchcancel", this.touchCancel, {
+            passive: false
+        });
+        this._canvas.addEventListener("touchend", this.touchEnd, {
+            passive: false
+        });
+        // Keyboard events
+        document.addEventListener("keypress", this.keyPress);
+    };
+    UserInput.prototype.removeHandlers = function() {
+        document.removeEventListener("keypress", this.keyPress);
+    };
+    UserInput.prototype.processEvent = function(event) {
+        this._handlers.forEach(function(callback) {
+            callback(event);
+        });
+        this._oldX = event.screenX;
+        this._oldY = event.screenY;
+    };
+    UserInput.prototype.addHandler = function(callback) {
+        this._handlers.add(callback);
+    };
+    UserInput.prototype.removeHandler = function(callback) {
+        if (this._handlers.has(callback)) this._handlers.delete(callback);
+    };
+    UserInput.prototype.createMouseEvent = function(browserEvent) {
+        return {
+            screenX: browserEvent.offsetX,
+            screenY: browserEvent.offsetY,
+            dx: -this._oldX + browserEvent.offsetX,
+            dy: -this._oldY + browserEvent.offsetY,
+            leftButtonDown: this._leftButtonDown
+        };
+    };
+    UserInput.prototype.createTouchEvent = function(browserEvent) {
+        var touch = browserEvent.touches.item(0);
+        return {
+            screenX: touch.pageX,
+            screenY: touch.pageY,
+            dx: -this._oldX + touch.pageX,
+            dy: -this._oldY + touch.pageY,
+            leftButtonDown: this._leftButtonDown
+        };
+    };
+    UserInput.prototype.createTouchEndEvent = function() {
+        return {
+            screenX: this._oldX,
+            screenY: this._oldY,
+            dx: 0,
+            dy: 0,
+            leftButtonDown: this._leftButtonDown
+        };
+    };
+    return UserInput;
+}();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8r34k":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MessageType", ()=>MessageType);
+parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
+parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
+parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
+parcelHelpers.export(exports, "MessageEngineEvent", ()=>MessageEngineEvent);
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var MessageType;
+(function(MessageType) {
+    MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
+    MessageType[MessageType["MessageInit"] = 1] = "MessageInit";
+    MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
+    MessageType[MessageType["MessageEngineEvent"] = 3] = "MessageEngineEvent";
+})(MessageType || (MessageType = {}));
+var MessageEvent = /** @class */ function() {
+    function MessageEvent() {
+        this.type = MessageType.MessageNone;
+    }
+    return MessageEvent;
+}();
+var MessageInit = /** @class */ function(_super) {
+    __extends(MessageInit, _super);
+    function MessageInit(canvas) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageInit;
+        _this.canvas = canvas;
+        return _this;
+    }
+    return MessageInit;
+}(MessageEvent);
+var MessageUserInput = /** @class */ function(_super) {
+    __extends(MessageUserInput, _super);
+    function MessageUserInput(event) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageUserInput;
+        _this.event = event;
+        return _this;
+    }
+    return MessageUserInput;
+}(MessageEvent);
+var MessageEngineEvent = /** @class */ function(_super) {
+    __extends(MessageEngineEvent, _super);
+    function MessageEngineEvent(event) {
+        var _this = _super.call(this) || this;
+        _this.type = MessageType.MessageEngineEvent;
+        _this.event = event;
+        return _this;
+    }
+    return MessageEngineEvent;
+}(MessageEvent);
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9q0ah":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "createWorker", ()=>createWorker);
+function createWorker() {
+    return new Worker(require("68aa42cabbc06689"));
+}
+
+},{"68aa42cabbc06689":"iAEfQ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iAEfQ":[function(require,module,exports) {
+let workerURL = require("b6cd70138d1a4a29");
+let bundleURL = require("59603eb94b5cfa37");
+let url = bundleURL.getBundleURL("cYOr9") + "../main.8e789c37.js" + "?" + Date.now();
+module.exports = workerURL(url, bundleURL.getOrigin(url), false);
+
+},{"b6cd70138d1a4a29":"cn2gM","59603eb94b5cfa37":"lgJ39"}],"cn2gM":[function(require,module,exports) {
+"use strict";
+module.exports = function(workerUrl, origin, isESM) {
+    if (origin === self.location.origin) // If the worker bundle's url is on the same origin as the document,
+    // use the worker bundle's own url.
+    return workerUrl;
+    else {
+        // Otherwise, create a blob URL which loads the worker bundle with `importScripts`.
+        var source = isESM ? "import " + JSON.stringify(workerUrl) + ";" : "importScripts(" + JSON.stringify(workerUrl) + ");";
+        return URL.createObjectURL(new Blob([
+            source
+        ], {
+            type: "application/javascript"
+        }));
     }
 };
 
-},{"../render/index":"eyyeY","../host/messages":"8fDji"}],"eyyeY":[function(require,module,exports) {
+},{}],"lgJ39":[function(require,module,exports) {
+"use strict";
+var bundleURL = {};
+function getBundleURLCached(id) {
+    var value = bundleURL[id];
+    if (!value) {
+        value = getBundleURL();
+        bundleURL[id] = value;
+    }
+    return value;
+}
+function getBundleURL() {
+    try {
+        throw new Error();
+    } catch (err) {
+        var matches = ("" + err.stack).match(/(https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/[^)\n]+/g);
+        if (matches) // The first two stack frames will be this function and getBundleURLCached.
+        // Use the 3rd one, which will be a runtime in the original bundle.
+        return getBaseURL(matches[2]);
+    }
+    return "/";
+}
+function getBaseURL(url) {
+    return ("" + url).replace(/^((?:https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/.+)\/[^/]+$/, "$1") + "/";
+} // TODO: Replace uses with `new URL(url).origin` when ie11 is no longer supported.
+function getOrigin(url) {
+    var matches = ("" + url).match(/(https?|file|ftp|(chrome|moz|safari-web)-extension):\/\/[^/]+/);
+    if (!matches) throw new Error("Origin not found");
+    return matches[0];
+}
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+exports.getOrigin = getOrigin;
+
+},{}],"fCHiv":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "BaseEngine", ()=>BaseEngine);
+var BaseEngine = /** @class */ function() {
+    function BaseEngine() {}
+    BaseEngine.prototype.loadScene = function(sceneName) {
+        var event = {
+            scene: sceneName
+        };
+        this.sendEngineEvent(event);
+    };
+    return BaseEngine;
+}();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"BtOcs":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "DirectApplication", ()=>DirectApplication);
+var _render = require("../render");
+var _input = require("./input");
+var _baseEngine = require("../engine/baseEngine");
+var __extends = undefined && undefined.__extends || function() {
+    var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || ({
+            __proto__: []
+        }) instanceof Array && function(d, b) {
+            d.__proto__ = b;
+        } || function(d, b) {
+            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+        return extendStatics(d, b);
+    };
+    return function(d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+            this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+}();
+var DirectApplication = /** @class */ function(_super) {
+    __extends(DirectApplication, _super);
+    function DirectApplication(canvas) {
+        var _this = _super.call(this) || this;
+        _this.sendUserInputEvent = function(event) {
+            _this.render.processUserInput(event);
+        };
+        _this.sendEngineEvent = function(event) {
+            _this.render.processEngineEvent(event);
+        };
+        _this.render = new (0, _render.Render)(canvas);
+        _this.render.start();
+        _this.userInput = new (0, _input.UserInput)(canvas);
+        _this.userInput.addHandler(_this.sendUserInputEvent);
+        return _this;
+    }
+    return DirectApplication;
+}((0, _baseEngine.BaseEngine));
+
+},{"../render":"63F0y","./input":"d2HoK","../engine/baseEngine":"fCHiv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"63F0y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Render", ()=>Render);
@@ -758,7 +1228,7 @@ var Render = /** @class */ function() {
     return Render;
 }();
 
-},{"./vector/vec2":"9XJHV","./solver/gridSolver":"7zdk7","./scenes/all":"ghYpR","./stats":"dKRct","./solver/quadTreeSolver":"exI4W","./render/canvas2DRender":"8bceJ","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"9XJHV":[function(require,module,exports) {
+},{"./vector/vec2":"bp79Y","./solver/gridSolver":"5tW2V","./scenes/all":"bqCRd","./stats":"8G7on","./solver/quadTreeSolver":"eD4iS","./render/canvas2DRender":"3vUyF","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bp79Y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2", ()=>Vec2);
@@ -989,7 +1459,7 @@ var Vec2 = /** @class */ function() {
     return Vec2;
 }();
 
-},{"./vec2Math":"j4cED","./math":"efHiM","./exceptions":"a3jqY","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"j4cED":[function(require,module,exports) {
+},{"./vec2Math":"nZL8C","./math":"fX8MB","./exceptions":"68SyS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"nZL8C":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Math", ()=>Vec2Math);
@@ -1058,7 +1528,7 @@ var Vec2Math = /** @class */ function() {
     return Vec2Math;
 }();
 
-},{"./vec2":"9XJHV","./exceptions":"a3jqY","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"a3jqY":[function(require,module,exports) {
+},{"./vec2":"bp79Y","./exceptions":"68SyS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"68SyS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Exception", ()=>Vec2Exception);
@@ -1114,37 +1584,7 @@ var Vec2ExceptionRectSizeShouldBePositive = /** @class */ function(_super) {
     return Vec2ExceptionRectSizeShouldBePositive;
 }(Vec2Exception);
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fn8Fk":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"efHiM":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fX8MB":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "MATH_ERROR", ()=>MATH_ERROR);
@@ -1164,7 +1604,7 @@ function isEqual(a, b, error) {
     return Math.abs(a - b) < error;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"7zdk7":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5tW2V":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "GridOptimizedSolver", ()=>GridOptimizedSolver);
@@ -1270,7 +1710,7 @@ function makeKey(obj1, obj2) {
     ].sort().join("-");
 }
 
-},{"../vector/vec2":"9XJHV","./gridSolverSpace":"cFvqk","./baseSolver":"86ZeH","../vector/vec2Math":"j4cED","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"cFvqk":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","./gridSolverSpace":"3VDry","./baseSolver":"jzdWf","../vector/vec2Math":"nZL8C","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3VDry":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CollisionCell", ()=>CollisionCell);
@@ -1499,7 +1939,7 @@ var GridSolverSpace = /** @class */ function(_super) {
     return GridSolverSpace;
 }((0, _baseSolverSpace.BaseSolverSpace));
 
-},{"../vector/vec2":"9XJHV","../vector/vec2Math":"j4cED","./baseSolverSpace":"htZHw","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"htZHw":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","../vector/vec2Math":"nZL8C","./baseSolverSpace":"3vpVg","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3vpVg":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseSolverSpace", ()=>BaseSolverSpace);
@@ -1508,7 +1948,7 @@ var BaseSolverSpace = /** @class */ function() {
     return BaseSolverSpace;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"86ZeH":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jzdWf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseSolver", ()=>BaseSolver);
@@ -1569,7 +2009,7 @@ function makeKey(obj1, obj2) {
     ].sort().join("-");
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ghYpR":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bqCRd":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ENGINE_SCENES", ()=>ENGINE_SCENES);
@@ -1582,7 +2022,7 @@ var ENGINE_SCENES = {
     "scene3": (0, _scene3.Scene3)
 };
 
-},{"./scene1":"inrCn","./scene2":"5cPb7","./scene3":"57T0W","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"inrCn":[function(require,module,exports) {
+},{"./scene1":"lS7PG","./scene2":"8vIhi","./scene3":"ajxWT","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"lS7PG":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Scene1", ()=>Scene1);
@@ -1703,7 +2143,7 @@ var Scene1 = /** @class */ function(_super) {
     return Scene1;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dsDU5","../generators/totalObjectsGenerator":"8eOrt","../items/circle":"86Vr1","../vector/vec2":"9XJHV","../objects/ball":"1Qukc","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../renderableObjects/immovableLine":"ah7D5","../objects/immovableLine":"4U8jS","../items/line":"4yw9f","../items/circleWithText":"i8zZK","../items/utils/index2color":"frxih","../constrains/viewport":"8AY7d","../primitives/milkshake":"58RkW","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"dsDU5":[function(require,module,exports) {
+},{"./baseScene":"dRCUa","../generators/totalObjectsGenerator":"h8lsL","../items/circle":"c8cAT","../vector/vec2":"bp79Y","../objects/ball":"5IfJk","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../renderableObjects/immovableLine":"bihaA","../objects/immovableLine":"f4D1b","../items/line":"eAxYY","../items/circleWithText":"eZiSs","../items/utils/index2color":"datdc","../constrains/viewport":"fOYyc","../primitives/milkshake":"ajvKL","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dRCUa":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
@@ -1714,7 +2154,7 @@ var BaseScene = /** @class */ function() {
     return BaseScene;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8eOrt":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"h8lsL":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "TotalObjectsGenerator", ()=>TotalObjectsGenerator);
@@ -1741,7 +2181,7 @@ class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
     }
 }
 
-},{"./objectsGenerator":"h8l83","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"h8l83":[function(require,module,exports) {
+},{"./objectsGenerator":"g4Anj","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"g4Anj":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ObjectsGenerator", ()=>ObjectsGenerator);
@@ -1757,7 +2197,7 @@ var ObjectsGenerator = /** @class */ function() {
     return ObjectsGenerator;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"86Vr1":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"c8cAT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Circle", ()=>Circle);
@@ -1800,7 +2240,7 @@ var Circle = /** @class */ function(_super) {
     return Circle;
 }((0, _item.Item));
 
-},{"./item":"2MaQk","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2MaQk":[function(require,module,exports) {
+},{"./item":"62t5i","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"62t5i":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Item", ()=>Item);
@@ -1820,7 +2260,7 @@ var Item = /** @class */ function() {
     return Item;
 }();
 
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"1Qukc":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5IfJk":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BallsObject", ()=>BallsObject);
@@ -1960,7 +2400,7 @@ var BallsObject = /** @class */ function(_super) {
     return BallsObject;
 }((0, _object.BaseSolverObject));
 
-},{"../vector/vec2":"9XJHV","../vector/vec2Line":"fsq6M","../vector/vec2Math":"j4cED","./types":"46hd3","./collisionModels":"iDnZq","./object":"evzjS","../vector/vec2Rect":"8Upj6","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"fsq6M":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","../vector/vec2Line":"k0EZw","../vector/vec2Math":"nZL8C","./types":"7Eyh2","./collisionModels":"hKRfe","./object":"66Aay","../vector/vec2Rect":"fgsCI","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"k0EZw":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Line", ()=>Vec2Line);
@@ -2097,7 +2537,7 @@ var Vec2Line = /** @class */ function() {
     return Vec2Line;
 }();
 
-},{"./vec2":"9XJHV","./vec2Math":"j4cED","./math":"efHiM","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"46hd3":[function(require,module,exports) {
+},{"./vec2":"bp79Y","./vec2Math":"nZL8C","./math":"fX8MB","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7Eyh2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "SolverObjectTypes", ()=>SolverObjectTypes);
@@ -2110,7 +2550,7 @@ var SolverObjectTypes;
     SolverObjectTypes[SolverObjectTypes["TypeImmovablePolygon"] = 4] = "TypeImmovablePolygon";
 })(SolverObjectTypes || (SolverObjectTypes = {}));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"iDnZq":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hKRfe":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**
@@ -2213,7 +2653,7 @@ function collide(a, b) {
     }
 }
 
-},{"../vector/vec2Math":"j4cED","./types":"46hd3","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"evzjS":[function(require,module,exports) {
+},{"../vector/vec2Math":"nZL8C","./types":"7Eyh2","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"66Aay":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseSolverObject", ()=>BaseSolverObject);
@@ -2241,7 +2681,7 @@ var BaseSolverObject = /** @class */ function() {
     return BaseSolverObject;
 }();
 
-},{"./types":"46hd3","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8Upj6":[function(require,module,exports) {
+},{"./types":"7Eyh2","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fgsCI":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Rect", ()=>Vec2Rect);
@@ -2359,7 +2799,7 @@ var Vec2Rect = /** @class */ function() {
     return Vec2Rect;
 }();
 
-},{"./vec2":"9XJHV","./exceptions":"a3jqY","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"2ms9R":[function(require,module,exports) {
+},{"./vec2":"bp79Y","./exceptions":"68SyS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"34uaH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "RenderableObject", ()=>RenderableObject);
@@ -2380,7 +2820,7 @@ var RenderableObject = /** @class */ function() {
     return RenderableObject;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"izS6X":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8kn5q":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableBallsObject", ()=>ImmovableBallsObject);
@@ -2445,7 +2885,7 @@ var ImmovableBallsObject = /** @class */ function(_super) {
     return ImmovableBallsObject;
 }((0, _ball.BallsObject));
 
-},{"./ball":"1Qukc","./types":"46hd3","../vector/math":"efHiM","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ah7D5":[function(require,module,exports) {
+},{"./ball":"5IfJk","./types":"7Eyh2","../vector/math":"fX8MB","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bihaA":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableLineRenderableObject", ()=>ImmovableLineRenderableObject);
@@ -2465,7 +2905,7 @@ class ImmovableLineRenderableObject extends (0, _object.RenderableObject) {
     }
 }
 
-},{"./object":"2ms9R","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4U8jS":[function(require,module,exports) {
+},{"./object":"34uaH","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"f4D1b":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableLineObject", ()=>ImmovableLineObject);
@@ -2578,7 +3018,7 @@ function createImmovableLineFrom2Points(point1, point2) {
     return new ImmovableLineObject(point1, (0, _vec2Math.Vec2Math).diff(point2, point1));
 }
 
-},{"../vector/vec2Line":"fsq6M","./types":"46hd3","../vector/vec2Math":"j4cED","./immovable":"4MrrS","../vector/vec2Rect":"8Upj6","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4MrrS":[function(require,module,exports) {
+},{"../vector/vec2Line":"k0EZw","./types":"7Eyh2","../vector/vec2Math":"nZL8C","./immovable":"5OzDg","../vector/vec2Rect":"fgsCI","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5OzDg":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableSolverObject", ()=>ImmovableSolverObject);
@@ -2611,7 +3051,7 @@ var ImmovableSolverObject = /** @class */ function(_super) {
     return ImmovableSolverObject;
 }((0, _object.BaseSolverObject));
 
-},{"./object":"evzjS","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4yw9f":[function(require,module,exports) {
+},{"./object":"66Aay","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eAxYY":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Line", ()=>Line);
@@ -2654,7 +3094,7 @@ var Line = /** @class */ function(_super) {
     return Line;
 }((0, _item.Item));
 
-},{"./item":"2MaQk","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"i8zZK":[function(require,module,exports) {
+},{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eZiSs":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleWithText", ()=>CircleWithText);
@@ -2699,7 +3139,7 @@ var CircleWithText = /** @class */ function(_super) {
     return CircleWithText;
 }((0, _circle.Circle));
 
-},{"./circle":"86Vr1","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"frxih":[function(require,module,exports) {
+},{"./circle":"c8cAT","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"datdc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "index2color", ()=>index2color);
@@ -2711,7 +3151,7 @@ function index2color(index) {
     return "rgba(".concat(r, ", ").concat(g, ", ").concat(b, ", 1)");
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8AY7d":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fOYyc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
@@ -2788,7 +3228,7 @@ var ViewportConstrain = /** @class */ function(_super) {
     return ViewportConstrain;
 }((0, _constrain.Constrain));
 
-},{"./constrain":"e3ALH","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"e3ALH":[function(require,module,exports) {
+},{"./constrain":"jvBxb","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jvBxb":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Constrain", ()=>Constrain);
@@ -2797,7 +3237,7 @@ var Constrain = /** @class */ function() {
     return Constrain;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"58RkW":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ajvKL":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "createMilkshake", ()=>createMilkshake);
@@ -2821,7 +3261,7 @@ function createMilkshake(size, position) {
     return milkShakeLines;
 }
 
-},{"../vector/vec2":"9XJHV","../vector/vec2Line":"fsq6M","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"5cPb7":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","../vector/vec2Line":"k0EZw","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8vIhi":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Scene2", ()=>Scene2);
@@ -2922,7 +3362,7 @@ var Scene2 = /** @class */ function(_super) {
     return Scene2;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dsDU5","../items/circle":"86Vr1","../items/circleWithText":"i8zZK","../vector/vec2":"9XJHV","../renderableObjects/object":"2ms9R","../objects/immovableBall":"izS6X","../constrains/circle":"aSdKq","../generators/objectsGenerator":"h8l83","../objects/ball":"1Qukc","../items/utils/index2color":"frxih","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"aSdKq":[function(require,module,exports) {
+},{"./baseScene":"dRCUa","../items/circle":"c8cAT","../items/circleWithText":"eZiSs","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../constrains/circle":"jNoKM","../generators/objectsGenerator":"g4Anj","../objects/ball":"5IfJk","../items/utils/index2color":"datdc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jNoKM":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
@@ -2973,7 +3413,7 @@ var CircleConstrain = /** @class */ function(_super) {
     return CircleConstrain;
 }((0, _constrain.Constrain));
 
-},{"./constrain":"e3ALH","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"57T0W":[function(require,module,exports) {
+},{"./constrain":"jvBxb","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ajxWT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Scene3", ()=>Scene3);
@@ -3087,7 +3527,7 @@ var Scene3 = /** @class */ function(_super) {
     return Scene3;
 }((0, _baseScene.BaseScene));
 
-},{"./baseScene":"dsDU5","../items/circle":"86Vr1","../items/circleWithText":"i8zZK","../vector/vec2":"9XJHV","../renderableObjects/object":"2ms9R","../constrains/circle":"aSdKq","../generators/objectsGenerator":"h8l83","../objects/ball":"1Qukc","../items/utils/index2color":"frxih","../primitives/triangle":"ju21d","../objects/ImmovablePolygon":"4F67Y","../items/polygonRainbow":"lwDwV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"ju21d":[function(require,module,exports) {
+},{"./baseScene":"dRCUa","../items/circle":"c8cAT","../items/circleWithText":"eZiSs","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../constrains/circle":"jNoKM","../generators/objectsGenerator":"g4Anj","../objects/ball":"5IfJk","../items/utils/index2color":"datdc","../primitives/triangle":"2kNMb","../objects/ImmovablePolygon":"iluwZ","../items/polygonRainbow":"3W5Qt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2kNMb":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "createTriangle", ()=>createTriangle);
@@ -3102,7 +3542,7 @@ function createTriangle(size) {
     ];
 }
 
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"4F67Y":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iluwZ":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovablePolygon", ()=>ImmovablePolygon);
@@ -3227,7 +3667,7 @@ var ImmovablePolygon = /** @class */ function(_super) {
     return ImmovablePolygon;
 }((0, _immovable.ImmovableSolverObject));
 
-},{"./immovable":"4MrrS","./types":"46hd3","../vector/vec2":"9XJHV","./immovableLine":"4U8jS","../vector/vec2Math":"j4cED","../vector/vec2Rect":"8Upj6","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"lwDwV":[function(require,module,exports) {
+},{"./immovable":"5OzDg","./types":"7Eyh2","../vector/vec2":"bp79Y","./immovableLine":"f4D1b","../vector/vec2Math":"nZL8C","../vector/vec2Rect":"fgsCI","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3W5Qt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "PolygonRainbow", ()=>PolygonRainbow);
@@ -3260,7 +3700,7 @@ var PolygonRainbow = /** @class */ function(_super) {
     return PolygonRainbow;
 }((0, _polygon.Polygon));
 
-},{"./polygon":"61g6n","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"61g6n":[function(require,module,exports) {
+},{"./polygon":"bKrz3","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bKrz3":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Polygon", ()=>Polygon);
@@ -3306,7 +3746,7 @@ var Polygon = /** @class */ function(_super) {
     return Polygon;
 }((0, _item.Item));
 
-},{"./item":"2MaQk","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"dKRct":[function(require,module,exports) {
+},{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8G7on":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Stats", ()=>Stats);
@@ -3367,7 +3807,7 @@ var Stats = /** @class */ function() {
     return Stats;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"exI4W":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eD4iS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "QuadTreeSolver", ()=>QuadTreeSolver);
@@ -3454,7 +3894,7 @@ function makeKey(obj1, obj2) {
     ].sort().join("-");
 }
 
-},{"../vector/vec2":"9XJHV","./baseSolver":"86ZeH","./quadTreeSolverSpace":"TIvyE","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"TIvyE":[function(require,module,exports) {
+},{"../vector/vec2":"bp79Y","./baseSolver":"jzdWf","./quadTreeSolverSpace":"50FxH","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"50FxH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "QuadTree", ()=>QuadTree);
@@ -3584,7 +4024,7 @@ var QuadTreeSolverSpace = /** @class */ function(_super) {
     return QuadTreeSolverSpace;
 }((0, _baseSolverSpace.BaseSolverSpace));
 
-},{"./baseSolverSpace":"htZHw","../vector/vec2Rect":"8Upj6","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8bceJ":[function(require,module,exports) {
+},{"./baseSolverSpace":"3vpVg","../vector/vec2Rect":"fgsCI","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3vUyF":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Canvas2DRender", ()=>Canvas2DRender);
@@ -3708,7 +4148,7 @@ var Canvas2DRender = /** @class */ function(_super) {
     return Canvas2DRender;
 }((0, _baseRender.BaseRender));
 
-},{"./baseRender":"iKLYR","../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"iKLYR":[function(require,module,exports) {
+},{"./baseRender":"7zA4Y","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7zA4Y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseRender", ()=>BaseRender);
@@ -3723,78 +4163,6 @@ var BaseRender = /** @class */ function() {
     return BaseRender;
 }();
 
-},{"../vector/vec2":"9XJHV","@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}],"8fDji":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "MessageType", ()=>MessageType);
-parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
-parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
-parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
-parcelHelpers.export(exports, "MessageEngineEvent", ()=>MessageEngineEvent);
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var MessageType;
-(function(MessageType) {
-    MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
-    MessageType[MessageType["MessageInit"] = 1] = "MessageInit";
-    MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
-    MessageType[MessageType["MessageEngineEvent"] = 3] = "MessageEngineEvent";
-})(MessageType || (MessageType = {}));
-var MessageEvent = /** @class */ function() {
-    function MessageEvent() {
-        this.type = MessageType.MessageNone;
-    }
-    return MessageEvent;
-}();
-var MessageInit = /** @class */ function(_super) {
-    __extends(MessageInit, _super);
-    function MessageInit(canvas) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageInit;
-        _this.canvas = canvas;
-        return _this;
-    }
-    return MessageInit;
-}(MessageEvent);
-var MessageUserInput = /** @class */ function(_super) {
-    __extends(MessageUserInput, _super);
-    function MessageUserInput(event) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageUserInput;
-        _this.event = event;
-        return _this;
-    }
-    return MessageUserInput;
-}(MessageEvent);
-var MessageEngineEvent = /** @class */ function(_super) {
-    __extends(MessageEngineEvent, _super);
-    function MessageEngineEvent(event) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageEngineEvent;
-        _this.event = event;
-        return _this;
-    }
-    return MessageEngineEvent;
-}(MessageEvent);
+},{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["lxFny","hb2Bw"], "hb2Bw", "parcelRequire62ee")
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"fn8Fk"}]},["ccn6U","fXkCw"], "fXkCw", "parcelRequire62ee")
-
-//# sourceMappingURL=main.8e789c37.js.map
+//# sourceMappingURL=index.059c6d4a.js.map
