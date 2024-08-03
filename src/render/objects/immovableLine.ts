@@ -108,6 +108,7 @@ export class ImmovableLineObject extends ImmovableSolverObject {
 
 
 
+
             return false;
         }
 

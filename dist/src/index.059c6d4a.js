@@ -660,124 +660,100 @@ var _input = require("./input");
 var _messages = require("./messages");
 var _workerWorkaroundJs = require("./workerWorkaround.js");
 var _baseEngine = require("../engine/baseEngine");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+class WorkerApplication extends (0, _baseEngine.BaseEngine) {
+    constructor(canvas){
+        super();
+        this.sendUserInputEvent = (event)=>{
+            this.worker.postMessage(new (0, _messages.MessageUserInput)(event));
         };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var WorkerApplication = /** @class */ function(_super) {
-    __extends(WorkerApplication, _super);
-    function WorkerApplication(canvas) {
-        var _this = _super.call(this) || this;
-        _this.sendUserInputEvent = function(event) {
-            _this.worker.postMessage(new (0, _messages.MessageUserInput)(event));
+        this.sendEngineEvent = (event)=>{
+            this.worker.postMessage(new (0, _messages.MessageEngineEvent)(event));
         };
-        _this.sendEngineEvent = function(event) {
-            _this.worker.postMessage(new (0, _messages.MessageEngineEvent)(event));
-        };
-        _this.worker = (0, _workerWorkaroundJs.createWorker)();
-        var offscreen = canvas.transferControlToOffscreen();
-        _this.worker.postMessage(new (0, _messages.MessageInit)(offscreen), [
+        this.worker = (0, _workerWorkaroundJs.createWorker)();
+        const offscreen = canvas.transferControlToOffscreen();
+        this.worker.postMessage(new (0, _messages.MessageInit)(offscreen), [
             offscreen
         ]);
-        _this.userInput = new (0, _input.UserInput)(canvas);
-        _this.userInput.addHandler(_this.sendUserInputEvent);
-        return _this;
+        this.userInput = new (0, _input.UserInput)(canvas);
+        this.userInput.addHandler(this.sendUserInputEvent);
     }
-    return WorkerApplication;
-}((0, _baseEngine.BaseEngine));
+}
 
 },{"./input":"d2HoK","./messages":"8r34k","./workerWorkaround.js":"9q0ah","../engine/baseEngine":"fCHiv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"d2HoK":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "UserInput", ()=>UserInput);
-var UserInput = /** @class */ function() {
-    function UserInput(canvas) {
-        var _this = this;
-        this.keyPress = function(browserEvent) {
-            var event = {
+class UserInput {
+    constructor(canvas){
+        this.keyPress = (browserEvent)=>{
+            const event = {
                 keyPressed: browserEvent.key
             };
-            _this.processEvent(event);
+            this.processEvent(event);
         };
-        this.mouseEnter = function(browserEvent) {
-            var event = _this.createMouseEvent(browserEvent);
-            _this.processEvent(event);
+        this.mouseEnter = (browserEvent)=>{
+            const event = this.createMouseEvent(browserEvent);
+            this.processEvent(event);
         };
-        this.mouseLeave = function(browserEvent) {
-            var event = _this.createMouseEvent(browserEvent);
-            _this.processEvent(event);
+        this.mouseLeave = (browserEvent)=>{
+            const event = this.createMouseEvent(browserEvent);
+            this.processEvent(event);
         };
-        this.mouseMove = function(browserEvent) {
-            var event = _this.createMouseEvent(browserEvent);
-            _this.processEvent(event);
+        this.mouseMove = (browserEvent)=>{
+            const event = this.createMouseEvent(browserEvent);
+            this.processEvent(event);
         };
-        this.mouseDown = function(browserEvent) {
-            _this._leftButtonDown = true;
-            var event = _this.createMouseEvent(browserEvent);
-            _this.processEvent(event);
+        this.mouseDown = (browserEvent)=>{
+            this._leftButtonDown = true;
+            const event = this.createMouseEvent(browserEvent);
+            this.processEvent(event);
         };
-        this.mouseUp = function(browserEvent) {
-            _this._leftButtonDown = false;
-            var event = _this.createMouseEvent(browserEvent);
-            _this.processEvent(event);
+        this.mouseUp = (browserEvent)=>{
+            this._leftButtonDown = false;
+            const event = this.createMouseEvent(browserEvent);
+            this.processEvent(event);
         };
-        this.click = function(browserEvent) {
-            var event = _this.createMouseEvent(browserEvent);
-            _this.processEvent(event);
+        this.click = (browserEvent)=>{
+            const event = this.createMouseEvent(browserEvent);
+            this.processEvent(event);
         };
-        this.touchStart = function(browserEvent) {
+        this.touchStart = (browserEvent)=>{
             browserEvent.preventDefault();
             if (browserEvent.touches.length === 0) return;
-            _this._leftButtonDown = true;
-            var touch = browserEvent.touches.item(0);
-            var event = {
+            this._leftButtonDown = true;
+            const touch = browserEvent.touches.item(0);
+            const event = {
                 screenX: touch.pageX,
                 screenY: touch.pageY,
                 dx: 0,
                 dy: 0,
-                leftButtonDown: _this._leftButtonDown
+                leftButtonDown: this._leftButtonDown
             };
-            _this.processEvent(event);
+            this.processEvent(event);
         };
-        this.touchMove = function(browserEvent) {
+        this.touchMove = (browserEvent)=>{
             browserEvent.preventDefault();
-            var event = _this.createTouchEvent(browserEvent);
-            if (event) _this.processEvent(event);
+            const event = this.createTouchEvent(browserEvent);
+            if (event) this.processEvent(event);
         };
-        this.touchEnd = function(browserEvent) {
+        this.touchEnd = (browserEvent)=>{
             browserEvent.preventDefault();
-            _this._leftButtonDown = false;
-            var event = _this.createTouchEndEvent();
-            if (event) _this.processEvent(event);
+            this._leftButtonDown = false;
+            const event = this.createTouchEndEvent();
+            if (event) this.processEvent(event);
         };
-        this.touchCancel = function(browserEvent) {
+        this.touchCancel = (browserEvent)=>{
             browserEvent.preventDefault();
-            _this._leftButtonDown = false;
-            var event = _this.createTouchEndEvent();
-            if (event) _this.processEvent(event);
+            this._leftButtonDown = false;
+            const event = this.createTouchEndEvent();
+            if (event) this.processEvent(event);
         };
         this._canvas = canvas;
         this._handlers = new Set();
         this._leftButtonDown = false;
         this.addHandlers();
     }
-    UserInput.prototype.addHandlers = function() {
+    addHandlers() {
         this._canvas.addEventListener("mouseenter", this.mouseEnter);
         this._canvas.addEventListener("mouseleave", this.mouseLeave);
         this._canvas.addEventListener("mousemove", this.mouseMove);
@@ -799,24 +775,24 @@ var UserInput = /** @class */ function() {
         });
         // Keyboard events
         document.addEventListener("keypress", this.keyPress);
-    };
-    UserInput.prototype.removeHandlers = function() {
+    }
+    removeHandlers() {
         document.removeEventListener("keypress", this.keyPress);
-    };
-    UserInput.prototype.processEvent = function(event) {
-        this._handlers.forEach(function(callback) {
+    }
+    processEvent(event) {
+        this._handlers.forEach((callback)=>{
             callback(event);
         });
         this._oldX = event.screenX;
         this._oldY = event.screenY;
-    };
-    UserInput.prototype.addHandler = function(callback) {
+    }
+    addHandler(callback) {
         this._handlers.add(callback);
-    };
-    UserInput.prototype.removeHandler = function(callback) {
+    }
+    removeHandler(callback) {
         if (this._handlers.has(callback)) this._handlers.delete(callback);
-    };
-    UserInput.prototype.createMouseEvent = function(browserEvent) {
+    }
+    createMouseEvent(browserEvent) {
         return {
             screenX: browserEvent.offsetX,
             screenY: browserEvent.offsetY,
@@ -824,9 +800,9 @@ var UserInput = /** @class */ function() {
             dy: -this._oldY + browserEvent.offsetY,
             leftButtonDown: this._leftButtonDown
         };
-    };
-    UserInput.prototype.createTouchEvent = function(browserEvent) {
-        var touch = browserEvent.touches.item(0);
+    }
+    createTouchEvent(browserEvent) {
+        const touch = browserEvent.touches.item(0);
         return {
             screenX: touch.pageX,
             screenY: touch.pageY,
@@ -834,8 +810,8 @@ var UserInput = /** @class */ function() {
             dy: -this._oldY + touch.pageY,
             leftButtonDown: this._leftButtonDown
         };
-    };
-    UserInput.prototype.createTouchEndEvent = function() {
+    }
+    createTouchEndEvent() {
         return {
             screenX: this._oldX,
             screenY: this._oldY,
@@ -843,9 +819,8 @@ var UserInput = /** @class */ function() {
             dy: 0,
             leftButtonDown: this._leftButtonDown
         };
-    };
-    return UserInput;
-}();
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8r34k":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -855,26 +830,6 @@ parcelHelpers.export(exports, "MessageEvent", ()=>MessageEvent);
 parcelHelpers.export(exports, "MessageInit", ()=>MessageInit);
 parcelHelpers.export(exports, "MessageUserInput", ()=>MessageUserInput);
 parcelHelpers.export(exports, "MessageEngineEvent", ()=>MessageEngineEvent);
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
 var MessageType;
 (function(MessageType) {
     MessageType[MessageType["MessageNone"] = 0] = "MessageNone";
@@ -882,42 +837,32 @@ var MessageType;
     MessageType[MessageType["MessageUserInput"] = 2] = "MessageUserInput";
     MessageType[MessageType["MessageEngineEvent"] = 3] = "MessageEngineEvent";
 })(MessageType || (MessageType = {}));
-var MessageEvent = /** @class */ function() {
-    function MessageEvent() {
+class MessageEvent {
+    constructor(){
         this.type = MessageType.MessageNone;
     }
-    return MessageEvent;
-}();
-var MessageInit = /** @class */ function(_super) {
-    __extends(MessageInit, _super);
-    function MessageInit(canvas) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageInit;
-        _this.canvas = canvas;
-        return _this;
+}
+class MessageInit extends MessageEvent {
+    constructor(canvas){
+        super();
+        this.type = MessageType.MessageInit;
+        this.canvas = canvas;
     }
-    return MessageInit;
-}(MessageEvent);
-var MessageUserInput = /** @class */ function(_super) {
-    __extends(MessageUserInput, _super);
-    function MessageUserInput(event) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageUserInput;
-        _this.event = event;
-        return _this;
+}
+class MessageUserInput extends MessageEvent {
+    constructor(event){
+        super();
+        this.type = MessageType.MessageUserInput;
+        this.event = event;
     }
-    return MessageUserInput;
-}(MessageEvent);
-var MessageEngineEvent = /** @class */ function(_super) {
-    __extends(MessageEngineEvent, _super);
-    function MessageEngineEvent(event) {
-        var _this = _super.call(this) || this;
-        _this.type = MessageType.MessageEngineEvent;
-        _this.event = event;
-        return _this;
+}
+class MessageEngineEvent extends MessageEvent {
+    constructor(event){
+        super();
+        this.type = MessageType.MessageEngineEvent;
+        this.event = event;
     }
-    return MessageEngineEvent;
-}(MessageEvent);
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9q0ah":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -988,16 +933,14 @@ exports.getOrigin = getOrigin;
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseEngine", ()=>BaseEngine);
-var BaseEngine = /** @class */ function() {
-    function BaseEngine() {}
-    BaseEngine.prototype.loadScene = function(sceneName) {
-        var event = {
+class BaseEngine {
+    loadScene(sceneName) {
+        const event = {
             scene: sceneName
         };
         this.sendEngineEvent(event);
-    };
-    return BaseEngine;
-}();
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"BtOcs":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1006,44 +949,21 @@ parcelHelpers.export(exports, "DirectApplication", ()=>DirectApplication);
 var _render = require("../render");
 var _input = require("./input");
 var _baseEngine = require("../engine/baseEngine");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+class DirectApplication extends (0, _baseEngine.BaseEngine) {
+    constructor(canvas){
+        super();
+        this.sendUserInputEvent = (event)=>{
+            this.render.processUserInput(event);
         };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var DirectApplication = /** @class */ function(_super) {
-    __extends(DirectApplication, _super);
-    function DirectApplication(canvas) {
-        var _this = _super.call(this) || this;
-        _this.sendUserInputEvent = function(event) {
-            _this.render.processUserInput(event);
+        this.sendEngineEvent = (event)=>{
+            this.render.processEngineEvent(event);
         };
-        _this.sendEngineEvent = function(event) {
-            _this.render.processEngineEvent(event);
-        };
-        _this.render = new (0, _render.Render)(canvas);
-        _this.render.start();
-        _this.userInput = new (0, _input.UserInput)(canvas);
-        _this.userInput.addHandler(_this.sendUserInputEvent);
-        return _this;
+        this.render = new (0, _render.Render)(canvas);
+        this.render.start();
+        this.userInput = new (0, _input.UserInput)(canvas);
+        this.userInput.addHandler(this.sendUserInputEvent);
     }
-    return DirectApplication;
-}((0, _baseEngine.BaseEngine));
+}
 
 },{"../render":"63F0y","./input":"d2HoK","../engine/baseEngine":"fCHiv","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"63F0y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1055,9 +975,8 @@ var _all = require("./scenes/all");
 var _stats = require("./stats");
 var _quadTreeSolver = require("./solver/quadTreeSolver");
 var _canvas2DRender = require("./render/canvas2DRender");
-var Render = /** @class */ function() {
-    function Render(canvas) {
-        var _this = this;
+class Render {
+    constructor(canvas){
         /**
          * List of balls
          * @type {RenderableObject[]}
@@ -1072,19 +991,19 @@ var Render = /** @class */ function() {
         this.flagRenderGrid = false;
         this.flagRenderPreviousPosition = false;
         this.flagSwitchSolver = false;
-        this.nextFrame = function(time) {
-            _this.step = time - _this.timeRenderEnd;
-            if (_this.step < 0) _this.step = 0;
-            _this.tick();
-            _this.timeRenderEnd = time;
-            self.requestAnimationFrame(_this.nextFrame);
+        this.nextFrame = (time)=>{
+            this.step = time - this.timeRenderEnd;
+            if (this.step < 0) this.step = 0;
+            this.tick();
+            this.timeRenderEnd = time;
+            self.requestAnimationFrame(this.nextFrame);
         };
-        this.nextInterval = function() {
-            _this.timeRenderStart = performance.now();
-            _this.step = _this.timeRenderStart - _this.timeRenderEnd;
-            if (_this.step < 0) _this.step = 0;
-            _this.tick();
-            _this.timeRenderEnd = performance.now();
+        this.nextInterval = ()=>{
+            this.timeRenderStart = performance.now();
+            this.step = this.timeRenderStart - this.timeRenderEnd;
+            if (this.step < 0) this.step = 0;
+            this.tick();
+            this.timeRenderEnd = performance.now();
         };
         this.stats = new (0, _stats.Stats)();
         this.canvas = canvas;
@@ -1099,64 +1018,60 @@ var Render = /** @class */ function() {
         this.solver = null;
         this.configure();
     }
-    Render.prototype.reset = function() {
+    reset() {
         this.objects = [];
         this.items = [];
         this.solver.reset();
-    };
-    Render.prototype.switchToGridSolver = function() {
-        var newSolver = new (0, _gridSolver.GridOptimizedSolver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
+    }
+    switchToGridSolver() {
+        const newSolver = new (0, _gridSolver.GridOptimizedSolver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
         if (this.solver) {
-            this.solver.objects.forEach(function(obj) {
-                return newSolver.addObject(obj);
-            });
+            this.solver.objects.forEach((obj)=>newSolver.addObject(obj));
             newSolver.constrains = this._constrains;
         }
         this.solver = newSolver;
-    };
-    Render.prototype.switchToQuadSolver = function() {
-        var newSolver = new (0, _quadTreeSolver.QuadTreeSolver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
+    }
+    switchToQuadSolver() {
+        const newSolver = new (0, _quadTreeSolver.QuadTreeSolver)(new (0, _vec2.Vec2)(this.canvas.width, this.canvas.height), this.stats);
         if (this.solver) {
-            this.solver.objects.forEach(function(obj) {
-                return newSolver.addObject(obj);
-            });
+            this.solver.objects.forEach((obj)=>newSolver.addObject(obj));
             newSolver.constrains = this._constrains;
         }
         this.solver = newSolver;
-    };
-    Render.prototype.configure = function() {
+    }
+    configure() {
         this.switchToGridSolver();
         this.context.font("10px serif");
         this.loadScene("scene1");
-    };
-    Render.prototype.processUserInput = function(event) {
-        var keyboardEvent = event;
+    }
+    processUserInput(event) {
+        const keyboardEvent = event;
         if (keyboardEvent.keyPressed === "g") this.flagRenderGrid = !this.flagRenderGrid;
         if (keyboardEvent.keyPressed === "p") this.flagRenderPreviousPosition = !this.flagRenderPreviousPosition;
         if (keyboardEvent.keyPressed === "s") this.flagSwitchSolver = true;
         this.scene.processUserInput(event);
-    };
-    Render.prototype.processEngineEvent = function(event) {
-        var loadSceneEvent = event;
+    }
+    processEngineEvent(event) {
+        const loadSceneEvent = event;
         if (loadSceneEvent.scene) this.loadScene(loadSceneEvent.scene);
-    };
-    Render.prototype.loadScene = function(sceneName) {
+    }
+    loadScene(sceneName) {
         this.reset();
-        var Scene = (0, _all.ENGINE_SCENES)[sceneName];
+        const Scene = (0, _all.ENGINE_SCENES)[sceneName];
         this.scene = new Scene(this);
-    };
+    }
     /**
      * @param {RenderableObject} obj
-     */ Render.prototype.addObject = function(obj) {
+     */ addObject(obj) {
         this.objects.push(obj);
         this.solver.addObject(obj.solverObject);
-    };
-    Render.prototype.update = function(time) {
+    }
+    update(time) {
         this.solver.update(time);
-    };
-    Render.prototype.tick = function() {
+    }
+    tick() {
         if (this.step < 0) this.step = 0;
-        var timePassed = this.step / 1000;
+        const timePassed = this.step / 1000;
         this.scene.tick(timePassed);
         this.update(timePassed);
         this.clear();
@@ -1172,61 +1087,50 @@ var Render = /** @class */ function() {
             else this.switchToGridSolver();
             this.flagSwitchSolver = false;
         }
-    };
-    Render.prototype.renderItems = function() {
-        this.items.forEach(function(item) {
-            return item.render();
-        });
-        this.objects.forEach(function(obj) {
-            return obj.render();
-        });
-    };
-    Render.prototype.printFPS = function() {
-        var _this = this;
+    }
+    renderItems() {
+        this.items.forEach((item)=>item.render());
+        this.objects.forEach((obj)=>obj.render());
+    }
+    printFPS() {
         this.context.fillStyle("rgba(0,0,0,0.1)");
         this.context.fillRect(0, 0, 100, 60);
-        this.context.text("".concat(Math.round(this.step), " ms / ").concat(Math.round(1000 / this.step), " FPS"), 0, 10);
-        this.context.text("Length calls: ".concat((0, _vec2.Vec2).lengthCallsCount), 0, 20);
-        this.context.text("Lenght2 calls: ".concat((0, _vec2.Vec2).length2CallsCount), 0, 30);
-        this.context.text("Objects: ".concat(this.objects.length), 0, 40);
-        this.context.text("Compares per object: ".concat(Math.round((0, _vec2.Vec2).lengthCallsCount / this.objects.length)), 0, 50);
-        var stats = this.stats.getTickData();
-        stats.forEach(function(item, index) {
-            _this.context.text("".concat(item.key, ": ").concat(item.value), 0, index * 10 + 60);
+        this.context.text(`${Math.round(this.step)} ms / ${Math.round(1000 / this.step)} FPS`, 0, 10);
+        this.context.text(`Length calls: ${(0, _vec2.Vec2).lengthCallsCount}`, 0, 20);
+        this.context.text(`Lenght2 calls: ${(0, _vec2.Vec2).length2CallsCount}`, 0, 30);
+        this.context.text(`Objects: ${this.objects.length}`, 0, 40);
+        this.context.text(`Compares per object: ${Math.round((0, _vec2.Vec2).lengthCallsCount / this.objects.length)}`, 0, 50);
+        const stats = this.stats.getTickData();
+        stats.forEach((item, index)=>{
+            this.context.text(`${item.key}: ${item.value}`, 0, index * 10 + 60);
         });
-    };
-    Render.prototype.clear = function() {
+    }
+    clear() {
         this.context.fillStyle("rgba(0, 0, 0, 0.9)");
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    };
-    Render.prototype.start = function() {
+    }
+    start() {
         if (self.requestAnimationFrame) self.requestAnimationFrame(this.nextFrame);
         else setInterval(this.nextInterval, 16);
-    };
-    Render.prototype.renderGrid = function() {
+    }
+    renderGrid() {
         this.solver.debugRender(this.context);
-    };
-    Render.prototype.renderPreviousPosition = function() {
-        var _this = this;
-        this.objects.forEach(function(renderableObject) {
-            var position = renderableObject.solverObject.previousPosition;
-            _this.context.fillStyle("rgba(0, 0, 255, 0.5)");
-            _this.context.fillCircle(10, position);
+    }
+    renderPreviousPosition() {
+        this.objects.forEach((renderableObject)=>{
+            const position = renderableObject.solverObject.previousPosition;
+            this.context.fillStyle("rgba(0, 0, 255, 0.5)");
+            this.context.fillCircle(10, position);
         });
-    };
-    Object.defineProperty(Render.prototype, "constrain", {
-        get: function() {
-            return this._constrains;
-        },
-        set: function(constrain) {
-            this._constrains = constrain;
-            this.solver.constrains = this._constrains;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Render;
-}();
+    }
+    set constrain(constrain) {
+        this._constrains = constrain;
+        this.solver.constrains = this._constrains;
+    }
+    get constrain() {
+        return this._constrains;
+    }
+}
 
 },{"./vector/vec2":"bp79Y","./solver/gridSolver":"5tW2V","./scenes/all":"bqCRd","./stats":"8G7on","./solver/quadTreeSolver":"eD4iS","./render/canvas2DRender":"3vUyF","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bp79Y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1235,8 +1139,8 @@ parcelHelpers.export(exports, "Vec2", ()=>Vec2);
 var _vec2Math = require("./vec2Math");
 var _math = require("./math");
 var _exceptions = require("./exceptions");
-var Vec2 = /** @class */ function() {
-    function Vec2(x, y, l) {
+class Vec2 {
+    constructor(x, y, l){
         this._x = 0;
         this._y = 0;
         this._length = null;
@@ -1249,53 +1153,37 @@ var Vec2 = /** @class */ function() {
             this._length2 = l * l;
         }
     }
-    Object.defineProperty(Vec2.prototype, "x", {
-        get: function() {
-            return this._x;
-        },
-        set: function(x) {
-            this._x = x;
-            this.reset();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2.prototype, "y", {
-        get: function() {
-            return this._y;
-        },
-        set: function(y) {
-            this._y = y;
-            this.reset();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2.prototype, "length", {
-        get: function() {
-            if (this._length === null) {
-                this._length = Math.sqrt(this.x * this.x + this.y * this.y);
-                Vec2.lengthCallsCount++;
-            }
-            return this._length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2.prototype, "length2", {
-        /**
-         * Returns length^2
-         */ get: function() {
-            if (this._length2 === null) {
-                this._length2 = this._x * this._x + this._y * this._y;
-                Vec2.length2CallsCount++;
-            }
-            return this._length2;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Vec2.prototype.moveTo = function(x, y) {
+    get x() {
+        return this._x;
+    }
+    get y() {
+        return this._y;
+    }
+    set x(x) {
+        this._x = x;
+        this.reset();
+    }
+    set y(y) {
+        this._y = y;
+        this.reset();
+    }
+    get length() {
+        if (this._length === null) {
+            this._length = Math.sqrt(this.x * this.x + this.y * this.y);
+            Vec2.lengthCallsCount++;
+        }
+        return this._length;
+    }
+    /**
+     * Returns length^2
+     */ get length2() {
+        if (this._length2 === null) {
+            this._length2 = this._x * this._x + this._y * this._y;
+            Vec2.length2CallsCount++;
+        }
+        return this._length2;
+    }
+    moveTo(x, y) {
         if (x instanceof Vec2) {
             this._x = x.x;
             this._y = x.y;
@@ -1304,160 +1192,147 @@ var Vec2 = /** @class */ function() {
             this._y = y;
         }
         this.reset();
-    };
-    Vec2.prototype.reset = function() {
+    }
+    reset() {
         this._length = null;
         this._length2 = null;
-    };
+    }
     /**
      * Adds vec2 to current vector
      * @param {Vec2} vec2
      * @returns {Vec2}
-     */ Vec2.prototype.addSelf = function(vec2) {
+     */ addSelf(vec2) {
         this._x += vec2.x;
         this._y += vec2.y;
         this._length = null;
         return this;
-    };
-    Vec2.prototype.moveBy = function(delta) {
+    }
+    moveBy(delta) {
         this.addSelf(delta);
-    };
+    }
     /**
      * Subtract from current vector given vector
      * @param {Vec2} vec2
      * @returns {Vec2}
-     */ Vec2.prototype.subSelf = function(vec2) {
+     */ subSelf(vec2) {
         this._x -= vec2.x;
         this._y -= vec2.y;
         this._length = null;
         return this;
-    };
+    }
     /**
      * Flips along X axis
      * @returns {Vec2}
-     */ Vec2.prototype.flipYSelf = function() {
+     */ flipYSelf() {
         this._y = -this._y;
         return this;
-    };
+    }
     /**
      * Flips along Y axis
      * @returns {Vec2}
-     */ Vec2.prototype.flipXSelf = function() {
+     */ flipXSelf() {
         this._x = -this._x;
         return this;
-    };
-    Vec2.prototype.flipSelf = function() {
+    }
+    flipSelf() {
         this._x = -this._x;
         this._y = -this._y;
         return this;
-    };
+    }
     /**
      * Checks if this vector equals given vector using global MATH_ERROR const
      * @param vec2
-     */ Vec2.prototype.equals = function(vec2) {
+     */ equals(vec2) {
         return (0, _vec2Math.Vec2Math).distance2(this, vec2) < (0, _math.MATH_ERROR2);
-    };
+    }
     /**
      * Sums current vector and given vector and returns new vector
      * @param {Vec2} vec2
      * @returns {Vec2}
-     */ Vec2.prototype.sum = function(vec2) {
+     */ sum(vec2) {
         return new Vec2(this.x + vec2.x, this.y + vec2.y);
-    };
+    }
     /**
      * Calculate difference between current vector and given vector and returns
      * new vector
      *
      * @param {Vec2} vec2
      * @returns {Vec2}
-     */ Vec2.prototype.diff = function(vec2) {
+     */ diff(vec2) {
         return new Vec2(this.x - vec2.x, this.y - vec2.y);
-    };
+    }
     /**
      * Multiplicates vector by number
      * @param {number} value
      * @returns {Vec2}
-     */ Vec2.prototype.mul = function(value) {
+     */ mul(value) {
         return new Vec2(this.x * value, this.y * value);
-    };
-    Vec2.prototype.dot = function(vec) {
+    }
+    dot(vec) {
         return this.x * vec.x + this.y * vec.y;
-    };
-    Vec2.prototype.copy = function() {
+    }
+    copy() {
         return new Vec2(this.x, this.y);
-    };
-    Vec2.prototype.applySelf = function(callback) {
+    }
+    applySelf(callback) {
         this.x = callback(this.x);
         this.y = callback(this.y);
         return this;
-    };
+    }
     /**
      * Checks if this vector inside rect created by 2 other vectors.
      * @param vec1
      * @param vec2
-     */ Vec2.prototype.isInsideRect = function(vec1, vec2) {
-        var leftTopX = Math.min(vec1.x, vec2.x);
-        var leftTopY = Math.min(vec1.y, vec2.y);
-        var rightBottomX = Math.max(vec1.x, vec2.x);
-        var rightBottomY = Math.max(vec1.y, vec2.y);
+     */ isInsideRect(vec1, vec2) {
+        const leftTopX = Math.min(vec1.x, vec2.x);
+        const leftTopY = Math.min(vec1.y, vec2.y);
+        const rightBottomX = Math.max(vec1.x, vec2.x);
+        const rightBottomY = Math.max(vec1.y, vec2.y);
         return this._x >= leftTopX && this._x <= rightBottomX && this._y >= leftTopY && this._y <= rightBottomY;
-    };
-    Object.defineProperty(Vec2.prototype, "ort", {
-        /**
-         * Returns normalized vector
-         * @returns {Vec2}
-         */ get: function() {
-            var l = this.length;
-            return new Vec2(this.x / l, this.y / l, 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2.prototype, "abs", {
-        /**
-         * Returns new vector with absolute values for X and Y
-         */ get: function() {
-            return new Vec2(Math.abs(this.x), Math.abs(this.y));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2.prototype, "perpendicular", {
-        get: function() {
-            if (this.x === 0) {
-                // Vertical
-                if (this.y > 0) return Vec2.Horizontal().ort;
-                else if (this.y < 0) return Vec2.Horizontal().ort.flipSelf();
-                else throw new (0, _exceptions.Vec2ExceptionNoPerpendicularVectorToZeroVector)();
-            } else if (this.y === 0) {
-                // Horizontal
-                if (this.x > 0) return Vec2.Vertical().ort;
-                else if (this.x < 0) return Vec2.Vertical().ort.flipSelf();
-            }
-            return new Vec2(-this.y, this.x).ort;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Vec2.Zero = function() {
+    }
+    /**
+     * Returns normalized vector
+     * @returns {Vec2}
+     */ get ort() {
+        const l = this.length;
+        return new Vec2(this.x / l, this.y / l, 1);
+    }
+    /**
+     * Returns new vector with absolute values for X and Y
+     */ get abs() {
+        return new Vec2(Math.abs(this.x), Math.abs(this.y));
+    }
+    get perpendicular() {
+        if (this.x === 0) {
+            // Vertical
+            if (this.y > 0) return Vec2.Horizontal().ort;
+            else if (this.y < 0) return Vec2.Horizontal().ort.flipSelf();
+            else throw new (0, _exceptions.Vec2ExceptionNoPerpendicularVectorToZeroVector)();
+        } else if (this.y === 0) {
+            // Horizontal
+            if (this.x > 0) return Vec2.Vertical().ort;
+            else if (this.x < 0) return Vec2.Vertical().ort.flipSelf();
+        }
+        return new Vec2(-this.y, this.x).ort;
+    }
+    static Zero() {
         return new Vec2(0, 0);
-    };
-    Vec2.Horizontal = function() {
+    }
+    static Horizontal() {
         return new Vec2(1, 0);
-    };
-    Vec2.Vertical = function() {
+    }
+    static Vertical() {
         return new Vec2(0, 1);
-    };
-    Vec2.Down = function(y) {
+    }
+    static Down(y) {
         return new Vec2(0, y);
-    };
-    Vec2.Right = function(x) {
+    }
+    static Right(x) {
         return new Vec2(x, 0);
-    };
-    Vec2.lengthCallsCount = 0;
-    Vec2.length2CallsCount = 0;
-    return Vec2;
-}();
+    }
+}
+Vec2.lengthCallsCount = 0;
+Vec2.length2CallsCount = 0;
 
 },{"./vec2Math":"nZL8C","./math":"fX8MB","./exceptions":"68SyS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"nZL8C":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1465,68 +1340,66 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Math", ()=>Vec2Math);
 var _vec2 = require("./vec2");
 var _exceptions = require("./exceptions");
-var Vec2Math = /** @class */ function() {
-    function Vec2Math() {}
-    Vec2Math.diff = function(vec1, vec2) {
+class Vec2Math {
+    static diff(vec1, vec2) {
         return new (0, _vec2.Vec2)(vec1.x - vec2.x, vec1.y - vec2.y);
-    };
-    Vec2Math.mul = function(vec1, scalar) {
+    }
+    static mul(vec1, scalar) {
         return new (0, _vec2.Vec2)(vec1.x * scalar, vec1.y * scalar);
-    };
+    }
     /**
      * Calculates distance between 2 vectors
      * @param {Vec2} vec1
      * @param {Vec2} vec2
      * @returns {number}
-     */ Vec2Math.distance = function(vec1, vec2) {
+     */ static distance(vec1, vec2) {
         return Vec2Math.diff(vec1, vec2).length;
-    };
+    }
     /**
      * Calculates square of distance between 2 vectors
      * @param {Vec2} vec1
      * @param {Vec2} vec2
      * @returns {number}
-     */ Vec2Math.distance2 = function(vec1, vec2) {
+     */ static distance2(vec1, vec2) {
         return Vec2Math.diff(vec1, vec2).length2;
-    };
+    }
     /**
      * Finds intersection between 2 lines
      * @param {Vec2Line} line1
      * @param {Vec2Line} line2
      * @returns {Vec2}
-     */ Vec2Math.intersect = function(line1, line2) {
+     */ static intersect(line1, line2) {
         if (line1.K === line2.K) throw new (0, _exceptions.Vec2ExceptionParallel)();
         if (isNaN(line1.K) || isNaN(line2.K)) {
             // One of two lines is vertical
             if (isNaN(line1.K)) return line2.makeVec2FromX(line1._vec1.x);
             else return line1.makeVec2FromX(line2._vec1.x);
         } else {
-            var x = (line1.B - line2.B) / (line2.K - line1.K);
+            const x = (line1.B - line2.B) / (line2.K - line1.K);
             return line1.makeVec2FromX(x);
         }
-    };
+    }
     /**
      * Dot product of 2 vectors
      * @param {Vec2} vec1
      * @param {Vec2} vec2
      * @returns {number}
-     */ Vec2Math.dot = function(vec1, vec2) {
+     */ static dot(vec1, vec2) {
         return vec1.x * vec2.x + vec1.y * vec2.y;
-    };
+    }
     /**
      *
      * @param {Vec2} vec
      * @param {Vec2Line} line
      * @returns {Vec2}
-     */ Vec2Math.mirror = function(vec, line) {
-        var normal = line.direction.perpendicular;
+     */ static mirror(vec, line) {
+        const normal = line.direction.perpendicular;
         return vec.diff(normal.mul(2 * Vec2Math.dot(vec, normal)));
-    };
-    Vec2Math.scale = function(vec1, vec2) {
+    }
+    static scale(vec1, vec2) {
         return new (0, _vec2.Vec2)(vec1.x / vec2.x, vec1.y / vec2.y);
-    };
-    return Vec2Math;
-}();
+    }
+}
 
 },{"./vec2":"bp79Y","./exceptions":"68SyS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"68SyS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1535,54 +1408,14 @@ parcelHelpers.export(exports, "Vec2Exception", ()=>Vec2Exception);
 parcelHelpers.export(exports, "Vec2ExceptionParallel", ()=>Vec2ExceptionParallel);
 parcelHelpers.export(exports, "Vec2ExceptionNoPerpendicularVectorToZeroVector", ()=>Vec2ExceptionNoPerpendicularVectorToZeroVector);
 parcelHelpers.export(exports, "Vec2ExceptionRectSizeShouldBePositive", ()=>Vec2ExceptionRectSizeShouldBePositive);
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Vec2Exception = /** @class */ function(_super) {
-    __extends(Vec2Exception, _super);
-    function Vec2Exception() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Vec2Exception;
-}(Error);
-var Vec2ExceptionParallel = /** @class */ function(_super) {
-    __extends(Vec2ExceptionParallel, _super);
-    function Vec2ExceptionParallel() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Vec2ExceptionParallel;
-}(Vec2Exception);
-var Vec2ExceptionNoPerpendicularVectorToZeroVector = /** @class */ function(_super) {
-    __extends(Vec2ExceptionNoPerpendicularVectorToZeroVector, _super);
-    function Vec2ExceptionNoPerpendicularVectorToZeroVector() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Vec2ExceptionNoPerpendicularVectorToZeroVector;
-}(Vec2Exception);
-var Vec2ExceptionRectSizeShouldBePositive = /** @class */ function(_super) {
-    __extends(Vec2ExceptionRectSizeShouldBePositive, _super);
-    function Vec2ExceptionRectSizeShouldBePositive() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return Vec2ExceptionRectSizeShouldBePositive;
-}(Vec2Exception);
+class Vec2Exception extends Error {
+}
+class Vec2ExceptionParallel extends Vec2Exception {
+}
+class Vec2ExceptionNoPerpendicularVectorToZeroVector extends Vec2Exception {
+}
+class Vec2ExceptionRectSizeShouldBePositive extends Vec2Exception {
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fX8MB":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1597,9 +1430,9 @@ parcelHelpers.export(exports, "SQRT2", ()=>SQRT2);
  * @param {number} error
  * @returns {boolean}
  */ parcelHelpers.export(exports, "isEqual", ()=>isEqual);
-var MATH_ERROR = 0.000001;
-var MATH_ERROR2 = MATH_ERROR * MATH_ERROR;
-var SQRT2 = Math.sqrt(2);
+const MATH_ERROR = 0.000001;
+const MATH_ERROR2 = MATH_ERROR * MATH_ERROR;
+const SQRT2 = Math.sqrt(2);
 function isEqual(a, b, error) {
     return Math.abs(a - b) < error;
 }
@@ -1612,97 +1445,68 @@ var _vec2 = require("../vector/vec2");
 var _gridSolverSpace = require("./gridSolverSpace");
 var _baseSolver = require("./baseSolver");
 var _vec2Math = require("../vector/vec2Math");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var GridOptimizedSolver = /** @class */ function(_super) {
-    __extends(GridOptimizedSolver, _super);
-    function GridOptimizedSolver(worldSize, stats) {
-        var _this = _super.call(this, worldSize, stats) || this;
-        _this.gravity = (0, _vec2.Vec2).Zero();
-        _this.gravityCenter = (0, _vec2.Vec2).Zero();
-        _this.configure();
-        return _this;
+class GridOptimizedSolver extends (0, _baseSolver.BaseSolver) {
+    constructor(worldSize, stats){
+        super(worldSize, stats);
+        this.gravity = (0, _vec2.Vec2).Zero();
+        this.gravityCenter = (0, _vec2.Vec2).Zero();
+        this.configure();
     }
-    GridOptimizedSolver.prototype.reset = function() {
-        _super.prototype.reset.call(this);
+    reset() {
+        super.reset();
         this.collisionGrid.clear();
-    };
-    GridOptimizedSolver.prototype.configure = function() {
-        _super.prototype.configure.call(this);
+    }
+    configure() {
+        super.configure();
         this.gravity = new (0, _vec2.Vec2)(0, 100);
         this.gravityCenter = new (0, _vec2.Vec2)(this.worldSize.x / 2, this.worldSize.y / 2);
-        var cellSize = 16;
-        var gridX = Math.round(this.worldSize.x / cellSize);
-        var gridY = Math.round(this.worldSize.y / cellSize);
+        const cellSize = 16;
+        const gridX = Math.round(this.worldSize.x / cellSize);
+        const gridY = Math.round(this.worldSize.y / cellSize);
         this.cellSize = new (0, _vec2.Vec2)(this.worldSize.x / gridX, this.worldSize.y / gridY);
         this.collisionGrid = new (0, _gridSolverSpace.GridSolverSpace)(gridX, gridY, this.cellSize);
-    };
-    GridOptimizedSolver.prototype.processOptimizations = function() {
-        var _this = this;
+    }
+    processOptimizations() {
         this.collisionGrid.clear();
-        this.objects.forEach(function(obj, index) {
-            obj.addToSpace(_this.collisionGrid);
-            _this.stats.addStats("Solver object: ".concat(obj.toString()));
+        this.objects.forEach((obj, index)=>{
+            obj.addToSpace(this.collisionGrid);
+            this.stats.addStats(`Solver object: ${obj.toString()}`);
         });
-    };
-    GridOptimizedSolver.prototype.applyForces = function() {
-        var _this = this;
-        this.objects.forEach(function(obj) {
-            var direction = (0, _vec2Math.Vec2Math).diff(obj.currentPosition, _this.gravityCenter);
-            obj.accelerate(direction.ort.mul(-_this.gravity.length));
+    }
+    applyForces() {
+        this.objects.forEach((obj)=>{
+            const direction = (0, _vec2Math.Vec2Math).diff(obj.currentPosition, this.gravityCenter);
+            obj.accelerate(direction.ort.mul(-this.gravity.length));
         //obj.accelerate(this.gravity)
         });
-    };
-    GridOptimizedSolver.prototype.processCollisionsInCell = function(objA, cell) {
-        var _this = this;
+    }
+    processCollisionsInCell(objA, cell) {
         this.stats.addStats("processCollisionsInCell.calls");
-        cell.objects.forEach(function(objB) {
+        cell.objects.forEach((objB)=>{
             if (objA === objB) return;
             if (objA.immovable && objB.immovable) return;
-            _this.stats.addStats("processCollisions.calls");
+            this.stats.addStats("processCollisions.calls");
             objA.collide(objB);
         });
-    };
-    GridOptimizedSolver.prototype.processCell = function(index) {
-        var _this = this;
+    }
+    processCell(index) {
         this.stats.addStats("processCell.calls", 1);
-        var currentCell = this.collisionGrid.cells[index];
-        currentCell.objects.forEach(function(objA) {
-            _this.collisionGrid.adjacentCells[index].forEach(function(cell) {
+        const currentCell = this.collisionGrid.cells[index];
+        currentCell.objects.forEach((objA)=>{
+            this.collisionGrid.adjacentCells[index].forEach((cell)=>{
                 if (cell === currentCell && cell.objects.length === 1) return; // We don't need to check collisions if I'm only object in cell
-                _this.processCollisionsInCell(objA, cell);
+                this.processCollisionsInCell(objA, cell);
             });
         });
-    };
-    GridOptimizedSolver.prototype.processCollisions = function() {
-        for(var index = 0; index < this.collisionGrid.size; index++)this.processCell(index);
-    };
-    GridOptimizedSolver.prototype.debugRender = function(context) {
+    }
+    processCollisions() {
+        for(let index = 0; index < this.collisionGrid.size; index++)this.processCell(index);
+    }
+    debugRender(context) {
         this.collisionGrid.debugRender(context);
-        this.objects.forEach(function(object) {
-            return object.debugRender(context);
-        });
-    };
-    return GridOptimizedSolver;
-}((0, _baseSolver.BaseSolver));
+        this.objects.forEach((object)=>object.debugRender(context));
+    }
+}
 function makeKey(obj1, obj2) {
     return [
         obj1.index,
@@ -1718,203 +1522,158 @@ parcelHelpers.export(exports, "GridSolverSpace", ()=>GridSolverSpace);
 var _vec2 = require("../vector/vec2");
 var _vec2Math = require("../vector/vec2Math");
 var _baseSolverSpace = require("./baseSolverSpace");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var CollisionCell = /** @class */ function() {
-    function CollisionCell() {
+class CollisionCell {
+    constructor(){
         this.objects = [];
         this.highlight = false;
     }
-    CollisionCell.prototype.addObject = function(obj) {
+    addObject(obj) {
         if (this.objects.length >= CollisionCell.MAX_OBJECT_IN_CELL) return;
         this.objects.push(obj);
-    };
-    CollisionCell.prototype.clear = function() {
+    }
+    clear() {
         this.objects = [];
         this.highlight = false;
-    };
-    CollisionCell.prototype.remove = function(index) {
-        var objectIndex = this.objects.findIndex(function(obj) {
-            return obj.index === index;
-        });
-        if (objectIndex !== -1) this.objects.splice(objectIndex, 1);
-    };
-    Object.defineProperty(CollisionCell.prototype, "count", {
-        get: function() {
-            return this.objects.length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    CollisionCell.MAX_OBJECT_IN_CELL = 100;
-    return CollisionCell;
-}();
-var GridSolverSpace = /** @class */ function(_super) {
-    __extends(GridSolverSpace, _super);
-    function GridSolverSpace(width, height, cellSize) {
-        var _this = _super.call(this) || this;
-        _this.cells = [];
-        _this.index2xy = [];
-        _this.adjacentCells = [];
-        _this._width = width;
-        _this._height = height;
-        _this.cellSize = cellSize;
-        _this.resize();
-        return _this;
     }
-    Object.defineProperty(GridSolverSpace.prototype, "size", {
-        get: function() {
-            return this._size;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GridSolverSpace.prototype, "width", {
-        get: function() {
-            return this._width;
-        },
-        set: function(w) {
-            this._width = w;
-            this.resize();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(GridSolverSpace.prototype, "height", {
-        get: function() {
-            return this._height;
-        },
-        set: function(h) {
-            this._height = h;
-            this.resize();
-        },
-        enumerable: false,
-        configurable: true
-    });
-    GridSolverSpace.prototype.recalculateIndex2xy = function() {
+    remove(index) {
+        const objectIndex = this.objects.findIndex((obj)=>obj.index === index);
+        if (objectIndex !== -1) this.objects.splice(objectIndex, 1);
+    }
+    get count() {
+        return this.objects.length;
+    }
+}
+CollisionCell.MAX_OBJECT_IN_CELL = 100;
+class GridSolverSpace extends (0, _baseSolverSpace.BaseSolverSpace) {
+    constructor(width, height, cellSize){
+        super();
+        this.cells = [];
         this.index2xy = [];
-        for(var i = 0; i < this._size; i++)this.index2xy.push(this.makeVecFromIndex(i));
-    };
+        this.adjacentCells = [];
+        this._width = width;
+        this._height = height;
+        this.cellSize = cellSize;
+        this.resize();
+    }
+    get size() {
+        return this._size;
+    }
+    get width() {
+        return this._width;
+    }
+    set width(w) {
+        this._width = w;
+        this.resize();
+    }
+    get height() {
+        return this._height;
+    }
+    set height(h) {
+        this._height = h;
+        this.resize();
+    }
+    recalculateIndex2xy() {
+        this.index2xy = [];
+        for(let i = 0; i < this._size; i++)this.index2xy.push(this.makeVecFromIndex(i));
+    }
     /**
      * Calculate cache of collision cells
-     */ GridSolverSpace.prototype.recalculateCollisionCells = function() {
-        var _this = this;
+     */ recalculateCollisionCells() {
         this.adjacentCells = [];
-        this.cells.forEach(function(cell, index) {
-            var pos = _this.getVecFromIndex(index);
-            var cells = [];
+        this.cells.forEach((cell, index)=>{
+            const pos = this.getVecFromIndex(index);
+            const cells = [];
             cells.push(cell); // Add self
-            if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y - 1)]); //TOP
-            if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x, pos.y + 1)]); //BOTTOM
+            if (pos.y > 0) cells.push(this.cells[this.makeIndexFromCoord(pos.x, pos.y - 1)]); //TOP
+            if (pos.y + 1 < this._height) cells.push(this.cells[this.makeIndexFromCoord(pos.x, pos.y + 1)]); //BOTTOM
             if (pos.x > 0) {
-                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y - 1)]); //LEFT TOP
-                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y)]); //LEFT
-                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x - 1, pos.y + 1)]); //LEFT BOTTOM
+                if (pos.y > 0) cells.push(this.cells[this.makeIndexFromCoord(pos.x - 1, pos.y - 1)]); //LEFT TOP
+                cells.push(this.cells[this.makeIndexFromCoord(pos.x - 1, pos.y)]); //LEFT
+                if (pos.y + 1 < this._height) cells.push(this.cells[this.makeIndexFromCoord(pos.x - 1, pos.y + 1)]); //LEFT BOTTOM
             }
-            if (pos.x + 1 < _this._width) {
-                if (pos.y > 0) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y - 1)]); //RIGHT TOP
-                cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y)]); //RIGHT
-                if (pos.y + 1 < _this._height) cells.push(_this.cells[_this.makeIndexFromCoord(pos.x + 1, pos.y + 1)]); //RIGHT BOTTOM
+            if (pos.x + 1 < this._width) {
+                if (pos.y > 0) cells.push(this.cells[this.makeIndexFromCoord(pos.x + 1, pos.y - 1)]); //RIGHT TOP
+                cells.push(this.cells[this.makeIndexFromCoord(pos.x + 1, pos.y)]); //RIGHT
+                if (pos.y + 1 < this._height) cells.push(this.cells[this.makeIndexFromCoord(pos.x + 1, pos.y + 1)]); //RIGHT BOTTOM
             }
-            _this.adjacentCells[index] = cells;
+            this.adjacentCells[index] = cells;
         });
-    };
-    GridSolverSpace.prototype.getVecFromIndex = function(index) {
+    }
+    getVecFromIndex(index) {
         return this.index2xy[index];
-    };
-    GridSolverSpace.prototype.resize = function() {
+    }
+    resize() {
         this.cells = [];
         this._size = this._width * this._height;
-        for(var i = 0; i < this._size; i++)this.cells.push(new CollisionCell());
+        for(let i = 0; i < this._size; i++)this.cells.push(new CollisionCell());
         this.recalculateIndex2xy();
         this.recalculateCollisionCells();
-    };
-    GridSolverSpace.prototype.addObject = function(obj) {
+    }
+    addObject(obj) {
         this.addObjectByIndex(0, obj);
-    };
-    GridSolverSpace.prototype.addPointObject = function(worldX, worldY, obj) {
-        var x = Math.trunc(worldX / this.cellSize.x);
-        var y = Math.trunc(worldY / this.cellSize.y);
-        var index = this.makeIndexFromCoord(x, y);
+    }
+    addPointObject(worldX, worldY, obj) {
+        const x = Math.trunc(worldX / this.cellSize.x);
+        const y = Math.trunc(worldY / this.cellSize.y);
+        const index = this.makeIndexFromCoord(x, y);
         this.addObjectByIndex(index, obj);
-    };
-    GridSolverSpace.prototype.addObjectByIndex = function(index, obj) {
+    }
+    addObjectByIndex(index, obj) {
         if (!isNaN(index) && index >= 0 && index < this.size) this.cells[index].addObject(obj);
-    };
-    GridSolverSpace.prototype.makeIndexFromVec = function(vec) {
+    }
+    makeIndexFromVec(vec) {
         return vec.x * this._height + vec.y;
-    };
-    GridSolverSpace.prototype.makeIndexFromCoord = function(x, y) {
+    }
+    makeIndexFromCoord(x, y) {
         return x * this._height + y;
-    };
-    GridSolverSpace.prototype.makeVecFromIndex = function(index) {
-        var x = Math.trunc(index / this._height);
-        var y = index - x * this._height;
+    }
+    makeVecFromIndex(index) {
+        const x = Math.trunc(index / this._height);
+        const y = index - x * this._height;
         return new (0, _vec2.Vec2)(x, y);
-    };
+    }
     /**
      * Adds object to all cells between given coords
      * @param worldLeftTop
      * @param worldRightBottom
      * @param obj
-     */ GridSolverSpace.prototype.addRectangularObject = function(worldLeftTop, worldRightBottom, obj) {
-        var point1 = (0, _vec2Math.Vec2Math).scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
-        var point2 = (0, _vec2Math.Vec2Math).scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
-        var left = Math.max(Math.min(point1.x, point2.x), 0);
-        var top = Math.max(Math.min(point1.y, point2.y), 0);
-        var right = Math.min(Math.max(point1.x, point2.x), this._width - 1);
-        var bottom = Math.min(Math.max(point1.y, point2.y), this._height - 1);
-        var index1 = this.makeIndexFromCoord(left, top);
-        var index2 = this.makeIndexFromCoord(right, bottom);
+     */ addRectangularObject(worldLeftTop, worldRightBottom, obj) {
+        const point1 = (0, _vec2Math.Vec2Math).scale(worldLeftTop, this.cellSize).applySelf(Math.trunc);
+        const point2 = (0, _vec2Math.Vec2Math).scale(worldRightBottom, this.cellSize).applySelf(Math.trunc);
+        let left = Math.max(Math.min(point1.x, point2.x), 0);
+        let top = Math.max(Math.min(point1.y, point2.y), 0);
+        let right = Math.min(Math.max(point1.x, point2.x), this._width - 1);
+        let bottom = Math.min(Math.max(point1.y, point2.y), this._height - 1);
+        const index1 = this.makeIndexFromCoord(left, top);
+        const index2 = this.makeIndexFromCoord(right, bottom);
         if (right >= this._width || left < 0 || top < 0 || bottom >= this._height) return;
         if (point1.x === point2.x) // Vertical
-        for(var cellIndex = index1; cellIndex <= index2; cellIndex++)this.cells[cellIndex].addObject(obj);
+        for(let cellIndex = index1; cellIndex <= index2; cellIndex++)this.cells[cellIndex].addObject(obj);
         else if (point1.y === point2.y) // Horizontal
-        for(var cellIndex = index1; cellIndex <= index2; cellIndex += this.height)this.cells[cellIndex].addObject(obj);
+        for(let cellIndex = index1; cellIndex <= index2; cellIndex += this.height)this.cells[cellIndex].addObject(obj);
         else {
-            var height = bottom - top;
-            var startFrom = this.makeIndexFromCoord(left, top);
-            for(var x = 0; x <= right - left; x++)for(var y = 0; y <= height; y++){
-                var cellIndex = startFrom + this.makeIndexFromCoord(x, y);
+            let height = bottom - top;
+            let startFrom = this.makeIndexFromCoord(left, top);
+            for(let x = 0; x <= right - left; x++)for(let y = 0; y <= height; y++){
+                const cellIndex = startFrom + this.makeIndexFromCoord(x, y);
                 this.addObjectByIndex(cellIndex, obj);
             }
         }
-    };
-    GridSolverSpace.prototype.clear = function() {
-        this.cells.forEach(function(cell) {
-            return cell.clear();
-        });
-    };
-    GridSolverSpace.prototype.forEach = function(callback) {
-        var _this = this;
-        this.cells.forEach(function(cell, index) {
-            var pos = _this.getVecFromIndex(index);
+    }
+    clear() {
+        this.cells.forEach((cell)=>cell.clear());
+    }
+    forEach(callback) {
+        this.cells.forEach((cell, index)=>{
+            const pos = this.getVecFromIndex(index);
             callback(pos.x, pos.y, cell, index);
         });
-    };
-    GridSolverSpace.prototype.hasCell = function(index, dt) {
+    }
+    hasCell(index, dt) {
         if (index < 0 || index >= this.size) return false;
-        var pos = this.getVecFromIndex(index);
-        var x = pos.x;
-        var y = pos.y;
+        const pos = this.getVecFromIndex(index);
+        const x = pos.x;
+        const y = pos.y;
         if (y <= 0 && dt < 0) // TOP CELL
         return false;
         if (y === this.height - 1 && dt > 0) // Bottom cell
@@ -1924,36 +1683,32 @@ var GridSolverSpace = /** @class */ function(_super) {
         if (x >= this.width - 1 && dt > 0) // right cell;
         return false;
         return true;
-    };
-    GridSolverSpace.prototype.debugRender = function(render) {
-        var _this = this;
-        this.forEach(function(column, row, cell, index) {
-            var cellPosition = new (0, _vec2.Vec2)(column * _this.cellSize.x, row * _this.cellSize.y);
+    }
+    debugRender(render) {
+        this.forEach((column, row, cell, index)=>{
+            const cellPosition = new (0, _vec2.Vec2)(column * this.cellSize.x, row * this.cellSize.y);
             render.strokeStyle(cell.count > 0 ? "#ff0000" : "#00ff00");
             render.lineWidth(cell.highlight ? 10 : 1);
-            render.rect(cellPosition.x, cellPosition.y, _this.cellSize.x - 1, _this.cellSize.y - 1);
+            render.rect(cellPosition.x, cellPosition.y, this.cellSize.x - 1, this.cellSize.y - 1);
             render.fillStyle("#ffffff");
-            render.text("".concat(index), cellPosition.sum(_this.cellSize.mul(0.5)));
+            render.text(`${index}`, cellPosition.sum(this.cellSize.mul(0.5)));
         });
-    };
-    return GridSolverSpace;
-}((0, _baseSolverSpace.BaseSolverSpace));
+    }
+}
 
 },{"../vector/vec2":"bp79Y","../vector/vec2Math":"nZL8C","./baseSolverSpace":"3vpVg","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3vpVg":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseSolverSpace", ()=>BaseSolverSpace);
-var BaseSolverSpace = /** @class */ function() {
-    function BaseSolverSpace() {}
-    return BaseSolverSpace;
-}();
+class BaseSolverSpace {
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jzdWf":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseSolver", ()=>BaseSolver);
-var BaseSolver = /** @class */ function() {
-    function BaseSolver(worldSize, stats) {
+class BaseSolver {
+    constructor(worldSize, stats){
         this.objects = [];
         this.constrains = null;
         this.subSteps = 4;
@@ -1963,45 +1718,39 @@ var BaseSolver = /** @class */ function() {
         this.worldSize = worldSize.copy();
         this.configure();
     }
-    BaseSolver.prototype.reset = function() {
+    reset() {
         this.objects = [];
-    };
-    BaseSolver.prototype.configure = function() {
+    }
+    configure() {
         this.useFixedTime = true;
         this.step = 0.017 / this.subSteps;
-    };
-    BaseSolver.prototype.addObject = function(obj) {
+    }
+    addObject(obj) {
         this.objects.push(obj);
-    };
+    }
     /**
      * Update the simulation by given step.
      * @param {number} time amount of seconds passed since last update.
-     */ BaseSolver.prototype.update = function(time) {
-        var subTime = this.useFixedTime ? this.step : time / this.subSteps;
-        for(var i = 0; i < this.subSteps; i++){
+     */ update(time) {
+        const subTime = this.useFixedTime ? this.step : time / this.subSteps;
+        for(let i = 0; i < this.subSteps; i++){
             this.processOptimizations();
             this.processCollisions();
             this.applyForces();
             this.updateObjects(subTime);
             this.applyConstrains();
         }
-    };
+    }
     /**
      * Update objects state
      * @param {number} time amount of seconds passed since last update
-     */ BaseSolver.prototype.updateObjects = function(time) {
-        this.objects.forEach(function(obj) {
-            return obj.update(time);
-        });
-    };
-    BaseSolver.prototype.applyConstrains = function() {
-        var _this = this;
-        this.objects.forEach(function(obj) {
-            return _this.constrains.applyConstrain(obj);
-        });
-    };
-    return BaseSolver;
-}();
+     */ updateObjects(time) {
+        this.objects.forEach((obj)=>obj.update(time));
+    }
+    applyConstrains() {
+        this.objects.forEach((obj)=>this.constrains.applyConstrain(obj));
+    }
+}
 function makeKey(obj1, obj2) {
     return [
         obj1.index,
@@ -2016,7 +1765,7 @@ parcelHelpers.export(exports, "ENGINE_SCENES", ()=>ENGINE_SCENES);
 var _scene1 = require("./scene1");
 var _scene2 = require("./scene2");
 var _scene3 = require("./scene3");
-var ENGINE_SCENES = {
+const ENGINE_SCENES = {
     "scene1": (0, _scene1.Scene1),
     "scene2": (0, _scene2.Scene2),
     "scene3": (0, _scene3.Scene3)
@@ -2040,27 +1789,7 @@ var _circleWithText = require("../items/circleWithText");
 var _index2Color = require("../items/utils/index2color");
 var _viewport = require("../constrains/viewport");
 var _milkshake = require("../primitives/milkshake");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var ballsColors = {
+const ballsColors = {
     57: "#ffffff",
     78: "#ffffff",
     71: "#ffffff",
@@ -2069,28 +1798,25 @@ var ballsColors = {
     202: "#ffffff",
     218: "#ffffff"
 };
-var Scene1 = /** @class */ function(_super) {
-    __extends(Scene1, _super);
-    function Scene1(engine) {
-        var _this = _super.call(this, engine) || this;
-        _this.canMoveRedObject = false;
-        var canvasCenter = new (0, _vec2.Vec2)(_this.engine.canvas.width / 2, _this.engine.canvas.height / 2);
-        _this.generator = _this.createBallsGenerator(canvasCenter, new (0, _vec2.Vec2)(300, 300), new (0, _vec2.Vec2)(2, -2));
-        _this.createBottomBouncyLine();
-        _this.createMilkShake(canvasCenter);
-        _this.createActor();
-        _this.initConstrain();
-        return _this;
+class Scene1 extends (0, _baseScene.BaseScene) {
+    constructor(engine){
+        super(engine);
+        this.canMoveRedObject = false;
+        const canvasCenter = new (0, _vec2.Vec2)(this.engine.canvas.width / 2, this.engine.canvas.height / 2);
+        this.generator = this.createBallsGenerator(canvasCenter, new (0, _vec2.Vec2)(300, 300), new (0, _vec2.Vec2)(2, -2));
+        this.createBottomBouncyLine();
+        this.createMilkShake(canvasCenter);
+        this.createActor();
+        this.initConstrain();
     }
-    Scene1.prototype.createBallsGenerator = function(canvasCenter, pointDelta, baseBallVelocity) {
-        var _this = this;
-        var ballGeneratorPoint = canvasCenter.diff(pointDelta);
-        var ballVelocity = baseBallVelocity.mul(1 / this.engine.solver.subSteps);
-        return new (0, _totalObjectsGenerator.TotalObjectsGenerator)(this.engine.solver, 1000, 7, function(index) {
-            var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint, 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(_this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index + 200), "", "#000000"));
-            var obj2 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Down(20)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(_this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index + 100), "", "#000000"));
-            var obj3 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Down(-20)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(_this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index), "", "#000000"));
-            var obj4 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Right(-40)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(_this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index - 100), "", "#000000"));
+    createBallsGenerator(canvasCenter, pointDelta, baseBallVelocity) {
+        const ballGeneratorPoint = canvasCenter.diff(pointDelta);
+        const ballVelocity = baseBallVelocity.mul(1 / this.engine.solver.subSteps);
+        return new (0, _totalObjectsGenerator.TotalObjectsGenerator)(this.engine.solver, 1000, 7, (index)=>{
+            const obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint, 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index + 200), "", "#000000"));
+            const obj2 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Down(20)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index + 100), "", "#000000"));
+            const obj3 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Down(-20)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index), "", "#000000"));
+            const obj4 = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.sum((0, _vec2.Vec2).Right(-40)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 5, (0, _index2Color.index2color)(index - 100), "", "#000000"));
             return [
                 obj,
                 obj2,
@@ -2098,61 +1824,55 @@ var Scene1 = /** @class */ function(_super) {
                 obj4
             ];
         });
-    };
-    Scene1.prototype.createBottomBouncyLine = function() {
+    }
+    createBottomBouncyLine() {
         // Bottom bouncy line
-        var bottomLine = new (0, _immovableLine1.ImmovableLineObject)(new (0, _vec2.Vec2)(0, this.engine.canvas.height - 10), new (0, _vec2.Vec2)(this.engine.canvas.width, 0));
+        const bottomLine = new (0, _immovableLine1.ImmovableLineObject)(new (0, _vec2.Vec2)(0, this.engine.canvas.height - 10), new (0, _vec2.Vec2)(this.engine.canvas.width, 0));
         bottomLine.bounceValue = 1.5;
         this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(bottomLine, new (0, _line.Line)(this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ff0000")));
-    };
-    Scene1.prototype.createMilkShake = function(canvasCenter) {
-        var _this = this;
-        (0, _milkshake.createMilkshake)(1, canvasCenter).forEach(function(line) {
-            _this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line), new (0, _line.Line)(_this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
+    }
+    createMilkShake(canvasCenter) {
+        (0, _milkshake.createMilkshake)(1, canvasCenter).forEach((line)=>{
+            this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line), new (0, _line.Line)(this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#ffffff")));
         });
-        (0, _milkshake.createMilkshake)(0.5, canvasCenter).forEach(function(line) {
-            _this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line), new (0, _line.Line)(_this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#0000ff")));
+        (0, _milkshake.createMilkshake)(0.5, canvasCenter).forEach((line)=>{
+            this.engine.addObject(new (0, _immovableLine.ImmovableLineRenderableObject)(new (0, _immovableLine1.ImmovableLineObject)(line), new (0, _line.Line)(this.engine.context, (0, _vec2.Vec2).Zero(), (0, _vec2.Vec2).Zero(), "#0000ff")));
         });
-    };
-    Scene1.prototype.initConstrain = function() {
+    }
+    initConstrain() {
         this.engine.constrain = new (0, _viewport.ViewportConstrain)(this.engine.canvas.width, this.engine.canvas.height);
-    };
-    Scene1.prototype.createActor = function() {
+    }
+    createActor() {
         this.actor = new (0, _object.RenderableObject)(new (0, _immovableBall.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.engine.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000"));
         this.engine.addObject(this.actor);
-    };
-    Scene1.prototype.getActor = function() {
+    }
+    getActor() {
         return this.actor;
-    };
-    Scene1.prototype.tick = function(timePassed) {
-        var _this = this;
+    }
+    tick(timePassed) {
         this.engine.stats.addStats("Time passed", timePassed);
         if (timePassed > 0.017) return;
-        var newBalls = this.generator.getNextObjects(timePassed);
-        if (newBalls) newBalls.forEach(function(ball) {
-            return _this.engine.addObject(ball);
-        });
-    };
-    Scene1.prototype.processUserInput = function(event) {
-        var mouseEvent = event;
+        const newBalls = this.generator.getNextObjects(timePassed);
+        if (newBalls) newBalls.forEach((ball)=>this.engine.addObject(ball));
+    }
+    processUserInput(event) {
+        const mouseEvent = event;
         if (mouseEvent.leftButtonDown) {
             if (this.actor.solverObject.isPointInsideObject(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY))) this.canMoveRedObject = true;
             if (this.canMoveRedObject) this.actor.solverObject.moveBy(new (0, _vec2.Vec2)(mouseEvent.dx, mouseEvent.dy));
         } else this.canMoveRedObject = false;
-    };
-    return Scene1;
-}((0, _baseScene.BaseScene));
+    }
+}
 
 },{"./baseScene":"dRCUa","../generators/totalObjectsGenerator":"h8lsL","../items/circle":"c8cAT","../vector/vec2":"bp79Y","../objects/ball":"5IfJk","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../renderableObjects/immovableLine":"bihaA","../objects/immovableLine":"f4D1b","../items/line":"eAxYY","../items/circleWithText":"eZiSs","../items/utils/index2color":"datdc","../constrains/viewport":"fOYyc","../primitives/milkshake":"ajvKL","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dRCUa":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseScene", ()=>BaseScene);
-var BaseScene = /** @class */ function() {
-    function BaseScene(engine) {
+class BaseScene {
+    constructor(engine){
         this.engine = engine;
     }
-    return BaseScene;
-}();
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"h8lsL":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2185,80 +1905,55 @@ class TotalObjectsGenerator extends (0, _objectsGenerator.ObjectsGenerator) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ObjectsGenerator", ()=>ObjectsGenerator);
-var ObjectsGenerator = /** @class */ function() {
-    function ObjectsGenerator(solver) {
+class ObjectsGenerator {
+    constructor(solver){
         this.solver = null;
         this.solver = solver;
     }
     // TODO Make me iterator
-    ObjectsGenerator.prototype.getNextObjects = function(step) {
+    getNextObjects(step) {
         return [];
-    };
-    return ObjectsGenerator;
-}();
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"c8cAT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Circle", ()=>Circle);
 var _item = require("./item");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Circle = /** @class */ function(_super) {
-    __extends(Circle, _super);
-    function Circle(renderer, position, r, color) {
-        var _this = _super.call(this, renderer, position) || this;
-        _this.r = 0;
-        _this.color = "#00ff00";
-        if (r) _this.r = r;
-        if (color) _this.color = color;
-        return _this;
+class Circle extends (0, _item.Item) {
+    constructor(renderer, position, r, color){
+        super(renderer, position);
+        this.r = 0;
+        this.color = "#00ff00";
+        if (r) this.r = r;
+        if (color) this.color = color;
     }
-    Circle.prototype.render = function() {
+    render() {
         this.renderer.strokeStyle(this.color);
         this.renderer.fillStyle(this.color);
         this.renderer.fillCircle(this.r, this.position);
-    };
-    return Circle;
-}((0, _item.Item));
+    }
+}
 
 },{"./item":"62t5i","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"62t5i":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Item", ()=>Item);
 var _vec2 = require("../vector/vec2");
-var Item = /** @class */ function() {
-    function Item(renderer, position) {
+class Item {
+    constructor(renderer, position){
         this.position = (0, _vec2.Vec2).Zero();
         this.renderer = renderer;
         this.position = position;
     }
     /**
      * Method immediately renders object on context
-     */ Item.prototype.render = function() {};
+     */ render() {}
     /**
      * Method tries to put object in render block
-     */ Item.prototype.queue = function() {};
-    return Item;
-}();
+     */ queue() {}
+}
 
 },{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5IfJk":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2271,134 +1966,99 @@ var _types = require("./types");
 var _collisionModels = require("./collisionModels");
 var _object = require("./object");
 var _vec2Rect = require("../vector/vec2Rect");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var MAX_VELOCITY = 10;
-var MAX_VELOCITY2 = Math.pow(MAX_VELOCITY, 2);
-var BallsObject = /** @class */ function(_super) {
-    __extends(BallsObject, _super);
+const MAX_VELOCITY = 10;
+const MAX_VELOCITY2 = Math.pow(MAX_VELOCITY, 2);
+class BallsObject extends (0, _object.BaseSolverObject) {
     /**
      * Creates balls object
      * @param {Vec2} position
      * @param {number} [radius]
-     */ function BallsObject(position, radius) {
-        var _this = _super.call(this) || this;
-        _this.acc = (0, _vec2.Vec2).Zero();
-        _this.radius = 10;
-        _this.bounceValue = 1.1;
-        _this.motionReduce = 0.999;
-        _this.type = (0, _types.SolverObjectTypes).TypeBall;
-        _this.immovable = false;
-        _this.previousPosition = position.copy();
-        _this.currentPosition = position.copy();
-        if (radius !== undefined) _this.radius = radius;
-        _this._radius2 = _this.radius * _this.radius;
-        _this.collisionRange = new (0, _vec2Rect.Vec2Rect)(_this.currentPosition, new (0, _vec2.Vec2)(_this.radius * 4));
-        _this.boundary = new (0, _vec2Rect.Vec2Rect)(_this.currentPosition, new (0, _vec2.Vec2)(_this.radius * 2));
-        return _this;
+     */ constructor(position, radius){
+        super();
+        this.acc = (0, _vec2.Vec2).Zero();
+        this.radius = 10;
+        this.bounceValue = 1.1;
+        this.motionReduce = 0.999;
+        this.type = (0, _types.SolverObjectTypes).TypeBall;
+        this.immovable = false;
+        this.previousPosition = position.copy();
+        this.currentPosition = position.copy();
+        if (radius !== undefined) this.radius = radius;
+        this._radius2 = this.radius * this.radius;
+        this.collisionRange = new (0, _vec2Rect.Vec2Rect)(this.currentPosition, new (0, _vec2.Vec2)(this.radius * 4));
+        this.boundary = new (0, _vec2Rect.Vec2Rect)(this.currentPosition, new (0, _vec2.Vec2)(this.radius * 2));
     }
     /**
      * Updates state of object
      * @param {number} step
-     */ BallsObject.prototype.update = function(step) {
-        var velocity = this.velocity.mul(this.motionReduce);
+     */ update(step) {
+        let velocity = this.velocity.mul(this.motionReduce);
         if (velocity.length2 > MAX_VELOCITY2) velocity = velocity.ort.mul(MAX_VELOCITY);
         this.previousPosition = this.currentPosition.copy();
         this.moveBy(velocity.addSelf(this.acc.mul(step * step)));
         this.acc = (0, _vec2.Vec2).Zero();
-    };
-    BallsObject.prototype.accelerate = function(acc) {
+    }
+    accelerate(acc) {
         this.acc.addSelf(acc);
         return this;
-    };
-    BallsObject.prototype.setVelocity = function(vel) {
+    }
+    setVelocity(vel) {
         this.velocity = vel;
         return this;
-    };
+    }
     /**
      *
      * @param {BallsObject} obj
-     */ BallsObject.prototype.collide = function(obj) {
+     */ collide(obj) {
         (0, _collisionModels.collide)(this, obj);
-    };
-    BallsObject.prototype.addToSpace = function(collisionGrid) {
+    }
+    addToSpace(collisionGrid) {
         collisionGrid.addPointObject(Math.floor(this.currentPosition.x), Math.floor(this.currentPosition.y), this);
-    };
-    BallsObject.prototype.moveBy = function(delta) {
+    }
+    moveBy(delta) {
         this.currentPosition.moveBy(delta);
         this.collisionRange.moveBy(delta);
         this.boundary.moveBy(delta);
-    };
-    BallsObject.prototype.moveTo = function(position) {
+    }
+    moveTo(position) {
         this.currentPosition.moveTo(position);
         this.collisionRange.moveTo(this.currentPosition);
         this.boundary.moveTo(this.currentPosition);
-    };
-    BallsObject.prototype.isPointInsideObject = function(point) {
+    }
+    isPointInsideObject(point) {
         return (0, _vec2Math.Vec2Math).distance(this.currentPosition, point) < this.radius;
-    };
-    Object.defineProperty(BallsObject.prototype, "velocity", {
-        get: function() {
-            return (0, _vec2Math.Vec2Math).diff(this.currentPosition, this.previousPosition);
-        },
-        set: function(v) {
-            this.previousPosition = (0, _vec2Math.Vec2Math).diff(this.currentPosition, v);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(BallsObject.prototype, "movementVector", {
-        /**
-         *
-         * @returns {Vec2Line}
-         */ get: function() {
-            return new (0, _vec2Line.Vec2Line)(this.previousPosition, this.currentPosition);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(BallsObject.prototype, "radius2", {
-        get: function() {
-            return this._radius2;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    BallsObject.prototype.intersects = function(range) {
-        var myRect = new (0, _vec2Rect.Vec2Rect)(this.currentPosition, new (0, _vec2.Vec2)(this.radius, this.radius));
+    }
+    get velocity() {
+        return (0, _vec2Math.Vec2Math).diff(this.currentPosition, this.previousPosition);
+    }
+    set velocity(v) {
+        this.previousPosition = (0, _vec2Math.Vec2Math).diff(this.currentPosition, v);
+    }
+    /**
+     *
+     * @returns {Vec2Line}
+     */ get movementVector() {
+        return new (0, _vec2Line.Vec2Line)(this.previousPosition, this.currentPosition);
+    }
+    get radius2() {
+        return this._radius2;
+    }
+    intersects(range) {
+        const myRect = new (0, _vec2Rect.Vec2Rect)(this.currentPosition, new (0, _vec2.Vec2)(this.radius, this.radius));
         return myRect.intersect(range);
-    };
-    BallsObject.prototype.getCollisionRange = function() {
+    }
+    getCollisionRange() {
         return this.collisionRange;
-    };
-    BallsObject.prototype.getBoundary = function() {
+    }
+    getBoundary() {
         return this.boundary;
-    };
-    BallsObject.prototype.debugRender = function(context) {
+    }
+    debugRender(context) {
         context.strokeStyle("#FF0000");
-        var range = this.getCollisionRange();
+        const range = this.getCollisionRange();
         context.rect(range.left, range.top, range.width, range.height);
-    };
-    return BallsObject;
-}((0, _object.BaseSolverObject));
+    }
+}
 
 },{"../vector/vec2":"bp79Y","../vector/vec2Line":"k0EZw","../vector/vec2Math":"nZL8C","./types":"7Eyh2","./collisionModels":"hKRfe","./object":"66Aay","../vector/vec2Rect":"fgsCI","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"k0EZw":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2407,8 +2067,8 @@ parcelHelpers.export(exports, "Vec2Line", ()=>Vec2Line);
 var _vec2 = require("./vec2");
 var _vec2Math = require("./vec2Math");
 var _math = require("./math");
-var Vec2Line = /** @class */ function() {
-    function Vec2Line(vec1, vec2) {
+class Vec2Line {
+    constructor(vec1, vec2){
         this._vec1 = (0, _vec2.Vec2).Zero();
         this._vec2 = (0, _vec2.Vec2).Zero();
         /**
@@ -2428,19 +2088,19 @@ var Vec2Line = /** @class */ function() {
      * Determines if given point lays on the line
      * @param vec
      * @returns {boolean}
-     */ Vec2Line.prototype.inBetween = function(vec) {
-        var l1 = (0, _vec2Math.Vec2Math).diff(vec, this._vec1).length;
-        var l2 = (0, _vec2Math.Vec2Math).diff(this._vec2, vec).length;
-        var sum = l1 + l2;
+     */ inBetween(vec) {
+        const l1 = (0, _vec2Math.Vec2Math).diff(vec, this._vec1).length;
+        const l2 = (0, _vec2Math.Vec2Math).diff(this._vec2, vec).length;
+        const sum = l1 + l2;
         return (0, _math.isEqual)(this._length, sum, (0, _math.MATH_ERROR));
-    };
+    }
     /**
      * Checks if vector which lies on this line is in between vec1 and vec2
      * @param vec
-     */ Vec2Line.prototype.inBetweenFast = function(vec) {
+     */ inBetweenFast(vec) {
         return vec.isInsideRect(this._vec1, this._vec2);
-    };
-    Vec2Line.prototype.calculateKB = function() {
+    }
+    calculateKB() {
         if (this._vec1.y === this._vec2.y) {
             // Horizontal line
             this._b = this._vec1.y;
@@ -2453,89 +2113,56 @@ var Vec2Line = /** @class */ function() {
             this._b = (this._vec1.x * this._vec2.y - this._vec1.y * this._vec2.x) / (this._vec1.x - this._vec2.x);
             this._k = (this._vec1.y - this._vec2.y) / (this._vec1.x - this._vec2.x);
         }
-    };
-    Vec2Line.prototype.makeVec2FromX = function(x) {
+    }
+    makeVec2FromX(x) {
         return new (0, _vec2.Vec2)(x, this._k * x + this._b);
-    };
-    Vec2Line.prototype.copy = function() {
+    }
+    copy() {
         return new Vec2Line(this._vec1, this._vec2);
-    };
-    Vec2Line.prototype.moveBy = function(vec) {
+    }
+    moveBy(vec) {
         this._vec1.addSelf(vec);
         this._vec2.addSelf(vec);
         this.calculateKB();
         return this;
-    };
-    Vec2Line.prototype.getPointProjection = function(vec) {
-        var a = this.direction;
-        var b = (0, _vec2Math.Vec2Math).diff(vec, this._vec1);
-        var cosabD = (0, _vec2Math.Vec2Math).dot(a, b) / this.length;
+    }
+    getPointProjection(vec) {
+        const a = this.direction;
+        const b = (0, _vec2Math.Vec2Math).diff(vec, this._vec1);
+        const cosabD = (0, _vec2Math.Vec2Math).dot(a, b) / this.length;
         return this._vec1.sum(this.ort.mul(cosabD));
-    };
-    Object.defineProperty(Vec2Line.prototype, "B", {
-        get: function() {
-            return this._b;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "K", {
-        get: function() {
-            return this._k;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "length", {
-        get: function() {
-            return this._length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "direction", {
-        get: function() {
-            return this._direction;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "ort", {
-        get: function() {
-            return this._ort;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "vec1", {
-        get: function() {
-            return this._vec1;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "vec2", {
-        get: function() {
-            return this._vec2;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Line.prototype, "normal", {
-        get: function() {
-            return this._vec2.diff(this._vec1).perpendicular;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Vec2Line.Vertical = function(x) {
+    }
+    get B() {
+        return this._b;
+    }
+    get K() {
+        return this._k;
+    }
+    get length() {
+        return this._length;
+    }
+    get direction() {
+        return this._direction;
+    }
+    get ort() {
+        return this._ort;
+    }
+    get vec1() {
+        return this._vec1;
+    }
+    get vec2() {
+        return this._vec2;
+    }
+    get normal() {
+        return this._vec2.diff(this._vec1).perpendicular;
+    }
+    static Vertical(x) {
         return new Vec2Line(new (0, _vec2.Vec2)(x, 0), new (0, _vec2.Vec2)(x, Number.MAX_SAFE_INTEGER));
-    };
-    Vec2Line.Horizontal = function(y) {
+    }
+    static Horizontal(y) {
         return new Vec2Line(new (0, _vec2.Vec2)(0, y), new (0, _vec2.Vec2)(Number.MAX_SAFE_INTEGER, y));
-    };
-    return Vec2Line;
-}();
+    }
+}
 
 },{"./vec2":"bp79Y","./vec2Math":"nZL8C","./math":"fX8MB","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7Eyh2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2578,38 +2205,38 @@ var _vec2Math = require("../vector/vec2Math");
 var _types = require("./types");
 function collideBallAndBall(obj1, obj2) {
     if (!obj1.getBoundary().intersect(obj2.getBoundary())) return;
-    var between = (0, _vec2Math.Vec2Math).diff(obj1.currentPosition, obj2.currentPosition);
-    var distance = between.length;
-    var requiredDistance = obj1.radius + obj2.radius;
+    const between = (0, _vec2Math.Vec2Math).diff(obj1.currentPosition, obj2.currentPosition);
+    const distance = between.length;
+    const requiredDistance = obj1.radius + obj2.radius;
     if (distance < requiredDistance) {
-        var normalized = between.ort;
-        var delta = requiredDistance - distance;
+        const normalized = between.ort;
+        const delta = requiredDistance - distance;
         obj1.moveBy((0, _vec2Math.Vec2Math).mul(normalized, obj1.radius / requiredDistance * delta * obj1.bounceValue));
         obj2.moveBy((0, _vec2Math.Vec2Math).mul(normalized, -obj2.radius / requiredDistance * delta * obj2.bounceValue));
     }
 }
 function collideBallAndImmovableBall(ball, immovable) {
     if (!ball.getBoundary().intersect(immovable.getBoundary())) return;
-    var between = (0, _vec2Math.Vec2Math).diff(ball.currentPosition, immovable.currentPosition);
-    var distance = between.length;
-    var requiredDistance = ball.radius + immovable.radius;
+    const between = (0, _vec2Math.Vec2Math).diff(ball.currentPosition, immovable.currentPosition);
+    const distance = between.length;
+    const requiredDistance = ball.radius + immovable.radius;
     if (distance < requiredDistance) {
-        var normalized = between.ort;
-        var delta = requiredDistance - distance;
+        const normalized = between.ort;
+        const delta = requiredDistance - distance;
         ball.moveBy((0, _vec2Math.Vec2Math).mul(normalized, ball.radius / requiredDistance * delta * ball.bounceValue * immovable.bounceValue));
     }
 }
 function _collideBallAndLine(ball, line, lineBounce) {
     try {
-        var projectionPoint = line.getPointProjection(ball.currentPosition);
+        const projectionPoint = line.getPointProjection(ball.currentPosition);
         // We definitely know that projection point is on the line, so we just need to check if it's
         // between the ends.
         if (line.inBetweenFast(projectionPoint)) {
-            var between = (0, _vec2Math.Vec2Math).diff(projectionPoint, ball.currentPosition);
+            const between = (0, _vec2Math.Vec2Math).diff(projectionPoint, ball.currentPosition);
             if (between.length2 < ball.radius2) {
-                var normalized = between.ort;
-                var sign = normalized.dot(line.normal) > 0 ? 1 : -1;
-                var delta = sign * (ball.radius - between.length);
+                const normalized = between.ort;
+                const sign = normalized.dot(line.normal) > 0 ? 1 : -1;
+                const delta = sign * (ball.radius - between.length);
                 ball.moveBy((0, _vec2Math.Vec2Math).mul(normalized, -delta * ball.bounceValue * lineBounce));
             }
         }
@@ -2621,9 +2248,7 @@ function collideBallAndImmovableLine(ball, line) {
 }
 function collideBallAndImmovablePolygon(ball, polygon) {
     if (!ball.getBoundary().intersect(polygon.getCollisionRange())) return;
-    polygon.lines.forEach(function(line) {
-        return _collideBallAndLine(ball, line._line, line.bounceValue);
-    });
+    polygon.lines.forEach((line)=>_collideBallAndLine(ball, line._line, line.bounceValue));
 }
 function flipObjects(obj1, obj2) {
     return {
@@ -2632,10 +2257,10 @@ function flipObjects(obj1, obj2) {
     };
 }
 function collide(a, b) {
-    var obj1 = a;
-    var obj2 = b;
+    let obj1 = a;
+    let obj2 = b;
     if (obj1.type > obj2.type) {
-        var flipped = flipObjects(obj1, obj2);
+        const flipped = flipObjects(obj1, obj2);
         obj1 = flipped.a;
         obj2 = flipped.b;
     }
@@ -2659,27 +2284,26 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseSolverObject", ()=>BaseSolverObject);
 var _types = require("./types");
 var _vec2 = require("../vector/vec2");
-var BaseSolverObject = /** @class */ function() {
-    function BaseSolverObject() {
+class BaseSolverObject {
+    constructor(){
         this.type = (0, _types.SolverObjectTypes).TypeNull;
         this.previousPosition = (0, _vec2.Vec2).Zero();
         this.currentPosition = (0, _vec2.Vec2).Zero();
         BaseSolverObject.index += 1;
         this.index = BaseSolverObject.index;
     }
-    BaseSolverObject.prototype.update = function(step) {};
-    BaseSolverObject.prototype.accelerate = function(acc) {};
-    BaseSolverObject.prototype.collide = function(obj) {};
-    BaseSolverObject.prototype.inside = function(boundary) {
+    update(step) {}
+    accelerate(acc) {}
+    collide(obj) {}
+    inside(boundary) {
         return this.currentPosition.x >= boundary.left && this.currentPosition.x <= boundary.right && this.currentPosition.y >= boundary.top && this.currentPosition.y <= boundary.bottom;
-    };
-    BaseSolverObject.prototype.debugRender = function(context) {};
-    BaseSolverObject.prototype.toString = function() {
+    }
+    debugRender(context) {}
+    toString() {
         return "BaseSolverObject";
-    };
-    BaseSolverObject.index = 0;
-    return BaseSolverObject;
-}();
+    }
+}
+BaseSolverObject.index = 0;
 
 },{"./types":"7Eyh2","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fgsCI":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2687,138 +2311,92 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Vec2Rect", ()=>Vec2Rect);
 var _vec2 = require("./vec2");
 var _exceptions = require("./exceptions");
-var Vec2Rect = /** @class */ function() {
-    function Vec2Rect(center, size) {
+class Vec2Rect {
+    constructor(center, size){
         this.position = center.copy();
         this.size = size.copy();
         if (this.size.x < 0 || this.size.y < 0) throw new (0, _exceptions.Vec2ExceptionRectSizeShouldBePositive)();
         this.recalculate();
     }
-    Vec2Rect.prototype.recalculate = function() {
+    recalculate() {
         this._width2 = this.size.x / 2;
         this._height2 = this.size.y / 2;
         this._left = this.position.x - this._width2;
         this._right = this.position.x + this._width2;
         this._top = this.position.y - this._height2;
         this._bottom = this.position.y + this._height2;
-    };
-    Vec2Rect.prototype.copy = function() {
+    }
+    copy() {
         return new Vec2Rect(this.position, this.size);
-    };
-    Vec2Rect.prototype.intersect = function(rect) {
+    }
+    intersect(rect) {
         return !(this.left > rect.right || this.right < rect.left || this.top > rect.bottom || this.bottom < rect.top);
-    };
-    Vec2Rect.prototype.contains = function(point) {
+    }
+    contains(point) {
         return point.x > this.left && point.x < this.right && point.y > this.top && point.y < this.bottom;
-    };
-    Vec2Rect.prototype.moveBy = function(delta) {
+    }
+    moveBy(delta) {
         this.position.addSelf(delta);
         this.recalculate();
-    };
-    Vec2Rect.prototype.moveTo = function(pos) {
+    }
+    moveTo(pos) {
         this.position = pos.copy();
         this.recalculate();
-    };
-    Object.defineProperty(Vec2Rect.prototype, "nw", {
-        get: function() {
-            return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x - this._width2 / 2, this.position.y - this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "ne", {
-        get: function() {
-            return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x + this._width2 / 2, this.position.y - this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "se", {
-        get: function() {
-            return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x + this._width2 / 2, this.position.y + this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "sw", {
-        get: function() {
-            return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x - this._width2 / 2, this.position.y + this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "left", {
-        get: function() {
-            return this._left;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "right", {
-        get: function() {
-            return this._right;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "top", {
-        get: function() {
-            return this._top;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "bottom", {
-        get: function() {
-            return this._bottom;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "diag", {
-        get: function() {
-            return this.size.length;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "width", {
-        get: function() {
-            return this.size.x;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Vec2Rect.prototype, "height", {
-        get: function() {
-            return this.size.y;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Vec2Rect;
-}();
+    }
+    get nw() {
+        return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x - this._width2 / 2, this.position.y - this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
+    }
+    get ne() {
+        return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x + this._width2 / 2, this.position.y - this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
+    }
+    get se() {
+        return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x + this._width2 / 2, this.position.y + this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
+    }
+    get sw() {
+        return new Vec2Rect(new (0, _vec2.Vec2)(this.position.x - this._width2 / 2, this.position.y + this._height2 / 2), new (0, _vec2.Vec2)(this._width2, this._height2));
+    }
+    get left() {
+        return this._left;
+    }
+    get right() {
+        return this._right;
+    }
+    get top() {
+        return this._top;
+    }
+    get bottom() {
+        return this._bottom;
+    }
+    get diag() {
+        return this.size.length;
+    }
+    get width() {
+        return this.size.x;
+    }
+    get height() {
+        return this.size.y;
+    }
+}
 
 },{"./vec2":"bp79Y","./exceptions":"68SyS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"34uaH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "RenderableObject", ()=>RenderableObject);
-var RenderableObject = /** @class */ function() {
-    function RenderableObject(solverObject, renderItem) {
+class RenderableObject {
+    constructor(solverObject, renderItem){
         this.solverObject = null;
         this.renderItem = null;
         this.solverObject = solverObject;
         this.renderItem = renderItem;
     }
-    RenderableObject.prototype.update = function() {
+    update() {
         this.renderItem.position = this.solverObject.currentPosition;
-    };
-    RenderableObject.prototype.render = function() {
+    }
+    render() {
         this.update();
         this.renderItem.render();
-    };
-    return RenderableObject;
-}();
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8kn5q":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2828,62 +2406,39 @@ var _ball = require("./ball");
 var _types = require("./types");
 var _math = require("../vector/math");
 var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var ImmovableBallsObject = /** @class */ function(_super) {
-    __extends(ImmovableBallsObject, _super);
+class ImmovableBallsObject extends (0, _ball.BallsObject) {
     /**
      * @param {Vec2} position
      * @param {number} [radius]
-     */ function ImmovableBallsObject(position, radius) {
-        var _this = _super.call(this, position, radius) || this;
-        _this.type = (0, _types.SolverObjectTypes).TypeImmovableBall;
-        _this.immovable = true;
-        _this.bounceValue = 0.5;
+     */ constructor(position, radius){
+        super(position, radius);
+        this.type = (0, _types.SolverObjectTypes).TypeImmovableBall;
+        this.immovable = true;
+        this.bounceValue = 0.5;
         /**
          * @type {Vec2}
          * @private
-         */ _this._fixedPosition = null;
-        _this._fixedPosition = position.copy();
-        return _this;
+         */ this._fixedPosition = null;
+        this._fixedPosition = position.copy();
     }
-    ImmovableBallsObject.prototype.update = function(step) {
+    update(step) {
         this.currentPosition = this._fixedPosition;
         this.previousPosition = this._fixedPosition;
         this.collisionRange.moveTo(this.currentPosition);
-    };
-    ImmovableBallsObject.prototype.addToSpace = function(solverSpace) {
-        var vec = new (0, _vec2.Vec2)(this.radius * (0, _math.SQRT2), this.radius * (0, _math.SQRT2));
-        var leftTop = this.currentPosition.sum(vec);
-        var rightBottom = this.currentPosition.diff(vec);
+    }
+    addToSpace(solverSpace) {
+        const vec = new (0, _vec2.Vec2)(this.radius * (0, _math.SQRT2), this.radius * (0, _math.SQRT2));
+        const leftTop = this.currentPosition.sum(vec);
+        const rightBottom = this.currentPosition.diff(vec);
         solverSpace.addRectangularObject(leftTop, rightBottom, this);
-    };
-    ImmovableBallsObject.prototype.moveTo = function(position) {
+    }
+    moveTo(position) {
         this.currentPosition = position.copy();
         this.previousPosition = position.copy();
         this._fixedPosition = position.copy();
-        _super.prototype.moveTo.call(this, position);
-    };
-    return ImmovableBallsObject;
-}((0, _ball.BallsObject));
+        super.moveTo(position);
+    }
+}
 
 },{"./ball":"5IfJk","./types":"7Eyh2","../vector/math":"fX8MB","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bihaA":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -2916,82 +2471,60 @@ var _types = require("./types");
 var _vec2Math = require("../vector/vec2Math");
 var _immovable = require("./immovable");
 var _vec2Rect = require("../vector/vec2Rect");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var ImmovableLineObject = /** @class */ function(_super) {
-    __extends(ImmovableLineObject, _super);
-    function ImmovableLineObject(position, direction) {
-        var _this = _super.call(this) || this;
-        _this.type = (0, _types.SolverObjectTypes).TypeImmovableLine;
-        _this.immovable = true;
-        _this.bounceValue = 1;
+class ImmovableLineObject extends (0, _immovable.ImmovableSolverObject) {
+    constructor(position, direction){
+        super();
+        this.type = (0, _types.SolverObjectTypes).TypeImmovableLine;
+        this.immovable = true;
+        this.bounceValue = 1;
         if (position instanceof (0, _vec2Line.Vec2Line)) {
-            _this.currentPosition = position.vec1.copy();
-            _this.previousPosition = position.vec1.copy();
-            _this._direction = position.direction.copy().flipSelf();
+            this.currentPosition = position.vec1.copy();
+            this.previousPosition = position.vec1.copy();
+            this._direction = position.direction.copy().flipSelf();
         } else {
-            _this.currentPosition = position.copy();
-            _this.previousPosition = position.copy();
-            _this._direction = direction;
+            this.currentPosition = position.copy();
+            this.previousPosition = position.copy();
+            this._direction = direction;
         }
-        _this._line = new (0, _vec2Line.Vec2Line)(_this.currentPosition.copy(), _this.currentPosition.copy().sum(_this._direction));
-        _this.collisionRange = new (0, _vec2Rect.Vec2Rect)(_this.currentPosition.sum(_this._direction.mul(0.5)), _this._direction.abs);
-        return _this;
+        this._line = new (0, _vec2Line.Vec2Line)(this.currentPosition.copy(), this.currentPosition.copy().sum(this._direction));
+        this.collisionRange = new (0, _vec2Rect.Vec2Rect)(this.currentPosition.sum(this._direction.mul(0.5)), this._direction.abs);
     }
-    ImmovableLineObject.prototype.update = function(step) {
+    update(step) {
         this.currentPosition = this._line.vec1;
         this.previousPosition = this._line.vec2;
-    };
-    ImmovableLineObject.prototype.addToSpace = function(solverSpace) {
+    }
+    addToSpace(solverSpace) {
         solverSpace.addRectangularObject(this._line.vec1, this._line.vec2, this);
-    };
-    ImmovableLineObject.prototype.moveBy = function(delta) {
+    }
+    moveBy(delta) {
         this.currentPosition.addSelf(delta);
         this.previousPosition.addSelf(delta);
         this._line.moveBy(delta);
         this.collisionRange = new (0, _vec2Rect.Vec2Rect)(this.currentPosition.sum(this._direction.mul(0.5)), this._direction.abs);
-    };
-    ImmovableLineObject.prototype.moveTo = function(position) {
-        var delta = (0, _vec2Math.Vec2Math).diff(position, this._line.vec1);
+    }
+    moveTo(position) {
+        const delta = (0, _vec2Math.Vec2Math).diff(position, this._line.vec1);
         this.moveBy(delta);
-    };
-    ImmovableLineObject.prototype.debugRender = function(context) {
+    }
+    debugRender(context) {
         context.strokeStyle("#00FF00");
         context.line(this._line.vec1, this._line.vec2);
-        context.text("".concat(this.index), this._line.vec1);
+        context.text(`${this.index}`, this._line.vec1);
         context.strokeStyle("#FFFFFF");
         context.lineWidth(10);
-        var point2 = this.currentPosition.sum(this._line.normal.flipSelf().mul(100));
+        const point2 = this.currentPosition.sum(this._line.normal.flipSelf().mul(100));
         context.line(this.currentPosition.x, this.currentPosition.y, point2.x, point2.y);
         context.lineWidth(1);
         context.strokeStyle("#FF0000");
         context.rect(this.collisionRange.left, this.collisionRange.top, this.collisionRange.width, this.collisionRange.height);
-    };
-    ImmovableLineObject.prototype.toString = function() {
+    }
+    toString() {
         return "ImmovableLine";
-    };
-    ImmovableLineObject.prototype.inside = function(boundary) {
+    }
+    inside(boundary) {
         return boundary.intersect(this.collisionRange);
-    };
-    ImmovableLineObject.prototype.intersects = function(range) {
+    }
+    intersects(range) {
         if (!range.intersect(this.collisionRange)) return false;
         if (range.contains(this._line.vec1) || range.contains(this._line.vec2)) return true;
         if (this.collisionRange.top < range.top && this.collisionRange.bottom > range.top) // TOP CROSS
@@ -3002,15 +2535,14 @@ var ImmovableLineObject = /** @class */ function(_super) {
         return true;
         if (this.collisionRange.left < range.right && this.collisionRange.right > range.right) // RIGHT
         return true;
-    };
-    ImmovableLineObject.prototype.isPointInsideObject = function(point) {
+    }
+    isPointInsideObject(point) {
         return false;
-    };
-    ImmovableLineObject.prototype.getCollisionRange = function() {
+    }
+    getCollisionRange() {
         return this.collisionRange;
-    };
-    return ImmovableLineObject;
-}((0, _immovable.ImmovableSolverObject));
+    }
+}
 function createImmovableLine(position, direction) {
     return new ImmovableLineObject(position, direction);
 }
@@ -3023,33 +2555,8 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ImmovableSolverObject", ()=>ImmovableSolverObject);
 var _object = require("./object");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var ImmovableSolverObject = /** @class */ function(_super) {
-    __extends(ImmovableSolverObject, _super);
-    function ImmovableSolverObject() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return ImmovableSolverObject;
-}((0, _object.BaseSolverObject));
+class ImmovableSolverObject extends (0, _object.BaseSolverObject) {
+}
 
 },{"./object":"66Aay","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eAxYY":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3057,98 +2564,52 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Line", ()=>Line);
 var _item = require("./item");
 var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Line = /** @class */ function(_super) {
-    __extends(Line, _super);
-    function Line(renderer, position, direction, color) {
-        var _this = _super.call(this, renderer, position) || this;
-        _this.direction = (0, _vec2.Vec2).Zero();
-        _this.color = "#00ff00";
-        _this.direction = direction;
-        if (color) _this.color = color;
-        return _this;
+class Line extends (0, _item.Item) {
+    constructor(renderer, position, direction, color){
+        super(renderer, position);
+        this.direction = (0, _vec2.Vec2).Zero();
+        this.color = "#00ff00";
+        this.direction = direction;
+        if (color) this.color = color;
     }
-    Line.prototype.render = function() {
+    render() {
         this.renderer.strokeStyle(this.color);
         this.renderer.vector(this.position, this.direction);
-    };
-    return Line;
-}((0, _item.Item));
+    }
+}
 
 },{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eZiSs":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleWithText", ()=>CircleWithText);
 var _circle = require("./circle");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var CircleWithText = /** @class */ function(_super) {
-    __extends(CircleWithText, _super);
-    function CircleWithText(context, position, r, color, text, textColor) {
-        var _this = _super.call(this, context, position, r, color) || this;
-        _this.text = "";
-        _this.textColor = "#ffffff";
-        _this.text = text;
-        if (textColor) _this.textColor = textColor;
-        return _this;
+class CircleWithText extends (0, _circle.Circle) {
+    constructor(context, position, r, color, text, textColor){
+        super(context, position, r, color);
+        this.text = "";
+        this.textColor = "#ffffff";
+        this.text = text;
+        if (textColor) this.textColor = textColor;
     }
-    CircleWithText.prototype.render = function() {
-        _super.prototype.render.call(this);
+    render() {
+        super.render();
         if (this.text !== "") {
             this.renderer.fillStyle(this.textColor);
             this.renderer.text(this.text, this.position);
         }
-    };
-    return CircleWithText;
-}((0, _circle.Circle));
+    }
+}
 
 },{"./circle":"c8cAT","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"datdc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "index2color", ()=>index2color);
 function index2color(index) {
-    var frequency = 0.005;
-    var r = Math.floor(Math.sin(frequency * index + 0) * 127 + 128);
-    var g = Math.floor(Math.sin(frequency * index + 2) * 127 + 128);
-    var b = Math.floor(Math.sin(frequency * index + 4) * 127 + 128);
-    return "rgba(".concat(r, ", ").concat(g, ", ").concat(b, ", 1)");
+    const frequency = 0.005;
+    const r = Math.floor(Math.sin(frequency * index + 0) * 127 + 128);
+    const g = Math.floor(Math.sin(frequency * index + 2) * 127 + 128);
+    const b = Math.floor(Math.sin(frequency * index + 4) * 127 + 128);
+    return `rgba(${r}, ${g}, ${b}, 1)`;
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fOYyc":[function(require,module,exports) {
@@ -3156,59 +2617,29 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ViewportConstrain", ()=>ViewportConstrain);
 var _constrain = require("./constrain");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var ViewportConstrain = /** @class */ function(_super) {
-    __extends(ViewportConstrain, _super);
-    function ViewportConstrain(width, height) {
-        var _this = _super.call(this) || this;
-        _this._width = 0;
-        _this._height = 0;
-        _this.width = width;
-        _this.height = height;
-        return _this;
+class ViewportConstrain extends (0, _constrain.Constrain) {
+    constructor(width, height){
+        super();
+        this._width = 0;
+        this._height = 0;
+        this.width = width;
+        this.height = height;
     }
-    Object.defineProperty(ViewportConstrain.prototype, "width", {
-        get: function() {
-            return this._width;
-        },
-        set: function(width) {
-            this._width = width;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(ViewportConstrain.prototype, "height", {
-        get: function() {
-            return this._height;
-        },
-        set: function(height) {
-            this._height = height;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    ViewportConstrain.prototype.applyConstrain = function(obj) {
-        var newPosition = obj.currentPosition.copy();
-        var changePosition = false;
+    get width() {
+        return this._width;
+    }
+    set width(width) {
+        this._width = width;
+    }
+    get height() {
+        return this._height;
+    }
+    set height(height) {
+        this._height = height;
+    }
+    applyConstrain(obj) {
+        const newPosition = obj.currentPosition.copy();
+        let changePosition = false;
         if (obj.currentPosition.x - obj.radius < 0) {
             newPosition.x = obj.radius;
             changePosition = true;
@@ -3224,18 +2655,16 @@ var ViewportConstrain = /** @class */ function(_super) {
             changePosition = true;
         }
         if (changePosition) obj.moveTo(newPosition);
-    };
-    return ViewportConstrain;
-}((0, _constrain.Constrain));
+    }
+}
 
 },{"./constrain":"jvBxb","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jvBxb":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Constrain", ()=>Constrain);
-var Constrain = /** @class */ function() {
-    function Constrain() {}
-    return Constrain;
-}();
+class Constrain {
+    constructor(){}
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ajvKL":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3243,7 +2672,7 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "createMilkshake", ()=>createMilkshake);
 var _vec2 = require("../vector/vec2");
 var _vec2Line = require("../vector/vec2Line");
-var p = [
+const p = [
     new (0, _vec2.Vec2)(0, 0),
     new (0, _vec2.Vec2)(70, 380),
     new (0, _vec2.Vec2)(270, 380),
@@ -3254,9 +2683,9 @@ var p = [
     new (0, _vec2.Vec2)(-20, 0)
 ];
 function createMilkshake(size, position) {
-    var center = position.diff(new (0, _vec2.Vec2)(180 * size, 200 * size));
-    var milkShakeLines = [];
-    for(var i = 0; i < p.length - 1; i++)milkShakeLines.push(new (0, _vec2Line.Vec2Line)(p[i].mul(size).sum(center), p[i + 1].mul(size).sum(center)));
+    const center = position.diff(new (0, _vec2.Vec2)(180 * size, 200 * size));
+    const milkShakeLines = [];
+    for(let i = 0; i < p.length - 1; i++)milkShakeLines.push(new (0, _vec2Line.Vec2Line)(p[i].mul(size).sum(center), p[i + 1].mul(size).sum(center)));
     milkShakeLines.push(new (0, _vec2Line.Vec2Line)(p[p.length - 1].mul(size).sum(center), p[0].mul(size).sum(center)));
     return milkShakeLines;
 }
@@ -3275,62 +2704,40 @@ var _circle1 = require("../constrains/circle");
 var _objectsGenerator = require("../generators/objectsGenerator");
 var _ball = require("../objects/ball");
 var _index2Color = require("../items/utils/index2color");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Scene2 = /** @class */ function(_super) {
-    __extends(Scene2, _super);
-    function Scene2(engine) {
-        var _this = _super.call(this, engine) || this;
-        _this._canMoveRedObject = false;
-        _this.timePassedSinceLastBallCreated = 0;
-        _this.ballIndex = 0;
-        _this.center = new (0, _vec2.Vec2)(_this.engine.canvas.width / 2, _this.engine.canvas.height / 2);
-        _this.radius = Math.min(_this.center.x, _this.center.y);
-        _this.generator = new (0, _objectsGenerator.ObjectsGenerator)(_this.engine.solver);
-        _this.createActor();
-        _this.initConstrain();
-        return _this;
+class Scene2 extends (0, _baseScene.BaseScene) {
+    constructor(engine){
+        super(engine);
+        this._canMoveRedObject = false;
+        this.timePassedSinceLastBallCreated = 0;
+        this.ballIndex = 0;
+        this.center = new (0, _vec2.Vec2)(this.engine.canvas.width / 2, this.engine.canvas.height / 2);
+        this.radius = Math.min(this.center.x, this.center.y);
+        this.generator = new (0, _objectsGenerator.ObjectsGenerator)(this.engine.solver);
+        this.createActor();
+        this.initConstrain();
     }
-    Scene2.prototype.createBall = function() {
-        var baseBallVelocity = new (0, _vec2.Vec2)(0, 0);
-        var ballGeneratorPoint = this.actor.solverObject.currentPosition;
-        var toCenter = ballGeneratorPoint.diff(this.center);
-        var n = toCenter.ort;
-        var ballVelocity = n.mul(-1);
-        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 7, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000"));
+    createBall() {
+        const baseBallVelocity = new (0, _vec2.Vec2)(0, 0);
+        const ballGeneratorPoint = this.actor.solverObject.currentPosition;
+        const toCenter = ballGeneratorPoint.diff(this.center);
+        const n = toCenter.ort;
+        const ballVelocity = n.mul(-1);
+        const obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), 5).setVelocity(ballVelocity), new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), 7, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000"));
         this.engine.addObject(obj);
         this.ballIndex++;
-    };
-    Scene2.prototype.createActor = function() {
+    }
+    createActor() {
         this.actor = new (0, _object.RenderableObject)(new (0, _immovableBall.ImmovableBallsObject)(new (0, _vec2.Vec2)(230, 50), 30), new (0, _circle.Circle)(this.engine.context, (0, _vec2.Vec2).Zero(), 30, "#ff0000"));
         this.engine.addObject(this.actor);
-    };
-    Scene2.prototype.initConstrain = function() {
+    }
+    initConstrain() {
         this.engine.constrain = new (0, _circle1.CircleConstrain)(this.center, this.radius);
         this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#ffffff"));
-    };
-    Scene2.prototype.getActor = function() {
+    }
+    getActor() {
         return this.actor;
-    };
-    Scene2.prototype.tick = function(timePassed) {
+    }
+    tick(timePassed) {
         if (this.canMoveRedObject) {
             this.timePassedSinceLastBallCreated += timePassed;
             if (this.timePassedSinceLastBallCreated > 0.05) {
@@ -3338,29 +2745,24 @@ var Scene2 = /** @class */ function(_super) {
                 this.createBall();
             }
         }
-    };
-    Scene2.prototype.processUserInput = function(event) {
-        var mouseEvent = event;
+    }
+    processUserInput(event) {
+        const mouseEvent = event;
         if (mouseEvent.leftButtonDown) {
             if (this.actor.solverObject.isPointInsideObject(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY))) this.canMoveRedObject = true;
             this.canMoveRedObject;
         } else this.canMoveRedObject = false;
         if (mouseEvent.screenX || mouseEvent.screenY) this.actor.solverObject.moveTo(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY));
-    };
-    Object.defineProperty(Scene2.prototype, "canMoveRedObject", {
-        get: function() {
-            return this._canMoveRedObject;
-        },
-        set: function(can) {
-            this._canMoveRedObject = can;
-            if (can) this.actor.renderItem.color = "#00ff00";
-            else this.actor.renderItem.color = "#ff0000";
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Scene2;
-}((0, _baseScene.BaseScene));
+    }
+    set canMoveRedObject(can) {
+        this._canMoveRedObject = can;
+        if (can) this.actor.renderItem.color = "#00ff00";
+        else this.actor.renderItem.color = "#ff0000";
+    }
+    get canMoveRedObject() {
+        return this._canMoveRedObject;
+    }
+}
 
 },{"./baseScene":"dRCUa","../items/circle":"c8cAT","../items/circleWithText":"eZiSs","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../objects/immovableBall":"8kn5q","../constrains/circle":"jNoKM","../generators/objectsGenerator":"g4Anj","../objects/ball":"5IfJk","../items/utils/index2color":"datdc","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jNoKM":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3368,50 +2770,27 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "CircleConstrain", ()=>CircleConstrain);
 var _constrain = require("./constrain");
 var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var CircleConstrain = /** @class */ function(_super) {
-    __extends(CircleConstrain, _super);
-    function CircleConstrain(center, radius) {
-        var _this = _super.call(this) || this;
+class CircleConstrain extends (0, _constrain.Constrain) {
+    constructor(center, radius){
+        super();
         /**
          *
          * @type {Vec2}
-         */ _this.center = (0, _vec2.Vec2).Zero();
-        _this.radius = 0;
-        _this.center = center;
-        _this.radius = radius;
-        return _this;
+         */ this.center = (0, _vec2.Vec2).Zero();
+        this.radius = 0;
+        this.center = center;
+        this.radius = radius;
     }
-    CircleConstrain.prototype.applyConstrain = function(obj) {
-        var toCenter = obj.currentPosition.diff(this.center);
-        var distance = toCenter.length;
-        var r = obj.radius || 0;
+    applyConstrain(obj) {
+        const toCenter = obj.currentPosition.diff(this.center);
+        const distance = toCenter.length;
+        const r = obj.radius || 0;
         if (distance > this.radius - r) {
-            var n = toCenter.ort;
+            const n = toCenter.ort;
             obj.moveTo(this.center.sum(n.mul(this.radius - r)));
         }
-    };
-    return CircleConstrain;
-}((0, _constrain.Constrain));
+    }
+}
 
 },{"./constrain":"jvBxb","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ajxWT":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3429,70 +2808,48 @@ var _index2Color = require("../items/utils/index2color");
 var _triangle = require("../primitives/triangle");
 var _immovablePolygon = require("../objects/ImmovablePolygon");
 var _polygonRainbow = require("../items/polygonRainbow");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Scene3 = /** @class */ function(_super) {
-    __extends(Scene3, _super);
-    function Scene3(engine) {
-        var _this = _super.call(this, engine) || this;
-        _this._createBalls = false;
-        _this.timePassedSinceLastBallCreated = 0;
-        _this.ballIndex = 0;
-        _this.ballsViews = [];
-        _this.center = new (0, _vec2.Vec2)(_this.engine.canvas.width / 2, _this.engine.canvas.height / 2);
-        _this.radius = Math.min(_this.center.x, _this.center.y);
-        _this.generator = new (0, _objectsGenerator.ObjectsGenerator)(_this.engine.solver);
-        _this.createActor();
-        _this.initConstrain();
-        return _this;
+class Scene3 extends (0, _baseScene.BaseScene) {
+    constructor(engine){
+        super(engine);
+        this._createBalls = false;
+        this.timePassedSinceLastBallCreated = 0;
+        this.ballIndex = 0;
+        this.ballsViews = [];
+        this.center = new (0, _vec2.Vec2)(this.engine.canvas.width / 2, this.engine.canvas.height / 2);
+        this.radius = Math.min(this.center.x, this.center.y);
+        this.generator = new (0, _objectsGenerator.ObjectsGenerator)(this.engine.solver);
+        this.createActor();
+        this.initConstrain();
     }
-    Scene3.prototype.createBall = function() {
-        var baseBallVelocity = new (0, _vec2.Vec2)(0, 0);
-        var ballGeneratorPoint = this.actor.solverObject.currentPosition;
-        var toCenter = ballGeneratorPoint.diff(this.center);
-        var n = toCenter.ort;
-        var ballVelocity = n.mul(-1);
-        var radius = 20 + Math.random() * 30;
-        var ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), radius, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
+    createBall() {
+        const baseBallVelocity = new (0, _vec2.Vec2)(0, 0);
+        const ballGeneratorPoint = this.actor.solverObject.currentPosition;
+        const toCenter = ballGeneratorPoint.diff(this.center);
+        const n = toCenter.ort;
+        const ballVelocity = n.mul(-1);
+        const radius = 20 + Math.random() * 30;
+        const ballView = new (0, _circleWithText.CircleWithText)(this.engine.context, (0, _vec2.Vec2).Zero(), radius, (0, _index2Color.index2color)(this.ballIndex + 200), "", "#000000");
         this.ballsViews.push(ballView);
-        var obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), radius).setVelocity(ballVelocity), ballView);
+        const obj = new (0, _object.RenderableObject)(new (0, _ball.BallsObject)(ballGeneratorPoint.diff(n.mul(40)), radius).setVelocity(ballVelocity), ballView);
         this.engine.addObject(obj);
         this.ballIndex++;
-    };
-    Scene3.prototype.createActor = function() {
-        var trianglePoints = (0, _triangle.createTriangle)(60);
+    }
+    createActor() {
+        const trianglePoints = (0, _triangle.createTriangle)(60);
         this.nextTickActorPosition = this.center;
-        var polygonObject = new (0, _immovablePolygon.ImmovablePolygon)(this.center, trianglePoints);
-        var polygonView = new (0, _polygonRainbow.PolygonRainbow)(this.engine.context, (0, _vec2.Vec2).Zero(), trianglePoints, "#ff0000");
+        const polygonObject = new (0, _immovablePolygon.ImmovablePolygon)(this.center, trianglePoints);
+        const polygonView = new (0, _polygonRainbow.PolygonRainbow)(this.engine.context, (0, _vec2.Vec2).Zero(), trianglePoints, "#ff0000");
         this.actor = new (0, _object.RenderableObject)(polygonObject, polygonView);
         this.engine.addObject(this.actor);
-    };
-    Scene3.prototype.initConstrain = function() {
+    }
+    initConstrain() {
         this.engine.constrain = new (0, _circle1.CircleConstrain)(this.center, this.radius);
         this.engine.items.push(new (0, _circle.Circle)(this.engine.context, this.center, this.radius, "#555555"));
-    };
-    Scene3.prototype.getActor = function() {
+    }
+    getActor() {
         return this.actor;
-    };
-    Scene3.prototype.tick = function(timePassed) {
+    }
+    tick(timePassed) {
         this.actor.solverObject.moveTo(this.nextTickActorPosition);
         if (this.createBalls) {
             this.timePassedSinceLastBallCreated += timePassed;
@@ -3501,31 +2858,26 @@ var Scene3 = /** @class */ function(_super) {
                 this.createBall();
             }
         }
-        this.ballsViews.forEach(function(ballView) {
+        this.ballsViews.forEach((ballView)=>{
             ballView.color = (0, _index2Color.index2color)(ballView.position.y);
         });
-    };
-    Scene3.prototype.processUserInput = function(event) {
-        var mouseEvent = event;
+    }
+    processUserInput(event) {
+        const mouseEvent = event;
         if (mouseEvent.leftButtonDown) {
             if (this.actor.solverObject.isPointInsideObject(new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY))) this.createBalls = true;
         } else this.createBalls = false;
         if (mouseEvent.screenX || mouseEvent.screenY) this.nextTickActorPosition = new (0, _vec2.Vec2)(mouseEvent.screenX, mouseEvent.screenY);
-    };
-    Object.defineProperty(Scene3.prototype, "createBalls", {
-        get: function() {
-            return this._createBalls;
-        },
-        set: function(can) {
-            this._createBalls = can;
-            if (can) this.actor.renderItem.color = "#00ff00";
-            else this.actor.renderItem.color = "#ff0000";
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Scene3;
-}((0, _baseScene.BaseScene));
+    }
+    set createBalls(can) {
+        this._createBalls = can;
+        if (can) this.actor.renderItem.color = "#00ff00";
+        else this.actor.renderItem.color = "#ff0000";
+    }
+    get createBalls() {
+        return this._createBalls;
+    }
+}
 
 },{"./baseScene":"dRCUa","../items/circle":"c8cAT","../items/circleWithText":"eZiSs","../vector/vec2":"bp79Y","../renderableObjects/object":"34uaH","../constrains/circle":"jNoKM","../generators/objectsGenerator":"g4Anj","../objects/ball":"5IfJk","../items/utils/index2color":"datdc","../primitives/triangle":"2kNMb","../objects/ImmovablePolygon":"iluwZ","../items/polygonRainbow":"3W5Qt","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2kNMb":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3533,8 +2885,8 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "createTriangle", ()=>createTriangle);
 var _vec2 = require("../vector/vec2");
 function createTriangle(size) {
-    var height = size * Math.sqrt(3) / 2;
-    var center = new (0, _vec2.Vec2)(size / 2, size / 2 * (1 / Math.sqrt(3)));
+    const height = size * Math.sqrt(3) / 2;
+    const center = new (0, _vec2.Vec2)(size / 2, size / 2 * (1 / Math.sqrt(3)));
     return [
         new (0, _vec2.Vec2)(-center.x, -center.y),
         new (0, _vec2.Vec2)(0, height - center.y),
@@ -3552,153 +2904,86 @@ var _vec2 = require("../vector/vec2");
 var _immovableLine = require("./immovableLine");
 var _vec2Math = require("../vector/vec2Math");
 var _vec2Rect = require("../vector/vec2Rect");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var __spreadArray = undefined && undefined.__spreadArray || function(to, from, pack) {
-    if (pack || arguments.length === 2) {
-        for(var i = 0, l = from.length, ar; i < l; i++)if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-var ImmovablePolygon = /** @class */ function(_super) {
-    __extends(ImmovablePolygon, _super);
-    function ImmovablePolygon(position, points) {
-        var _this = _super.call(this) || this;
-        _this._localPoints = [];
-        _this._lines = [];
-        _this.type = (0, _types.SolverObjectTypes).TypeImmovablePolygon;
-        _this.immovable = true;
-        _this.bounceValue = 1;
-        _this.currentPosition = position.copy();
-        _this.previousPosition = position.copy();
-        _this._fixedPosition = position.copy();
-        points.forEach(function(point) {
-            _this._localPoints.push(point.copy());
+class ImmovablePolygon extends (0, _immovable.ImmovableSolverObject) {
+    constructor(position, points){
+        super();
+        this._localPoints = [];
+        this._lines = [];
+        this.type = (0, _types.SolverObjectTypes).TypeImmovablePolygon;
+        this.immovable = true;
+        this.bounceValue = 1;
+        this.currentPosition = position.copy();
+        this.previousPosition = position.copy();
+        this._fixedPosition = position.copy();
+        points.forEach((point)=>{
+            this._localPoints.push(point.copy());
         });
-        _this._recreateLines();
-        return _this;
+        this._recreateLines();
     }
-    ImmovablePolygon.prototype._recreateLines = function() {
-        var pointsToProcess = __spreadArray([], this._localPoints, true).reverse();
-        var firstPoint = pointsToProcess.shift();
-        var secondPoint;
-        var lastPoint = firstPoint;
+    _recreateLines() {
+        const pointsToProcess = [
+            ...this._localPoints
+        ].reverse();
+        let firstPoint = pointsToProcess.shift();
+        let secondPoint;
+        let lastPoint = firstPoint;
         this._lines.splice(0, this._lines.length);
         while(secondPoint = pointsToProcess.shift()){
-            var line_1 = (0, _immovableLine.createImmovableLineFrom2Points)(this._fixedPosition.sum(lastPoint), this._fixedPosition.sum(secondPoint));
-            this._lines.push(line_1);
+            const line = (0, _immovableLine.createImmovableLineFrom2Points)(this._fixedPosition.sum(lastPoint), this._fixedPosition.sum(secondPoint));
+            this._lines.push(line);
             lastPoint = secondPoint;
         }
-        var line = (0, _immovableLine.createImmovableLineFrom2Points)(this._fixedPosition.sum(lastPoint), this._fixedPosition.sum(firstPoint));
+        const line = (0, _immovableLine.createImmovableLineFrom2Points)(this._fixedPosition.sum(lastPoint), this._fixedPosition.sum(firstPoint));
         this._lines.push(line);
-    };
-    ImmovablePolygon.prototype.update = function(step) {
+    }
+    update(step) {
         this.currentPosition = this._fixedPosition;
         this.previousPosition = this._fixedPosition;
-    };
-    ImmovablePolygon.prototype.addToSpace = function(solverSpace) {
+    }
+    addToSpace(solverSpace) {
         try {
-            this._lines.forEach(function(line) {
-                return line.addToSpace(solverSpace);
-            });
+            this._lines.forEach((line)=>line.addToSpace(solverSpace));
         } catch (e) {
             debugger;
             console.log(e, this._lines);
         }
-    };
-    ImmovablePolygon.prototype.isPointInsideObject = function(point) {
+    }
+    isPointInsideObject(point) {
         return true;
-    };
-    ImmovablePolygon.prototype.moveBy = function(delta) {
+    }
+    moveBy(delta) {
         this._fixedPosition.addSelf(delta);
-        this._lines.forEach(function(line) {
-            return line.moveBy(delta);
-        });
-    };
-    ImmovablePolygon.prototype.moveTo = function(position) {
-        var delta = (0, _vec2Math.Vec2Math).diff(position, this._fixedPosition);
+        this._lines.forEach((line)=>line.moveBy(delta));
+    }
+    moveTo(position) {
+        const delta = (0, _vec2Math.Vec2Math).diff(position, this._fixedPosition);
         this.moveBy(delta);
-    };
-    ImmovablePolygon.prototype.toString = function() {
+    }
+    toString() {
         return "ImmovablePolygon";
-    };
-    ImmovablePolygon.prototype.debugRender = function(context) {
+    }
+    debugRender(context) {
         context.strokeStyle("#00FF00");
-        this._lines.forEach(function(line) {
-            return line.debugRender(context);
-        });
-    };
-    Object.defineProperty(ImmovablePolygon.prototype, "lines", {
-        get: function() {
-            return this._lines;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    ImmovablePolygon.prototype.intersects = function(range) {
-        return this._lines.some(function(line) {
-            return line.intersects(range);
-        });
-    };
-    ImmovablePolygon.prototype.getCollisionRange = function() {
+        this._lines.forEach((line)=>line.debugRender(context));
+    }
+    get lines() {
+        return this._lines;
+    }
+    intersects(range) {
+        return this._lines.some((line)=>line.intersects(range));
+    }
+    getCollisionRange() {
         return new (0, _vec2Rect.Vec2Rect)(this.currentPosition, new (0, _vec2.Vec2)(60, 60));
-    };
-    return ImmovablePolygon;
-}((0, _immovable.ImmovableSolverObject));
+    }
+}
 
 },{"./immovable":"5OzDg","./types":"7Eyh2","../vector/vec2":"bp79Y","./immovableLine":"f4D1b","../vector/vec2Math":"nZL8C","../vector/vec2Rect":"fgsCI","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3W5Qt":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "PolygonRainbow", ()=>PolygonRainbow);
 var _polygon = require("./polygon");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var PolygonRainbow = /** @class */ function(_super) {
-    __extends(PolygonRainbow, _super);
-    function PolygonRainbow() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return PolygonRainbow;
-}((0, _polygon.Polygon));
+class PolygonRainbow extends (0, _polygon.Polygon) {
+}
 
 },{"./polygon":"bKrz3","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bKrz3":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3706,106 +2991,74 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Polygon", ()=>Polygon);
 var _item = require("./item");
 var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Polygon = /** @class */ function(_super) {
-    __extends(Polygon, _super);
-    function Polygon(renderer, position, points, color) {
-        var _this = _super.call(this, renderer, position) || this;
-        _this.direction = (0, _vec2.Vec2).Zero();
-        _this.color = "#00ff00";
-        _this.points = points;
-        if (color) _this.color = color;
-        return _this;
+class Polygon extends (0, _item.Item) {
+    constructor(renderer, position, points, color){
+        super(renderer, position);
+        this.direction = (0, _vec2.Vec2).Zero();
+        this.color = "#00ff00";
+        this.points = points;
+        if (color) this.color = color;
     }
-    Polygon.prototype.render = function() {
-        var _this = this;
+    render() {
         this.renderer.strokeStyle(this.color);
-        this.renderer.polygon(this.points.map(function(point) {
-            return point.sum(_this.position);
-        }));
-    };
-    return Polygon;
-}((0, _item.Item));
+        this.renderer.polygon(this.points.map((point)=>point.sum(this.position)));
+    }
+}
 
 },{"./item":"62t5i","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8G7on":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Stats", ()=>Stats);
-var Stats = /** @class */ function() {
-    function Stats() {
+class Stats {
+    constructor(){
         this.tickData = [];
         this.totalData = [];
         this.keys = new Map();
     }
-    Stats.prototype.resetTick = function() {
-        var _this = this;
-        this.tickData.forEach(function(value, index) {
-            return _this.tickData[index] = 0;
-        });
-    };
-    Stats.prototype.writeStats = function(key, value) {
-        var index = this.registerKey(key);
+    resetTick() {
+        this.tickData.forEach((value, index)=>this.tickData[index] = 0);
+    }
+    writeStats(key, value) {
+        const index = this.registerKey(key);
         this.tickData[index] = value;
         this.totalData[index] = value;
-    };
-    Stats.prototype.addStats = function(key, value) {
-        if (value === void 0) value = 1;
-        var index = this.registerKey(key);
+    }
+    addStats(key, value = 1) {
+        const index = this.registerKey(key);
         this.tickData[index] += value;
         this.totalData[index] += value;
-    };
-    Stats.prototype.registerKey = function(key) {
+    }
+    registerKey(key) {
         if (this.keys.has(key)) return this.keys.get(key);
         this.tickData.push(0);
         this.totalData.push(0);
         this.keys.set(key, this.tickData.length - 1);
         return this.tickData.length - 1;
-    };
-    Stats.prototype.getStats = function(key) {
+    }
+    getStats(key) {
         if (!this.keys.has(key)) return {
-            key: key,
+            key,
             total: 0,
             tick: 0
         };
-        var index = this.keys.get(key);
+        const index = this.keys.get(key);
         return {
-            key: key,
+            key,
             total: this.totalData[index],
             tick: this.tickData[index]
         };
-    };
-    Stats.prototype.getTickData = function() {
-        var _this = this;
-        var result = [];
-        this.keys.forEach(function(index, key) {
+    }
+    getTickData() {
+        const result = [];
+        this.keys.forEach((index, key)=>{
             result.push({
-                key: key,
-                value: _this.tickData[index]
+                key,
+                value: this.tickData[index]
             });
         });
         return result;
-    };
-    return Stats;
-}();
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"eD4iS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3814,79 +3067,49 @@ parcelHelpers.export(exports, "QuadTreeSolver", ()=>QuadTreeSolver);
 var _vec2 = require("../vector/vec2");
 var _baseSolver = require("./baseSolver");
 var _quadTreeSolverSpace = require("./quadTreeSolverSpace");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var QuadTreeSolver = /** @class */ function(_super) {
-    __extends(QuadTreeSolver, _super);
-    function QuadTreeSolver(worldSize, stats) {
-        var _this = _super.call(this, worldSize, stats) || this;
-        _this.gravity = (0, _vec2.Vec2).Zero();
-        _this.configure();
-        return _this;
+class QuadTreeSolver extends (0, _baseSolver.BaseSolver) {
+    constructor(worldSize, stats){
+        super(worldSize, stats);
+        this.gravity = (0, _vec2.Vec2).Zero();
+        this.configure();
     }
-    QuadTreeSolver.prototype.reset = function() {
-        _super.prototype.reset.call(this);
+    reset() {
+        super.reset();
         this.space.clear();
-    };
-    QuadTreeSolver.prototype.configure = function() {
-        _super.prototype.configure.call(this);
+    }
+    configure() {
+        super.configure();
         this.gravity = new (0, _vec2.Vec2)(0, 100);
         this.space = new (0, _quadTreeSolverSpace.QuadTreeSolverSpace)(this.worldSize.x, this.worldSize.y);
-    };
-    QuadTreeSolver.prototype.processOptimizations = function() {
-        var _this = this;
+    }
+    processOptimizations() {
         this.space.clear();
-        this.objects.forEach(function(obj, index) {
-            obj.addToSpace(_this.space);
-            _this.stats.addStats("Solver object: ".concat(obj.toString()));
+        this.objects.forEach((obj, index)=>{
+            obj.addToSpace(this.space);
+            this.stats.addStats(`Solver object: ${obj.toString()}`);
         });
-    };
-    QuadTreeSolver.prototype.applyForces = function() {
-        var _this = this;
-        this.objects.forEach(function(obj) {
-            return obj.accelerate(_this.gravity);
-        });
-    };
-    QuadTreeSolver.prototype.processCollisions = function() {
-        var _this = this;
-        this.objects.forEach(function(objA) {
-            var range = objA.getCollisionRange();
-            var possibleObjects = _this.space.root.query(range);
-            _this.stats.addStats("processCollisions.queryPossibleObjects.calls");
-            possibleObjects.forEach(function(objB) {
+    }
+    applyForces() {
+        this.objects.forEach((obj)=>obj.accelerate(this.gravity));
+    }
+    processCollisions() {
+        this.objects.forEach((objA)=>{
+            const range = objA.getCollisionRange();
+            const possibleObjects = this.space.root.query(range);
+            this.stats.addStats("processCollisions.queryPossibleObjects.calls");
+            possibleObjects.forEach((objB)=>{
                 if (objA === objB) return;
                 if (objA.immovable && objB.immovable) return;
-                _this.stats.addStats("processCollisions.calls");
+                this.stats.addStats("processCollisions.calls");
                 objA.collide(objB);
             });
         });
-    };
-    QuadTreeSolver.prototype.debugRender = function(context) {
+    }
+    debugRender(context) {
         this.space.debugRender(context);
-        this.objects.forEach(function(object) {
-            return object.debugRender(context);
-        });
-    };
-    return QuadTreeSolver;
-}((0, _baseSolver.BaseSolver));
+        this.objects.forEach((object)=>object.debugRender(context));
+    }
+}
 function makeKey(obj1, obj2) {
     return [
         obj1.index,
@@ -3902,28 +3125,8 @@ parcelHelpers.export(exports, "QuadTreeSolverSpace", ()=>QuadTreeSolverSpace);
 var _baseSolverSpace = require("./baseSolverSpace");
 var _vec2Rect = require("../vector/vec2Rect");
 var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var QuadTree = /** @class */ function() {
-    function QuadTree(boundary, capacity) {
+class QuadTree {
+    constructor(boundary, capacity){
         this.divided = false;
         this.minimumDiag = 10;
         this.boundary = boundary.copy();
@@ -3932,21 +3135,15 @@ var QuadTree = /** @class */ function() {
         this.nodes = [];
         this.divided = false;
     }
-    QuadTree.prototype.clear = function() {
+    clear() {
         if (this.objects.length > 0) this.objects.splice(0);
-        if (this.divided) this.nodes.forEach(function(node) {
-            return node.clear();
-        });
+        if (this.divided) this.nodes.forEach((node)=>node.clear());
         this.divided = false;
-    };
-    Object.defineProperty(QuadTree.prototype, "canSubdivide", {
-        get: function() {
-            return this.boundary.diag > this.minimumDiag;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    QuadTree.prototype.insert = function(obj) {
+    }
+    get canSubdivide() {
+        return this.boundary.diag > this.minimumDiag;
+    }
+    insert(obj) {
         if (!obj.inside(this.boundary)) return;
         if (this.objects.length < this.capacity) {
             this.objects.push(obj);
@@ -3960,69 +3157,59 @@ var QuadTree = /** @class */ function() {
             this.subdivide();
             this.divided = true;
         }
-        var index = 0;
+        let index = 0;
         while(index < 4){
             if (this.nodes[index].insert(obj)) index = 5;
             index++;
         }
         return index === 5;
-    };
-    QuadTree.prototype.subdivide = function() {
+    }
+    subdivide() {
         this.nodes[QuadTree.NW] = new QuadTree(this.boundary.nw, this.capacity);
         this.nodes[QuadTree.NE] = new QuadTree(this.boundary.ne, this.capacity);
         this.nodes[QuadTree.SE] = new QuadTree(this.boundary.se, this.capacity);
         this.nodes[QuadTree.SW] = new QuadTree(this.boundary.sw, this.capacity);
-    };
-    QuadTree.prototype.query = function(range) {
-        var result = [];
+    }
+    query(range) {
+        let result = [];
         if (!this.boundary.intersect(range)) return result;
-        this.objects.forEach(function(obj) {
+        this.objects.forEach((obj)=>{
             if (obj.intersects(range)) result.push(obj);
         });
-        if (this.divided) this.nodes.forEach(function(subTree) {
-            return subTree.query(range).forEach(function(obj) {
-                return result.push(obj);
-            });
-        });
+        if (this.divided) this.nodes.forEach((subTree)=>subTree.query(range).forEach((obj)=>result.push(obj)));
         return result;
-    };
-    QuadTree.prototype.debugRender = function(render) {
+    }
+    debugRender(render) {
         render.strokeStyle(this.objects.length > 0 ? "#ff0000" : "#00ff00");
         render.rect(this.boundary.left, this.boundary.top, this.boundary.width - 2, this.boundary.height - 2);
-        if (this.divided) this.nodes.forEach(function(subTree) {
-            return subTree.debugRender(render);
-        });
-    };
-    QuadTree.NW = 0;
-    QuadTree.NE = 1;
-    QuadTree.SE = 2;
-    QuadTree.SW = 3;
-    return QuadTree;
-}();
-var QuadTreeSolverSpace = /** @class */ function(_super) {
-    __extends(QuadTreeSolverSpace, _super);
-    function QuadTreeSolverSpace(width, height) {
-        var _this = _super.call(this) || this;
-        _this.root = new QuadTree(new (0, _vec2Rect.Vec2Rect)(new (0, _vec2.Vec2)(width / 2, height / 2), new (0, _vec2.Vec2)(width, height)), 4);
-        return _this;
+        if (this.divided) this.nodes.forEach((subTree)=>subTree.debugRender(render));
     }
-    QuadTreeSolverSpace.prototype.clear = function() {
+}
+QuadTree.NW = 0;
+QuadTree.NE = 1;
+QuadTree.SE = 2;
+QuadTree.SW = 3;
+class QuadTreeSolverSpace extends (0, _baseSolverSpace.BaseSolverSpace) {
+    constructor(width, height){
+        super();
+        this.root = new QuadTree(new (0, _vec2Rect.Vec2Rect)(new (0, _vec2.Vec2)(width / 2, height / 2), new (0, _vec2.Vec2)(width, height)), 4);
+    }
+    clear() {
         this.root.clear();
-    };
-    QuadTreeSolverSpace.prototype.addObject = function(obj) {
+    }
+    addObject(obj) {
         this.root.insert(obj);
-    };
-    QuadTreeSolverSpace.prototype.addPointObject = function(worldX, worldY, obj) {
+    }
+    addPointObject(worldX, worldY, obj) {
         this.root.insert(obj);
-    };
-    QuadTreeSolverSpace.prototype.addRectangularObject = function(worldLeftTop, worldRightBottom, obj) {
+    }
+    addRectangularObject(worldLeftTop, worldRightBottom, obj) {
         this.root.insert(obj);
-    };
-    QuadTreeSolverSpace.prototype.debugRender = function(render) {
+    }
+    debugRender(render) {
         this.root.debugRender(render);
-    };
-    return QuadTreeSolverSpace;
-}((0, _baseSolverSpace.BaseSolverSpace));
+    }
+}
 
 },{"./baseSolverSpace":"3vpVg","../vector/vec2Rect":"fgsCI","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3vUyF":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -4030,35 +3217,13 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Canvas2DRender", ()=>Canvas2DRender);
 var _baseRender = require("./baseRender");
 var _vec2 = require("../vector/vec2");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Canvas2DRender = /** @class */ function(_super) {
-    __extends(Canvas2DRender, _super);
-    function Canvas2DRender(context) {
-        var _this = _super.call(this) || this;
-        _this._context = context;
-        return _this;
+class Canvas2DRender extends (0, _baseRender.BaseRender) {
+    constructor(context){
+        super();
+        this._context = context;
     }
-    Canvas2DRender.prototype.getCoord = function(x, y) {
-        var cx, cy;
+    getCoord(x, y) {
+        let cx, cy;
         if (x === undefined) {
             cx = this._position.x;
             cy = this._position.y;
@@ -4073,70 +3238,69 @@ var Canvas2DRender = /** @class */ function(_super) {
             cx,
             cy
         ];
-    };
-    Canvas2DRender.prototype.circle = function(radius, x, y) {
-        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
+    }
+    circle(radius, x, y) {
+        const [cx, cy] = this.getCoord(x, y);
         this._context.beginPath();
         this._context.arc(cx, cy, radius, 0, 2 * Math.PI);
         this._context.stroke();
-    };
-    Canvas2DRender.prototype.fillCircle = function(radius, x, y) {
-        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
+    }
+    fillCircle(radius, x, y) {
+        const [cx, cy] = this.getCoord(x, y);
         this._context.beginPath();
         this._context.arc(cx, cy, radius, 0, 2 * Math.PI);
         this._context.fill();
-    };
-    Canvas2DRender.prototype.color = function() {};
-    Canvas2DRender.prototype.fillStyle = function(style) {
+    }
+    color() {}
+    fillStyle(style) {
         this._context.fillStyle = style;
-    };
-    Canvas2DRender.prototype.fillRect = function(x1, y1, x2, y2) {
+    }
+    fillRect(x1, y1, x2, y2) {
         this._context.fillRect(x1, y1, x2 - x1, y2 - y1);
-    };
-    Canvas2DRender.prototype.line = function(x, y, x2, y2) {
-        var _a, _b, _c;
+    }
+    line(x, y, x2, y2) {
         if (y instanceof (0, _vec2.Vec2)) {
-            _a = this.getCoord(x), x = _a[0], y = _a[1];
-            _b = this.getCoord(y), x2 = _b[0], y2 = _b[1];
-        } else _c = this.getCoord(x, y), x = _c[0], y = _c[1];
+            [x, y] = this.getCoord(x);
+            [x2, y2] = this.getCoord(y);
+        } else [x, y] = this.getCoord(x, y);
         this._context.beginPath();
         this._context.moveTo(x, y);
         this._context.lineTo(x2, y2);
         this._context.stroke();
-    };
-    Canvas2DRender.prototype.vector = function(position, direction) {
+    }
+    vector(position, direction) {
         this._context.beginPath();
         this._context.moveTo(position.x, position.y);
         this._context.lineTo(position.x + direction.x, position.y + direction.y);
         this._context.stroke();
-    };
-    Canvas2DRender.prototype.rect = function(x, y, width, height) {
+    }
+    rect(x, y, width, height) {
         this._context.strokeRect(x, y, width, height);
-    };
-    Canvas2DRender.prototype.text = function(text, x, y) {
-        var _a = this.getCoord(x, y), cx = _a[0], cy = _a[1];
+    }
+    text(text, x, y) {
+        const [cx, cy] = this.getCoord(x, y);
         this._context.fillStyle = "#ffffff";
         this._context.textAlign = "start";
         this._context.fillText(text, cx, cy);
-    };
-    Canvas2DRender.prototype.moveTo = function() {};
-    Canvas2DRender.prototype.font = function(font) {
+    }
+    moveTo() {}
+    font(font) {
         this._context.font = font;
-    };
-    Canvas2DRender.prototype.lineTo = function(x, y) {
-        var _a = this.getCoord(x, y), x2 = _a[0], y2 = _a[1];
+    }
+    lineTo(x, y) {
+        const [x2, y2] = this.getCoord(x, y);
         this._context.moveTo(this._position.x, this._position.y);
         this._context.lineTo(x2, y2);
-    };
-    Canvas2DRender.prototype.strokeStyle = function(style) {
+    }
+    strokeStyle(style) {
         this._context.strokeStyle = style;
-    };
-    Canvas2DRender.prototype.lineWidth = function(width) {
+    }
+    lineWidth(width) {
         this._context.lineWidth = width;
-    };
-    Canvas2DRender.prototype.polygon = function(worldPoints) {
+    }
+    polygon(worldPoints) {
         this._context.beginPath(); // Start a new path
-        var index = 0;
+        let index = 0;
         this._context.moveTo(worldPoints[index].x, worldPoints[index].y);
         while(index < worldPoints.length - 1){
             index++;
@@ -4144,24 +3308,22 @@ var Canvas2DRender = /** @class */ function(_super) {
         }
         this._context.lineTo(worldPoints[0].x, worldPoints[0].y);
         this._context.stroke();
-    };
-    return Canvas2DRender;
-}((0, _baseRender.BaseRender));
+    }
+}
 
 },{"./baseRender":"7zA4Y","../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7zA4Y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "BaseRender", ()=>BaseRender);
 var _vec2 = require("../vector/vec2");
-var BaseRender = /** @class */ function() {
-    function BaseRender() {
+class BaseRender {
+    constructor(){
         this._position = (0, _vec2.Vec2).Zero();
     }
-    BaseRender.prototype.moveTo = function(x, y) {
+    moveTo(x, y) {
         this._position.moveTo(x, y);
-    };
-    return BaseRender;
-}();
+    }
+}
 
 },{"../vector/vec2":"bp79Y","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["lxFny","hb2Bw"], "hb2Bw", "parcelRequire62ee")
 

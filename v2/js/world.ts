@@ -18,8 +18,14 @@ export class World {
         this.viewPortDistance = 1;
     }
 
-    moveViewPort(dx: number, dy: number) {
-        this.viewPortPosition.add(dx, dy);
+    moveViewPort(d: Vector);
+    moveViewPort(dx: number, dy: number);
+    moveViewPort(dxord: any, dy?: number){
+        if (dy !== undefined) {
+            this.viewPortPosition.add(dxord, dy);
+        } else {
+            this.viewPortDistance.add(dxord);
+        }
     }
 
     moveViewPortDistance(d: number) {

@@ -4,9 +4,10 @@ import { Vector } from "p5";
 import {Stats} from "../../src/render/stats";
 import {World} from "./world";
 import {Solver} from "./solver/solver";
-import {circleConstraint} from "./solver/constraints";
+import {circleConstraint, distance} from "./solver/constraints";
 import {airDensity, gravity, gravityCenter} from "./solver/forces";
 import {Point} from "./solver/objects";
+import {Touch, Touches} from "./touch";
 
 
 class Sketch {
@@ -25,6 +26,7 @@ class Sketch {
 
 class Sketch1 extends Sketch {
     magicCenter: Vector;
+    touches: Touches;
 
     constructor(p5) {
         super(p5);
@@ -39,6 +41,9 @@ class Sketch1 extends Sketch {
         p5.mouseWheel = this.mouseWheel;
 
         this.magicCenter = this.p5.createVector(450, 150);
+        this.touches = new Touches(this.p5);
+        this.touches.handleTouchClick = this.mouseClicked;
+        this.touches.handleTouchMove = this.handleTouchMove;
     }
 
     setup = () => {
@@ -78,6 +83,7 @@ class Sketch1 extends Sketch {
         // Handle User Input
         this.handleKeyIsDown();
         this.handleMouseIsDown();
+        this.touches.processTouches();
 
         // Handle The Solver
         this.solver.solve(this.p5.deltaTime);
@@ -109,6 +115,27 @@ class Sketch1 extends Sketch {
         // Draw all objects as points
         this.p5.strokeWeight(5);
         this.p5.stroke('black');
+
+        let index: number = 0;
+        while (index < this.solver.objects.length) {
+            const r = index % 255;
+            const g = Math.round(index / 2);
+            this.p5.stroke(r, g, 0);
+
+            let point1 = this.solver.objects[index].position;
+            let point2 = this.solver.objects[index + 1].position;
+            let point3 = this.solver.objects[index + 2].position;
+
+            this.p5.line(point1.x, point1.y, point2.x, point2.y);
+            this.p5.line(point2.x, point2.y, point3.x, point3.y);
+            this.p5.line(point3.x, point3.y, point1.x, point1.y);
+
+            this.p5.point(point1);
+            this.p5.point(point2);
+            this.p5.point(point3);
+            index += 3;
+        }
+
         this.solver.objects.forEach((point, index) => {
             const r = index % 255;
             const g = Math.round(index / 2);
@@ -128,14 +155,35 @@ class Sketch1 extends Sketch {
         this.p5.text(`Total points: ${this.solver.objects.length}`, 50, 70);
     }
 
+    handleTouchMove = (touch: Touch) => {
+        this.world.moveViewPort(
+            this.p5.mouseX - this.p5.pmouseX,
+            this.p5.mouseY - this.p5.pmouseY
+        );
+    }
+
     mouseClicked = (event: MouseEvent) => {
         console.log(event);
         event.preventDefault();
 
-        for (let i=0; i < 100; i++) {
-            this.solver.addObject(new Point(
-                this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
-            ))
+        for (let i=0; i < 30; i++) {
+            const points = [
+                new Point(
+                    this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
+                ),
+                new Point(
+                    this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
+                ),
+                new Point(
+                    this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
+                ),
+            ]
+
+            this.solver.addConstraint(distance(points[0], points[1], 100));
+            this.solver.addConstraint(distance(points[1], points[2], 100))
+            this.solver.addConstraint(distance(points[2], points[0], 100))
+
+            points.forEach(point => this.solver.addObject(point));
         }
 
         return false;

@@ -564,153 +564,163 @@ var _solver = require("./solver/solver");
 var _constraints = require("./solver/constraints");
 var _forces = require("./solver/forces");
 var _objects = require("./solver/objects");
-var __extends = undefined && undefined.__extends || function() {
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf || ({
-            __proto__: []
-        }) instanceof Array && function(d, b) {
-            d.__proto__ = b;
-        } || function(d, b) {
-            for(var p in b)if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-        return extendStatics(d, b);
-    };
-    return function(d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() {
-            this.constructor = d;
-        }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-}();
-var Sketch = /** @class */ function() {
-    function Sketch(p5) {
+var _touch = require("./touch");
+class Sketch {
+    constructor(p5){
         this.p5 = p5;
         this.stats = new (0, _stats.Stats)();
         this.world = new (0, _world.World)(this.p5);
         this.solver = new (0, _solver.Solver)(this.world);
     }
-    return Sketch;
-}();
-var Sketch1 = /** @class */ function(_super) {
-    __extends(Sketch1, _super);
-    function Sketch1(p5) {
-        var _this = _super.call(this, p5) || this;
-        _this.setup = function() {
-            _this.p5.createCanvas(400, 400);
-            _this.p5.resizeCanvas(_this.p5.windowWidth, _this.p5.windowHeight);
-            _this.solver.addConstraint((0, _constraints.circleConstraint)(_this.p5.createVector(300, 300), 300));
-            _this.solver.addForce((0, _forces.gravityCenter)(_this.p5.createVector(300, 300), 2));
-            _this.solver.addForce((0, _forces.gravity)(3));
+}
+class Sketch1 extends Sketch {
+    constructor(p5){
+        super(p5);
+        this.setup = ()=>{
+            this.p5.createCanvas(400, 400);
+            this.p5.resizeCanvas(this.p5.windowWidth, this.p5.windowHeight);
+            this.solver.addConstraint((0, _constraints.circleConstraint)(this.p5.createVector(300, 300), 300));
+            this.solver.addForce((0, _forces.gravityCenter)(this.p5.createVector(300, 300), 2));
+            this.solver.addForce((0, _forces.gravity)(3));
             //this.solver.addForce(airDensity(0.0001));
-            _this.solver.addForce((0, _forces.gravityCenter)(_this.magicCenter, 2));
+            this.solver.addForce((0, _forces.gravityCenter)(this.magicCenter, 2));
         };
-        _this.draw = function() {
-            if (!_this.p5.focused) return;
+        this.draw = ()=>{
+            if (!this.p5.focused) return;
             // Move Magic Center
-            var heading = _this.p5.createVector(200, 0);
-            heading.setHeading(_this.p5.frameCount * 0.02 / _this.p5.PI);
-            _this.magicCenter.set((0, _p5.Vector).add(new (0, _p5.Vector)(300, 300), heading));
+            const heading = this.p5.createVector(200, 0);
+            heading.setHeading(this.p5.frameCount * 0.02 / this.p5.PI);
+            this.magicCenter.set((0, _p5.Vector).add(new (0, _p5.Vector)(300, 300), heading));
             // Handle User Input
-            _this.handleKeyIsDown();
-            _this.handleMouseIsDown();
+            this.handleKeyIsDown();
+            this.handleMouseIsDown();
+            this.touches.processTouches();
             // Handle The Solver
-            _this.solver.solve(_this.p5.deltaTime);
+            this.solver.solve(this.p5.deltaTime);
             // Render Everything
-            _this.p5.background(220);
-            _this.p5.translate(_this.world.viewPortPosition);
-            _this.p5.scale(_this.world.viewPortDistance);
-            _this.p5.strokeWeight(1);
-            _this.p5.stroke("black");
+            this.p5.background(220);
+            this.p5.translate(this.world.viewPortPosition);
+            this.p5.scale(this.world.viewPortDistance);
+            this.p5.strokeWeight(1);
+            this.p5.stroke("black");
             // Draw World Constraint
-            _this.p5.rect(0, 0, _this.world.width, _this.world.height);
+            this.p5.rect(0, 0, this.world.width, this.world.height);
             // Draw Constraint Circle
-            _this.p5.circle(300, 300, 600);
+            this.p5.circle(300, 300, 600);
             // Draw Gravity Point
-            _this.p5.strokeWeight(10);
-            _this.p5.point(300, 300);
+            this.p5.strokeWeight(10);
+            this.p5.point(300, 300);
             // Draw Gravity Point
-            _this.p5.strokeWeight(10);
-            _this.p5.stroke("red");
-            _this.p5.point(_this.magicCenter);
+            this.p5.strokeWeight(10);
+            this.p5.stroke("red");
+            this.p5.point(this.magicCenter);
             // Draw all objects as points
-            _this.p5.strokeWeight(5);
-            _this.p5.stroke("black");
-            _this.solver.objects.forEach(function(point, index) {
-                var r = index % 255;
-                var g = Math.round(index / 2);
-                _this.p5.stroke(r, g, 0);
-                _this.p5.point(point.position);
+            this.p5.strokeWeight(5);
+            this.p5.stroke("black");
+            let index = 0;
+            while(index < this.solver.objects.length){
+                const r = index % 255;
+                const g = Math.round(index / 2);
+                this.p5.stroke(r, g, 0);
+                let point1 = this.solver.objects[index].position;
+                let point2 = this.solver.objects[index + 1].position;
+                let point3 = this.solver.objects[index + 2].position;
+                this.p5.line(point1.x, point1.y, point2.x, point2.y);
+                this.p5.line(point2.x, point2.y, point3.x, point3.y);
+                this.p5.line(point3.x, point3.y, point1.x, point1.y);
+                this.p5.point(point1);
+                this.p5.point(point2);
+                this.p5.point(point3);
+                index += 3;
+            }
+            this.solver.objects.forEach((point, index)=>{
+                const r = index % 255;
+                const g = Math.round(index / 2);
+                this.p5.stroke(r, g, 0);
+                this.p5.point(point.position);
             });
             // Debug Info
-            _this.p5.resetMatrix();
-            _this.p5.stroke("black");
-            _this.p5.strokeWeight(1);
-            var fps = _this.p5.frameRate();
-            _this.p5.text("FPS: ".concat(fps), 50, 50);
-            _this.p5.text("Click me to add points", 50, 60);
-            _this.p5.text("Total points: ".concat(_this.solver.objects.length), 50, 70);
+            this.p5.resetMatrix();
+            this.p5.stroke("black");
+            this.p5.strokeWeight(1);
+            let fps = this.p5.frameRate();
+            this.p5.text(`FPS: ${fps}`, 50, 50);
+            this.p5.text("Click me to add points", 50, 60);
+            this.p5.text(`Total points: ${this.solver.objects.length}`, 50, 70);
         };
-        _this.mouseClicked = function(event) {
+        this.handleTouchMove = (touch)=>{
+            this.world.moveViewPort(this.p5.mouseX - this.p5.pmouseX, this.p5.mouseY - this.p5.pmouseY);
+        };
+        this.mouseClicked = (event)=>{
             console.log(event);
             event.preventDefault();
-            for(var i = 0; i < 100; i++)_this.solver.addObject(new (0, _objects.Point)(_this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200))));
+            for(let i = 0; i < 30; i++){
+                const points = [
+                    new (0, _objects.Point)(this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200))),
+                    new (0, _objects.Point)(this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200))),
+                    new (0, _objects.Point)(this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200)))
+                ];
+                this.solver.addConstraint((0, _constraints.distance)(points[0], points[1], 100));
+                this.solver.addConstraint((0, _constraints.distance)(points[1], points[2], 100));
+                this.solver.addConstraint((0, _constraints.distance)(points[2], points[0], 100));
+                points.forEach((point)=>this.solver.addObject(point));
+            }
             return false;
         };
-        _this.mouseReleased = function(event) {
+        this.mouseReleased = (event)=>{
             console.log(event);
             event.preventDefault();
             event.stopPropagation();
             return false;
         };
-        _this.mouseWheel = function(event) {
-            _this.world.moveViewPortDistance(event.delta < 0 ? 0.1 : -0.1);
+        this.mouseWheel = (event)=>{
+            this.world.moveViewPortDistance(event.delta < 0 ? 0.1 : -0.1);
         };
-        _this.handleKeyIsDown = function() {
+        this.handleKeyIsDown = ()=>{
             switch(true){
-                case _this.p5.keyIsDown(_this.p5.LEFT_ARROW):
-                    _this.world.moveViewPort(-1, 0);
+                case this.p5.keyIsDown(this.p5.LEFT_ARROW):
+                    this.world.moveViewPort(-1, 0);
                     break;
-                case _this.p5.keyIsDown(_this.p5.RIGHT_ARROW):
-                    _this.world.moveViewPort(1, 0);
+                case this.p5.keyIsDown(this.p5.RIGHT_ARROW):
+                    this.world.moveViewPort(1, 0);
                     break;
-                case _this.p5.keyIsDown(_this.p5.UP_ARROW):
-                    _this.world.moveViewPort(0, -1);
+                case this.p5.keyIsDown(this.p5.UP_ARROW):
+                    this.world.moveViewPort(0, -1);
                     break;
-                case _this.p5.keyIsDown(_this.p5.DOWN_ARROW):
-                    _this.world.moveViewPort(0, 1);
+                case this.p5.keyIsDown(this.p5.DOWN_ARROW):
+                    this.world.moveViewPort(0, 1);
                     break;
             }
         };
-        _this.handleMouseIsDown = function() {
-            if (!_this.p5.mouseIsPressed) return;
-            if (_this.p5.mouseButton === _this.p5.RIGHT) _this.world.moveViewPort(_this.p5.mouseX - _this.p5.pmouseX, _this.p5.mouseY - _this.p5.pmouseY);
+        this.handleMouseIsDown = ()=>{
+            if (!this.p5.mouseIsPressed) return;
+            if (this.p5.mouseButton === this.p5.RIGHT) this.world.moveViewPort(this.p5.mouseX - this.p5.pmouseX, this.p5.mouseY - this.p5.pmouseY);
         };
-        _this.windowResized = function() {
-            _this.p5.resizeCanvas(_this.p5.windowWidth, _this.p5.windowHeight);
+        this.windowResized = ()=>{
+            this.p5.resizeCanvas(this.p5.windowWidth, this.p5.windowHeight);
         };
-        p5.setup = _this.setup;
-        p5.draw = _this.draw;
-        p5.windowResized = _this.windowResized;
-        p5.mouseClicked = _this.mouseClicked;
-        p5.mouseReleased = _this.mouseReleased;
-        p5.mousePressed = _this.mouseReleased;
-        p5.mouseWheel = _this.mouseWheel;
-        _this.magicCenter = _this.p5.createVector(450, 150);
-        return _this;
+        p5.setup = this.setup;
+        p5.draw = this.draw;
+        p5.windowResized = this.windowResized;
+        p5.mouseClicked = this.mouseClicked;
+        p5.mouseReleased = this.mouseReleased;
+        p5.mousePressed = this.mouseReleased;
+        p5.mouseWheel = this.mouseWheel;
+        this.magicCenter = this.p5.createVector(450, 150);
+        this.touches = new (0, _touch.Touches)(this.p5);
+        this.touches.handleTouchClick = this.mouseClicked;
+        this.touches.handleTouchMove = this.handleTouchMove;
     }
-    return Sketch1;
-}(Sketch);
-var sketch = function(p5) {
+}
+const sketch = (p5)=>{
     new Sketch1(p5);
 };
 new _p5(sketch);
-document.addEventListener("contextmenu", function(event) {
+document.addEventListener("contextmenu", (event)=>{
     event.preventDefault();
 });
 
-},{"p5":"7Uk5U","../../src/render/stats":"8G7on","./world":"7Zbbj","./solver/solver":"2tNxu","./solver/constraints":"fl8E0","./solver/forces":"hFC7C","./solver/objects":"8fvfl"}],"7Uk5U":[function(require,module,exports) {
+},{"p5":"7Uk5U","../../src/render/stats":"8G7on","./world":"7Zbbj","./solver/solver":"2tNxu","./solver/constraints":"fl8E0","./solver/forces":"hFC7C","./solver/objects":"8fvfl","./touch":"28P7y"}],"7Uk5U":[function(require,module,exports) {
 /*! p5.js v1.9.4 May 21, 2024 */ var global = arguments[3];
 !function(e1) {
     module.exports = e1();
@@ -32735,62 +32745,56 @@ document.addEventListener("contextmenu", function(event) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Stats", ()=>Stats);
-var Stats = /** @class */ function() {
-    function Stats() {
+class Stats {
+    constructor(){
         this.tickData = [];
         this.totalData = [];
         this.keys = new Map();
     }
-    Stats.prototype.resetTick = function() {
-        var _this = this;
-        this.tickData.forEach(function(value, index) {
-            return _this.tickData[index] = 0;
-        });
-    };
-    Stats.prototype.writeStats = function(key, value) {
-        var index = this.registerKey(key);
+    resetTick() {
+        this.tickData.forEach((value, index)=>this.tickData[index] = 0);
+    }
+    writeStats(key, value) {
+        const index = this.registerKey(key);
         this.tickData[index] = value;
         this.totalData[index] = value;
-    };
-    Stats.prototype.addStats = function(key, value) {
-        if (value === void 0) value = 1;
-        var index = this.registerKey(key);
+    }
+    addStats(key, value = 1) {
+        const index = this.registerKey(key);
         this.tickData[index] += value;
         this.totalData[index] += value;
-    };
-    Stats.prototype.registerKey = function(key) {
+    }
+    registerKey(key) {
         if (this.keys.has(key)) return this.keys.get(key);
         this.tickData.push(0);
         this.totalData.push(0);
         this.keys.set(key, this.tickData.length - 1);
         return this.tickData.length - 1;
-    };
-    Stats.prototype.getStats = function(key) {
+    }
+    getStats(key) {
         if (!this.keys.has(key)) return {
-            key: key,
+            key,
             total: 0,
             tick: 0
         };
-        var index = this.keys.get(key);
+        const index = this.keys.get(key);
         return {
-            key: key,
+            key,
             total: this.totalData[index],
             tick: this.tickData[index]
         };
-    };
-    Stats.prototype.getTickData = function() {
-        var _this = this;
-        var result = [];
-        this.keys.forEach(function(index, key) {
+    }
+    getTickData() {
+        const result = [];
+        this.keys.forEach((index, key)=>{
             result.push({
-                key: key,
-                value: _this.tickData[index]
+                key,
+                value: this.tickData[index]
             });
         });
         return result;
-    };
-    return Stats;
-}();
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
 exports.interopDefault = function(a) {
@@ -32827,72 +32831,66 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "World", ()=>World);
 var _p5 = require("p5");
-var World = /** @class */ function() {
-    function World(p5) {
+class World {
+    constructor(p5){
         this.width = 1000000;
         this.height = 1000000;
         this.viewPortSize = new (0, _p5.Vector)(400, 400);
         this.viewPortPosition = new (0, _p5.Vector)(0, 0);
         this.viewPortDistance = 1;
     }
-    World.prototype.moveViewPort = function(dx, dy) {
-        this.viewPortPosition.add(dx, dy);
-    };
-    World.prototype.moveViewPortDistance = function(d) {
+    moveViewPort(dxord, dy) {
+        if (dy !== undefined) this.viewPortPosition.add(dxord, dy);
+        else this.viewPortDistance.add(dxord);
+    }
+    moveViewPortDistance(d) {
         if (this.viewPortDistance + d < 0.0001) d /= 10;
         this.viewPortDistance += d;
         if (this.viewPortDistance < 0.0001) this.viewPortDistance = 0.0001;
         console.log(this.viewPortDistance);
-    };
-    return World;
-}();
+    }
+}
 
 },{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2tNxu":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Solver", ()=>Solver);
 var _colliders = require("./colliders");
-var SOLVER_SUBSTEPS = 2;
-var Solver = /** @class */ function() {
-    function Solver(world) {
+const SOLVER_SUBSTEPS = 2;
+class Solver {
+    constructor(world){
         this.world = world;
         this.objects = [];
         this.forces = [];
         this.constraints = [];
     }
-    Solver.prototype.addObject = function(obj) {
+    addObject(obj) {
         this.objects.push(obj);
-    };
-    Solver.prototype.addForce = function(force) {
+    }
+    addForce(force) {
         this.forces.push(force);
-    };
-    Solver.prototype.addConstraint = function(constraint) {
+    }
+    addConstraint(constraint) {
         this.constraints.push(constraint);
-    };
-    Solver.prototype.collisions = function(obj) {
-        this.objects.forEach(function(anotherObj) {
+    }
+    collisions(obj) {
+        this.objects.forEach((anotherObj)=>{
             if (obj === anotherObj) return;
             (0, _colliders.collidePoints)(obj, anotherObj);
         });
-    };
-    Solver.prototype.solve = function(time) {
-        var _this = this;
-        var step = time / SOLVER_SUBSTEPS;
-        for(var i = 0; i < SOLVER_SUBSTEPS; i++)this.objects.forEach(function(obj) {
-            _this.forces.forEach(function(force) {
-                return force(obj);
-            });
+    }
+    solve(time) {
+        let step = time / SOLVER_SUBSTEPS;
+        for(let i = 0; i < SOLVER_SUBSTEPS; i++)this.objects.forEach((obj)=>{
+            this.forces.forEach((force)=>force(obj));
             obj.update(step);
-            _this.collisions(obj);
-            _this.constraints.forEach(function(constraint) {
-                return constraint(obj);
-            });
+            this.collisions(obj);
+            this.constraints.forEach((constraint)=>constraint(obj));
         });
-    };
-    return Solver;
-}();
+    }
+}
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./colliders":"iMYWA"}],"iMYWA":[function(require,module,exports) {
+},{"./colliders":"iMYWA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMYWA":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**
@@ -32902,11 +32900,11 @@ parcelHelpers.defineInteropFlag(exports);
  */ parcelHelpers.export(exports, "collidePoints", ()=>collidePoints);
 var _p5 = require("p5");
 function collidePoints(obj1, obj2) {
-    var between = (0, _p5.Vector).sub(obj1.position, obj2.position);
-    var distance = between.mag();
-    var requiredDistance = 5;
+    const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
+    const distance = between.mag();
+    const requiredDistance = 5;
     if (distance < requiredDistance) {
-        var delta = 5 - distance;
+        const delta = 5 - distance;
         if (delta < 0.001) return;
         between.normalize();
         obj1.position.add((0, _p5.Vector).mult(between, delta / 2));
@@ -32918,15 +32916,37 @@ function collidePoints(obj1, obj2) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "circleConstraint", ()=>circleConstraint);
+parcelHelpers.export(exports, "distance", ()=>distance);
 var _p5 = require("p5");
 function circleConstraint(center, r) {
-    var r2 = r * r;
+    const r2 = r * r;
     return function(obj) {
-        var diff = (0, _p5.Vector).sub(obj.position, center);
+        const diff = (0, _p5.Vector).sub(obj.position, center);
         if (diff.magSq() > r2) {
             diff.setMag(r);
             obj.position = (0, _p5.Vector).add(center, diff);
         //obj.previousPosition = obj.position.copy();
+        }
+    };
+}
+function distance(obj1, obj2, r) {
+    return function(obj) {
+        if (obj !== obj1 && obj !== obj2) return;
+        const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
+        const distance = between.mag();
+        if (distance < r) {
+            const delta = r - distance;
+            if (delta < 0.001) return;
+            between.normalize();
+            obj1.position.add((0, _p5.Vector).mult(between, delta / 2));
+            obj2.position.add((0, _p5.Vector).mult(between, -delta / 2));
+        }
+        if (distance > r) {
+            const delta = distance - r;
+            if (delta < 0.001) return;
+            between.normalize();
+            obj1.position.sub((0, _p5.Vector).mult(between, delta / 2));
+            obj2.position.sub((0, _p5.Vector).mult(between, -delta / 2));
         }
     };
 }
@@ -32938,25 +32958,23 @@ parcelHelpers.export(exports, "gravity", ()=>gravity);
 parcelHelpers.export(exports, "gravityCenter", ()=>gravityCenter);
 parcelHelpers.export(exports, "airDensity", ()=>airDensity);
 var _p5 = require("p5");
-var WORLD_COEFFICIENT = 10000;
-function gravity(value) {
-    if (value === void 0) value = 9.81;
-    var force = new (0, _p5.Vector)(0, value / WORLD_COEFFICIENT);
+const WORLD_COEFFICIENT = 10000;
+function gravity(value = 9.81) {
+    const force = new (0, _p5.Vector)(0, value / WORLD_COEFFICIENT);
     return function(obj) {
         obj.applyForce(force);
     };
 }
-function gravityCenter(center, value) {
-    if (value === void 0) value = 9.81;
+function gravityCenter(center, value = 9.81) {
     return function(obj) {
-        var direction = (0, _p5.Vector).sub(obj.position, center);
+        const direction = (0, _p5.Vector).sub(obj.position, center);
         if (direction.magSq() < 0.000000001) return;
         obj.applyForce(direction.setMag(-value / WORLD_COEFFICIENT));
     };
 }
 function airDensity(density) {
     return function(obj) {
-        var velocity = (0, _p5.Vector).sub(obj.position, obj.previousPosition);
+        const velocity = (0, _p5.Vector).sub(obj.position, obj.previousPosition);
         obj.applyForce(velocity.setMag(-density));
     };
 }
@@ -32966,31 +32984,101 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Point", ()=>Point);
 var _p5 = require("p5");
-var Point = /** @class */ function() {
-    function Point(position) {
+class Point {
+    constructor(position){
         this.position = position.copy();
         this.previousPosition = position.copy();
         this.acceleration = new (0, _p5.Vector)(0, 0);
     }
-    Point.prototype.applyForce = function(force) {
+    applyForce(force) {
         this.acceleration.add(force);
-    };
-    Point.prototype.update = function(time) {
-        var velocity = (0, _p5.Vector).sub(this.position, this.previousPosition);
+    }
+    update(time) {
+        let velocity = (0, _p5.Vector).sub(this.position, this.previousPosition);
         velocity.add(this.acceleration.mult(time * time));
         this.previousPosition = this.position.copy();
         this.position.add(velocity);
         this.acceleration.mult(0);
-    };
-    return Point;
-}();
-var Box = /** @class */ function() {
-    function Box(position, size) {
+    }
+}
+class Box {
+    constructor(position, size){
         this.position = position;
         this.size = size;
     }
-    return Box;
-}();
+}
+
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"28P7y":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Touch", ()=>Touch);
+parcelHelpers.export(exports, "Touches", ()=>Touches);
+var _p5 = require("p5");
+const TOUCH_DISTANCE = 1;
+class Touch {
+    constructor(touch){
+        this.id = touch.id;
+        this.touchX = touch.x;
+        this.touchY = touch.y;
+        this.prevTouchX = touch.x;
+        this.prevTouchY = touch.y;
+    }
+    update(touch) {
+        this.prevTouchX = this.touchX;
+        this.prevTouchY = this.touchY;
+        this.touchX = touch.x;
+        this.touchY = touch.y;
+    }
+    get point() {
+        return new (0, _p5.Vector)(this.touchX, this.touchY);
+    }
+    get prevPoint() {
+        return new (0, _p5.Vector)(this.prevTouchX, this.prevTouchY);
+    }
+    get distance() {
+        return (0, _p5.Vector).dist(this.point, this.prevPoint);
+    }
+    get moved() {
+        return this.distance > TOUCH_DISTANCE;
+    }
+}
+class Touches {
+    constructor(p5){
+        this.touchStarted = ()=>{
+            this.updateTouches();
+        };
+        this.touchEnded = (event)=>{
+            this.updateTouches();
+            if (this.touches.size === 1) {
+                const touch = this.touches.values().next();
+                if (touch.moved) this.handleTouchClick(event, touch.point);
+            }
+            this.touches.clear();
+        };
+        this.touchMoved = ()=>{
+            this.updateTouches();
+            if (this.touches.size === 1) {
+                const touches = [
+                    ...this.touches.values()
+                ];
+                const touch = touches.pop();
+                if (touch.moved) this.handleTouchMove(touch);
+            }
+        };
+        this.processTouches = ()=>{};
+        this.p5 = p5;
+        this.touches = new Map();
+        this.p5.touchStarted = this.touchStarted;
+        this.p5.touchEnded = this.touchEnded;
+        this.p5.touchMoved = this.touchMoved;
+    }
+    updateTouches() {
+        this.p5.touches.forEach((touch)=>{
+            if (this.touches.has(touch.id)) this.touches.get(touch.id).update(touch);
+            else this.touches.set(touch.id, new Touch(touch));
+        });
+    }
+}
 
 },{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["feyvK","9OAhZ"], "9OAhZ", "parcelRequire62ee")
 
