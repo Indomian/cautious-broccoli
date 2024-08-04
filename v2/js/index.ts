@@ -1,4 +1,4 @@
-import * as P5 from "p5";
+ import * as P5 from "p5";
 
 import { Vector } from "p5";
 import {Stats} from "../../src/render/stats";

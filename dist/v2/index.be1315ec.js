@@ -33011,9 +33011,17 @@ class Box {
 },{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"28P7y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "inRange", ()=>inRange);
+parcelHelpers.export(exports, "notInRange", ()=>notInRange);
 parcelHelpers.export(exports, "Touch", ()=>Touch);
 parcelHelpers.export(exports, "Touches", ()=>Touches);
 var _p5 = require("p5");
+function inRange(value, range) {
+    return value > -range && value < range;
+}
+function notInRange(value, range) {
+    return !inRange(value, range);
+}
 const TOUCH_DISTANCE = 1;
 class Touch {
     constructor(touch){
@@ -33022,6 +33030,7 @@ class Touch {
         this.touchY = touch.y;
         this.prevTouchX = touch.x;
         this.prevTouchY = touch.y;
+        this.startTouch = new (0, _p5.Vector)(touch.x, touch.y);
     }
     update(touch) {
         this.prevTouchX = this.touchX;
@@ -33035,23 +33044,39 @@ class Touch {
     get prevPoint() {
         return new (0, _p5.Vector)(this.prevTouchX, this.prevTouchY);
     }
+    get startPoint() {
+        return this.startTouch;
+    }
     get distance() {
         return (0, _p5.Vector).dist(this.point, this.prevPoint);
     }
-    get moved() {
-        return this.distance > TOUCH_DISTANCE;
+    get fullDistance() {
+        return (0, _p5.Vector).dist(this.point, this.startPoint);
     }
+    get moved() {
+        return notInRange(this.distance, TOUCH_DISTANCE);
+    }
+    get movedSinceStart() {
+        return notInRange(this.fullDistance, TOUCH_DISTANCE);
+    }
+}
+function nopTouchZoomCallback(event) {
+    return true;
 }
 class Touches {
     constructor(p5){
+        this.handleTouchZoom = nopTouchZoomCallback;
         this.touchStarted = ()=>{
             this.updateTouches();
         };
         this.touchEnded = (event)=>{
             this.updateTouches();
             if (this.touches.size === 1) {
-                const touch = this.touches.values().next();
-                if (touch.moved) this.handleTouchClick(event, touch.point);
+                const touches = [
+                    ...this.touches.values()
+                ];
+                const touch = touches.pop();
+                if (!touch.movedSinceStart) this.handleTouchClick(event, touch.point);
             }
             this.touches.clear();
         };
@@ -33063,6 +33088,18 @@ class Touches {
                 ];
                 const touch = touches.pop();
                 if (touch.moved) this.handleTouchMove(touch);
+            } else if (this.touches.size === 2) {
+                const touches = [
+                    ...this.touches.values()
+                ];
+                if (touches.some((touch)=>touch.movedSinceStart)) {
+                    const startDistance = (0, _p5.Vector).dist(touches[0].prevPoint, touches[1].prevPoint);
+                    const endDistance = (0, _p5.Vector).dist(touches[0].point, touches[1].point);
+                    const distance = endDistance - startDistance;
+                    if (notInRange(distance, TOUCH_DISTANCE)) this.handleTouchZoom({
+                        delta: distance
+                    });
+                }
             }
         };
         this.processTouches = ()=>{};
