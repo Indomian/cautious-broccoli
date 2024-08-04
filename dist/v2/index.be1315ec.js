@@ -558,39 +558,21 @@ function hmrAccept(bundle, id) {
 
 },{}],"9OAhZ":[function(require,module,exports) {
 var _p5 = require("p5");
-var _stats = require("../../src/render/stats");
-var _world = require("./world");
-var _solver = require("./solver/solver");
-var _constraints = require("./solver/constraints");
-var _forces = require("./solver/forces");
-var _objects = require("./solver/objects");
 var _touch = require("./touch");
-class Sketch {
-    constructor(p5){
-        this.p5 = p5;
-        this.stats = new (0, _stats.Stats)();
-        this.world = new (0, _world.World)(this.p5);
-        this.solver = new (0, _solver.Solver)(this.world);
-    }
-}
-class Sketch1 extends Sketch {
+var _sketch = require("./sketch");
+var _sketch1 = require("./sketches/sketch1");
+var _point = require("./entities/point");
+class Sketch1 extends (0, _sketch.Sketch) {
     constructor(p5){
         super(p5);
+        this.drawDebug = false;
         this.setup = ()=>{
             this.p5.createCanvas(400, 400);
             this.p5.resizeCanvas(this.p5.windowWidth, this.p5.windowHeight);
-            this.solver.addConstraint((0, _constraints.circleConstraint)(this.p5.createVector(300, 300), 300));
-            this.solver.addForce((0, _forces.gravityCenter)(this.p5.createVector(300, 300), 2));
-            this.solver.addForce((0, _forces.gravity)(3));
-            //this.solver.addForce(airDensity(0.0001));
-            this.solver.addForce((0, _forces.gravityCenter)(this.magicCenter, 2));
+            (0, _sketch1.sketch1)(this);
         };
         this.draw = ()=>{
             if (!this.p5.focused) return;
-            // Move Magic Center
-            const heading = this.p5.createVector(200, 0);
-            heading.setHeading(this.p5.frameCount * 0.02 / this.p5.PI);
-            this.magicCenter.set((0, _p5.Vector).add(new (0, _p5.Vector)(300, 300), heading));
             // Handle User Input
             this.handleKeyIsDown();
             this.handleMouseIsDown();
@@ -599,6 +581,7 @@ class Sketch1 extends Sketch {
             this.solver.solve(this.p5.deltaTime);
             // Render Everything
             this.p5.background(220);
+            this.p5.fill("white");
             this.p5.translate(this.world.viewPortPosition);
             this.p5.scale(this.world.viewPortDistance);
             this.p5.strokeWeight(1);
@@ -610,38 +593,34 @@ class Sketch1 extends Sketch {
             // Draw Gravity Point
             this.p5.strokeWeight(10);
             this.p5.point(300, 300);
-            // Draw Gravity Point
-            this.p5.strokeWeight(10);
-            this.p5.stroke("red");
-            this.p5.point(this.magicCenter);
+            this.entities.forEach((entity)=>entity.draw(this.drawDebug));
+            if (this.drawDebug) this.solver.draw();
             // Draw all objects as points
             this.p5.strokeWeight(5);
             this.p5.stroke("black");
-            let index = 0;
-            while(index < this.solver.objects.length){
-                const r = index % 255;
-                const g = Math.round(index / 2);
-                this.p5.stroke(r, g, 0);
-                let point1 = this.solver.objects[index].position;
-                let point2 = this.solver.objects[index + 1].position;
-                let point3 = this.solver.objects[index + 2].position;
-                this.p5.line(point1.x, point1.y, point2.x, point2.y);
-                this.p5.line(point2.x, point2.y, point3.x, point3.y);
-                this.p5.line(point3.x, point3.y, point1.x, point1.y);
-                this.p5.point(point1);
-                this.p5.point(point2);
-                this.p5.point(point3);
-                index += 3;
-            }
-            this.solver.objects.forEach((point, index)=>{
-                const r = index % 255;
-                const g = Math.round(index / 2);
-                this.p5.stroke(r, g, 0);
-                this.p5.point(point.position);
-            });
+            // let index: number = 0;
+            // while (index < this.solver.objects.length) {
+            //     const r = index % 255;
+            //     const g = Math.round(index / 2);
+            //     this.p5.stroke(r, g, 0);
+            //
+            //     let point1 = this.solver.objects[index].position;
+            //     let point2 = this.solver.objects[index + 1].position;
+            //     let point3 = this.solver.objects[index + 2].position;
+            //
+            //     this.p5.line(point1.x, point1.y, point2.x, point2.y);
+            //     this.p5.line(point2.x, point2.y, point3.x, point3.y);
+            //     this.p5.line(point3.x, point3.y, point1.x, point1.y);
+            //
+            //     this.p5.point(point1);
+            //     this.p5.point(point2);
+            //     this.p5.point(point3);
+            //     index += 3;
+            // }
             // Debug Info
             this.p5.resetMatrix();
             this.p5.stroke("black");
+            this.p5.fill("black");
             this.p5.strokeWeight(1);
             let fps = this.p5.frameRate();
             this.p5.text(`FPS: ${fps}`, 50, 50);
@@ -654,16 +633,37 @@ class Sketch1 extends Sketch {
         this.mouseClicked = (event)=>{
             console.log(event);
             event.preventDefault();
+            // for (let i=0; i < 30; i++) {
+            //     const points = [
+            //         new Point(
+            //             this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
+            //         ),
+            //         new Point(
+            //             this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
+            //         ),
+            //         new Point(
+            //             this.p5.createVector(300, 300).add(Vector.random2D().mult(Math.random() * 200))
+            //         ),
+            //     ]
+            //
+            //     this.solver.addConstraint(distance(points[0], points[1], 100));
+            //     this.solver.addConstraint(distance(points[1], points[2], 100))
+            //     this.solver.addConstraint(distance(points[2], points[0], 100))
+            //
+            //     points.forEach(point => this.solver.addObject(point));
+            // }
+            const center = new (0, _p5.Vector)(300, 300);
             for(let i = 0; i < 30; i++){
-                const points = [
-                    new (0, _objects.Point)(this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200))),
-                    new (0, _objects.Point)(this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200))),
-                    new (0, _objects.Point)(this.p5.createVector(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200)))
-                ];
-                this.solver.addConstraint((0, _constraints.distance)(points[0], points[1], 100));
-                this.solver.addConstraint((0, _constraints.distance)(points[1], points[2], 100));
-                this.solver.addConstraint((0, _constraints.distance)(points[2], points[0], 100));
-                points.forEach((point)=>this.solver.addObject(point));
+                const point = new (0, _point.PointEntity)(this, {
+                    position: new (0, _p5.Vector)(300, 300).add((0, _p5.Vector).random2D().mult(Math.random() * 200)),
+                    stroke: this.p5.color([
+                        Math.random() * 255,
+                        Math.random() * 255,
+                        Math.random() * 255
+                    ]),
+                    size: this.p5.random(5, 20)
+                });
+                this.addEntity(point);
             }
             return false;
         };
@@ -676,7 +676,12 @@ class Sketch1 extends Sketch {
         this.mouseWheel = (event)=>{
             this.world.moveViewPortDistance(event.delta < 0 ? 0.1 : -0.1);
         };
+        this.keyPressed = (event)=>{
+            if (this.p5.key === "d") this.drawDebug = !this.drawDebug;
+            return false;
+        };
         this.handleKeyIsDown = ()=>{
+            this.entities.forEach((entity)=>entity.handleKeys());
             switch(true){
                 case this.p5.keyIsDown(this.p5.LEFT_ARROW):
                     this.world.moveViewPort(-1, 0);
@@ -706,7 +711,7 @@ class Sketch1 extends Sketch {
         p5.mouseReleased = this.mouseReleased;
         p5.mousePressed = this.mouseReleased;
         p5.mouseWheel = this.mouseWheel;
-        this.magicCenter = this.p5.createVector(450, 150);
+        p5.keyPressed = this.keyPressed;
         this.touches = new (0, _touch.Touches)(this.p5);
         this.touches.handleTouchClick = this.mouseClicked;
         this.touches.handleTouchMove = this.handleTouchMove;
@@ -720,7 +725,7 @@ document.addEventListener("contextmenu", (event)=>{
     event.preventDefault();
 });
 
-},{"p5":"7Uk5U","../../src/render/stats":"8G7on","./world":"7Zbbj","./solver/solver":"2tNxu","./solver/constraints":"fl8E0","./solver/forces":"hFC7C","./solver/objects":"8fvfl","./touch":"28P7y"}],"7Uk5U":[function(require,module,exports) {
+},{"p5":"7Uk5U","./touch":"28P7y","./sketch":"bSrvC","./sketches/sketch1":"4ofT3","./entities/point":"fxAdD"}],"7Uk5U":[function(require,module,exports) {
 /*! p5.js v1.9.4 May 21, 2024 */ var global = arguments[3];
 !function(e1) {
     module.exports = e1();
@@ -32741,274 +32746,7 @@ document.addEventListener("contextmenu", (event)=>{
     ])(264);
 });
 
-},{}],"8G7on":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Stats", ()=>Stats);
-class Stats {
-    constructor(){
-        this.tickData = [];
-        this.totalData = [];
-        this.keys = new Map();
-    }
-    resetTick() {
-        this.tickData.forEach((value, index)=>this.tickData[index] = 0);
-    }
-    writeStats(key, value) {
-        const index = this.registerKey(key);
-        this.tickData[index] = value;
-        this.totalData[index] = value;
-    }
-    addStats(key, value = 1) {
-        const index = this.registerKey(key);
-        this.tickData[index] += value;
-        this.totalData[index] += value;
-    }
-    registerKey(key) {
-        if (this.keys.has(key)) return this.keys.get(key);
-        this.tickData.push(0);
-        this.totalData.push(0);
-        this.keys.set(key, this.tickData.length - 1);
-        return this.tickData.length - 1;
-    }
-    getStats(key) {
-        if (!this.keys.has(key)) return {
-            key,
-            total: 0,
-            tick: 0
-        };
-        const index = this.keys.get(key);
-        return {
-            key,
-            total: this.totalData[index],
-            tick: this.tickData[index]
-        };
-    }
-    getTickData() {
-        const result = [];
-        this.keys.forEach((index, key)=>{
-            result.push({
-                key,
-                value: this.tickData[index]
-            });
-        });
-        return result;
-    }
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"7Zbbj":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "World", ()=>World);
-var _p5 = require("p5");
-class World {
-    constructor(p5){
-        this.width = 1000000;
-        this.height = 1000000;
-        this.viewPortSize = new (0, _p5.Vector)(400, 400);
-        this.viewPortPosition = new (0, _p5.Vector)(0, 0);
-        this.viewPortDistance = 1;
-    }
-    moveViewPort(dxord, dy) {
-        if (dy !== undefined) this.viewPortPosition.add(dxord, dy);
-        else this.viewPortDistance.add(dxord);
-    }
-    moveViewPortDistance(d) {
-        if (this.viewPortDistance + d < 0.0001) d /= 10;
-        this.viewPortDistance += d;
-        if (this.viewPortDistance < 0.0001) this.viewPortDistance = 0.0001;
-        console.log(this.viewPortDistance);
-    }
-}
-
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2tNxu":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Solver", ()=>Solver);
-var _colliders = require("./colliders");
-const SOLVER_SUBSTEPS = 2;
-class Solver {
-    constructor(world){
-        this.world = world;
-        this.objects = [];
-        this.forces = [];
-        this.constraints = [];
-    }
-    addObject(obj) {
-        this.objects.push(obj);
-    }
-    addForce(force) {
-        this.forces.push(force);
-    }
-    addConstraint(constraint) {
-        this.constraints.push(constraint);
-    }
-    collisions(obj) {
-        this.objects.forEach((anotherObj)=>{
-            if (obj === anotherObj) return;
-            (0, _colliders.collidePoints)(obj, anotherObj);
-        });
-    }
-    solve(time) {
-        let step = time / SOLVER_SUBSTEPS;
-        for(let i = 0; i < SOLVER_SUBSTEPS; i++)this.objects.forEach((obj)=>{
-            this.forces.forEach((force)=>force(obj));
-            obj.update(step);
-            this.collisions(obj);
-            this.constraints.forEach((constraint)=>constraint(obj));
-        });
-    }
-}
-
-},{"./colliders":"iMYWA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMYWA":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-/**
- * Collision between 2 balls objects
- * @param {Point} obj1
- * @param {Point} obj2
- */ parcelHelpers.export(exports, "collidePoints", ()=>collidePoints);
-var _p5 = require("p5");
-function collidePoints(obj1, obj2) {
-    const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
-    const distance = between.mag();
-    const requiredDistance = 5;
-    if (distance < requiredDistance) {
-        const delta = 5 - distance;
-        if (delta < 0.001) return;
-        between.normalize();
-        obj1.position.add((0, _p5.Vector).mult(between, delta / 2));
-        obj2.position.add((0, _p5.Vector).mult(between, -delta / 2));
-    }
-}
-
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fl8E0":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "circleConstraint", ()=>circleConstraint);
-parcelHelpers.export(exports, "distance", ()=>distance);
-var _p5 = require("p5");
-function circleConstraint(center, r) {
-    const r2 = r * r;
-    return function(obj) {
-        const diff = (0, _p5.Vector).sub(obj.position, center);
-        if (diff.magSq() > r2) {
-            diff.setMag(r);
-            obj.position = (0, _p5.Vector).add(center, diff);
-        //obj.previousPosition = obj.position.copy();
-        }
-    };
-}
-function distance(obj1, obj2, r) {
-    return function(obj) {
-        if (obj !== obj1 && obj !== obj2) return;
-        const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
-        const distance = between.mag();
-        if (distance < r) {
-            const delta = r - distance;
-            if (delta < 0.001) return;
-            between.normalize();
-            obj1.position.add((0, _p5.Vector).mult(between, delta / 2));
-            obj2.position.add((0, _p5.Vector).mult(between, -delta / 2));
-        }
-        if (distance > r) {
-            const delta = distance - r;
-            if (delta < 0.001) return;
-            between.normalize();
-            obj1.position.sub((0, _p5.Vector).mult(between, delta / 2));
-            obj2.position.sub((0, _p5.Vector).mult(between, -delta / 2));
-        }
-    };
-}
-
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hFC7C":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "gravity", ()=>gravity);
-parcelHelpers.export(exports, "gravityCenter", ()=>gravityCenter);
-parcelHelpers.export(exports, "airDensity", ()=>airDensity);
-var _p5 = require("p5");
-const WORLD_COEFFICIENT = 10000;
-function gravity(value = 9.81) {
-    const force = new (0, _p5.Vector)(0, value / WORLD_COEFFICIENT);
-    return function(obj) {
-        obj.applyForce(force);
-    };
-}
-function gravityCenter(center, value = 9.81) {
-    return function(obj) {
-        const direction = (0, _p5.Vector).sub(obj.position, center);
-        if (direction.magSq() < 0.000000001) return;
-        obj.applyForce(direction.setMag(-value / WORLD_COEFFICIENT));
-    };
-}
-function airDensity(density) {
-    return function(obj) {
-        const velocity = (0, _p5.Vector).sub(obj.position, obj.previousPosition);
-        obj.applyForce(velocity.setMag(-density));
-    };
-}
-
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8fvfl":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Point", ()=>Point);
-var _p5 = require("p5");
-class Point {
-    constructor(position){
-        this.position = position.copy();
-        this.previousPosition = position.copy();
-        this.acceleration = new (0, _p5.Vector)(0, 0);
-    }
-    applyForce(force) {
-        this.acceleration.add(force);
-    }
-    update(time) {
-        let velocity = (0, _p5.Vector).sub(this.position, this.previousPosition);
-        velocity.add(this.acceleration.mult(time * time));
-        this.previousPosition = this.position.copy();
-        this.position.add(velocity);
-        this.acceleration.mult(0);
-    }
-}
-class Box {
-    constructor(position, size){
-        this.position = position;
-        this.size = size;
-    }
-}
-
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"28P7y":[function(require,module,exports) {
+},{}],"28P7y":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "inRange", ()=>inRange);
@@ -33117,6 +32855,715 @@ class Touches {
     }
 }
 
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["feyvK","9OAhZ"], "9OAhZ", "parcelRequire62ee")
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"bSrvC":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Sketch", ()=>Sketch);
+var _stats = require("../../src/render/stats");
+var _solver = require("./solver/solver");
+var _world = require("./world");
+class Sketch {
+    constructor(p5){
+        this.p5 = p5;
+        this.stats = new (0, _stats.Stats)();
+        this.world = new (0, _world.World)(this.p5);
+        this.solver = new (0, _solver.Solver)(this);
+        this.entities = [];
+    }
+    addEntity(entity) {
+        this.entities.push(entity);
+        entity.add();
+    }
+    removeEntity(entity) {
+        const index = this.entities.indexOf(entity);
+        if (index !== -1) {
+            this.entities[index].remove();
+            this.entities.splice(index, 1);
+        }
+    }
+}
+
+},{"../../src/render/stats":"8G7on","./solver/solver":"2tNxu","./world":"7Zbbj","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8G7on":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Stats", ()=>Stats);
+class Stats {
+    constructor(){
+        this.tickData = [];
+        this.totalData = [];
+        this.keys = new Map();
+    }
+    resetTick() {
+        this.tickData.forEach((value, index)=>this.tickData[index] = 0);
+    }
+    writeStats(key, value) {
+        const index = this.registerKey(key);
+        this.tickData[index] = value;
+        this.totalData[index] = value;
+    }
+    addStats(key, value = 1) {
+        const index = this.registerKey(key);
+        this.tickData[index] += value;
+        this.totalData[index] += value;
+    }
+    registerKey(key) {
+        if (this.keys.has(key)) return this.keys.get(key);
+        this.tickData.push(0);
+        this.totalData.push(0);
+        this.keys.set(key, this.tickData.length - 1);
+        return this.tickData.length - 1;
+    }
+    getStats(key) {
+        if (!this.keys.has(key)) return {
+            key,
+            total: 0,
+            tick: 0
+        };
+        const index = this.keys.get(key);
+        return {
+            key,
+            total: this.totalData[index],
+            tick: this.tickData[index]
+        };
+    }
+    getTickData() {
+        const result = [];
+        this.keys.forEach((index, key)=>{
+            result.push({
+                key,
+                value: this.tickData[index]
+            });
+        });
+        return result;
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"2tNxu":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Solver", ()=>Solver);
+var _p5 = require("p5");
+var _colliders = require("./colliders");
+var _quadTreeSolverSpace = require("./quadTreeSolverSpace");
+var _rect = require("../math/rect");
+const SOLVER_SUBSTEPS = 2;
+const COLLISION_RANGE = new (0, _p5.Vector)(40, 40);
+class Solver {
+    constructor(sketch){
+        this.sketch = sketch;
+        this.world = sketch.world;
+        this.objects = [];
+        this.forces = [];
+        this.constraints = [];
+        this.space = new (0, _quadTreeSolverSpace.QuadTreeSolverSpace)(this.sketch);
+    }
+    addObject(obj) {
+        this.objects.push(obj);
+    }
+    addForce(force) {
+        this.forces.push(force);
+    }
+    removeForce(force) {
+        const index = this.forces.indexOf(force);
+        if (index !== -1) this.forces.splice(index, 1);
+    }
+    addConstraint(constraint) {
+        this.constraints.push(constraint);
+    }
+    removeConstraint(constraint) {
+        const index = this.constraints.indexOf(constraint);
+        if (index !== -1) this.constraints.splice(index, 1);
+    }
+    processOptimizations() {
+        this.space.clear();
+        this.objects.forEach((obj, index)=>{
+            this.space.addObject(obj);
+        });
+    }
+    collisions(obj) {
+        const range = new (0, _rect.Rect)(obj.position, COLLISION_RANGE);
+        const possibleObjects = this.space.root.query(range);
+        possibleObjects.forEach((anotherObj)=>{
+            if (obj === anotherObj) return;
+            (0, _colliders.collidePoints)(obj, anotherObj);
+        });
+    }
+    solve(time) {
+        this.processOptimizations();
+        let step = time / SOLVER_SUBSTEPS;
+        for(let i = 0; i < SOLVER_SUBSTEPS; i++)this.objects.forEach((obj)=>{
+            this.forces.forEach((force)=>force(obj));
+            obj.update(step);
+            this.collisions(obj);
+            this.constraints.forEach((constraint)=>constraint(obj));
+        });
+    }
+    draw() {
+        this.space.debugRender();
+    }
+}
+
+},{"p5":"7Uk5U","./colliders":"iMYWA","./quadTreeSolverSpace":"ca1ix","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMYWA":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/**
+ * Collision between 2 balls objects
+ * @param {Point} obj1
+ * @param {Point} obj2
+ */ parcelHelpers.export(exports, "collidePoints", ()=>collidePoints);
+parcelHelpers.export(exports, "pointInRange", ()=>pointInRange);
+var _p5 = require("p5");
+function collidePoints(obj1, obj2) {
+    const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
+    const distance = between.mag();
+    const requiredDistance = (obj1.size + obj2.size) / 2;
+    if (distance < requiredDistance) {
+        const delta = requiredDistance - distance;
+        if (delta < 0.001) return;
+        between.normalize();
+        obj1.position.add((0, _p5.Vector).mult(between, delta * obj1.size * 0.5 / requiredDistance));
+        obj2.position.add((0, _p5.Vector).mult(between, -delta * obj2.size * 0.5 / requiredDistance));
+    }
+}
+function pointInRange(obj, range) {
+    return range.contains(obj.position);
+}
+
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ca1ix":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "QuadTree", ()=>QuadTree);
+parcelHelpers.export(exports, "QuadTreeSolverSpace", ()=>QuadTreeSolverSpace);
+var _baseSolverSpace = require("./baseSolverSpace");
+var _rect = require("../math/rect");
+var _colliders = require("./colliders");
+var _p5 = require("p5");
+class QuadTree {
+    constructor(boundary, capacity){
+        this.divided = false;
+        this.minimumDiag = 2500;
+        this.boundary = boundary.copy();
+        this.capacity = capacity;
+        this.objects = [];
+        this.nodes = [];
+        this.divided = false;
+    }
+    clear() {
+        if (this.objects.length > 0) this.objects.splice(0);
+        if (this.divided) this.nodes.forEach((node)=>node.clear());
+    //this.divided = false;
+    }
+    get canSubdivide() {
+        return this.boundary.diag > this.minimumDiag;
+    }
+    insert(obj) {
+        if (!this.boundary.contains(obj.position)) return;
+        if (this.objects.length < this.capacity) {
+            this.objects.push(obj);
+            return true;
+        }
+        if (!this.canSubdivide) {
+            this.objects.push(obj);
+            return true;
+        }
+        if (!this.divided) {
+            this.subdivide();
+            this.divided = true;
+        }
+        let index = 0;
+        while(index < 4){
+            if (this.nodes[index].insert(obj)) index = 5;
+            index++;
+        }
+        return index === 5;
+    }
+    subdivide() {
+        this.nodes[QuadTree.NW] = new QuadTree(this.boundary.nw, this.capacity);
+        this.nodes[QuadTree.NE] = new QuadTree(this.boundary.ne, this.capacity);
+        this.nodes[QuadTree.SE] = new QuadTree(this.boundary.se, this.capacity);
+        this.nodes[QuadTree.SW] = new QuadTree(this.boundary.sw, this.capacity);
+    }
+    query(range) {
+        let result = [];
+        if (!this.boundary.intersect(range)) return result;
+        if (this.objects.length === 0) {
+            this.divided = false;
+            return result;
+        }
+        this.objects.forEach((obj)=>{
+            if ((0, _colliders.pointInRange)(obj, range)) result.push(obj);
+        });
+        if (this.divided) this.nodes.forEach((subTree)=>subTree.query(range).forEach((obj)=>result.push(obj)));
+        return result;
+    }
+    debugRender(p5) {
+        p5.strokeWeight(1);
+        p5.stroke(this.objects.length > 0 ? "#ff0000" : "#00ff00");
+        p5.noFill();
+        p5.rect(this.boundary.left, this.boundary.top, this.boundary.width - 2, this.boundary.height - 2);
+        if (this.divided) this.nodes.forEach((subTree)=>subTree.debugRender(p5));
+    }
+}
+QuadTree.NW = 0;
+QuadTree.NE = 1;
+QuadTree.SE = 2;
+QuadTree.SW = 3;
+class QuadTreeSolverSpace extends (0, _baseSolverSpace.BaseSolverSpace) {
+    constructor(sketch){
+        super(sketch);
+        const center = new (0, _p5.Vector)(sketch.world.width / 2, sketch.world.height / 2);
+        const size = new (0, _p5.Vector)(sketch.world.width, sketch.world.height);
+        this.root = new QuadTree(new (0, _rect.Rect)(center, size), 4);
+    }
+    clear() {
+        this.root.clear();
+    }
+    addObject(obj) {
+        this.root.insert(obj);
+    }
+    debugRender() {
+        this.root.debugRender(this.sketch.p5);
+    }
+}
+
+},{"./baseSolverSpace":"fL11o","../math/rect":"goPXA","./colliders":"iMYWA","p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fL11o":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "BaseSolverSpace", ()=>BaseSolverSpace);
+class BaseSolverSpace {
+    constructor(sketch){
+        this.sketch = sketch;
+    }
+    clear() {}
+    addObject(obj) {}
+    debugRender() {}
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"goPXA":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Rect", ()=>Rect);
+var _exceptions = require("./exceptions");
+var _p5 = require("p5");
+class Rect {
+    constructor(center, size){
+        this._position = center;
+        this.size = size;
+        if (this.size.x < 0 || this.size.y < 0) throw new (0, _exceptions.MathExceptionRectSizeShouldBePositive)();
+        this.recalculate();
+    }
+    recalculate() {
+        this._width2 = this.size.x / 2;
+        this._height2 = this.size.y / 2;
+        this._left = this._position.x - this._width2;
+        this._right = this._position.x + this._width2;
+        this._top = this._position.y - this._height2;
+        this._bottom = this._position.y + this._height2;
+    }
+    copy() {
+        return new Rect(this._position, this.size);
+    }
+    intersect(rect) {
+        return this.left < rect.right && this.right > rect.left && this.top < rect.bottom && this.bottom > rect.top;
+    }
+    contains(point) {
+        return point.x > this.left && point.x < this.right && point.y > this.top && point.y < this.bottom;
+    }
+    moveBy(delta) {
+        this.position.add(delta);
+        this.recalculate();
+    }
+    moveTo(pos) {
+        this.position.set(pos);
+        this.recalculate();
+    }
+    get nw() {
+        return new Rect(new (0, _p5.Vector)(this.position.x - this._width2 / 2, this.position.y - this._height2 / 2), new (0, _p5.Vector)(this._width2, this._height2));
+    }
+    get ne() {
+        return new Rect(new (0, _p5.Vector)(this.position.x + this._width2 / 2, this.position.y - this._height2 / 2), new (0, _p5.Vector)(this._width2, this._height2));
+    }
+    get se() {
+        return new Rect(new (0, _p5.Vector)(this.position.x + this._width2 / 2, this.position.y + this._height2 / 2), new (0, _p5.Vector)(this._width2, this._height2));
+    }
+    get sw() {
+        return new Rect(new (0, _p5.Vector)(this.position.x - this._width2 / 2, this.position.y + this._height2 / 2), new (0, _p5.Vector)(this._width2, this._height2));
+    }
+    get left() {
+        return this._position.x - this._width2;
+    }
+    get right() {
+        return this._position.x + this._width2;
+    }
+    get top() {
+        return this._position.y - this._height2;
+    }
+    get bottom() {
+        return this._position.y + this._height2;
+    }
+    get diag() {
+        return this.size.magSq();
+    }
+    get width() {
+        return this.size.x;
+    }
+    get height() {
+        return this.size.y;
+    }
+    get position() {
+        return this._position;
+    }
+}
+
+},{"./exceptions":"3v14W","p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3v14W":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MathException", ()=>MathException);
+parcelHelpers.export(exports, "MathExceptionRectSizeShouldBePositive", ()=>MathExceptionRectSizeShouldBePositive);
+class MathException extends Error {
+}
+class MathExceptionRectSizeShouldBePositive extends MathException {
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7Zbbj":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "World", ()=>World);
+var _p5 = require("p5");
+class World {
+    constructor(p5){
+        this.width = 1000000;
+        this.height = 1000000;
+        this.viewPortSize = new (0, _p5.Vector)(400, 400);
+        this.viewPortPosition = new (0, _p5.Vector)(0, 0);
+        this.viewPortDistance = 1;
+    }
+    moveViewPort(dxord, dy) {
+        if (dy !== undefined) this.viewPortPosition.add(dxord, dy);
+        else this.viewPortDistance.add(dxord);
+    }
+    moveViewPortDistance(d) {
+        if (this.viewPortDistance + d < 0.0001) d /= 10;
+        this.viewPortDistance += d;
+        if (this.viewPortDistance < 0.0001) this.viewPortDistance = 0.0001;
+        console.log(this.viewPortDistance);
+    }
+}
+
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4ofT3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "sketch1", ()=>sketch1);
+var _constraints = require("../solver/constraints");
+var _forces = require("../solver/forces");
+var _magicGravity = require("../entities/magicGravity");
+var _p5 = require("p5");
+var _immovableCircle = require("../entities/immovableCircle");
+function sketch1(sketch) {
+    const worldSize = 600;
+    const globalConstraint = (0, _constraints.circleConstraint)(sketch.p5.createVector(worldSize, worldSize), worldSize);
+    sketch.solver.addConstraint(globalConstraint);
+    const centerGravity = (0, _forces.gravityCenter)(sketch.p5.createVector(worldSize, worldSize), 2);
+    sketch.solver.addForce(centerGravity);
+    const globalGravity = (0, _forces.gravity)(3);
+    sketch.solver.addForce(globalGravity);
+    // Add Magic Gravity
+    const magicGravity = new (0, _magicGravity.MagicGravityEntity)(sketch, {
+        center: new (0, _p5.Vector)(worldSize, worldSize),
+        force: 2,
+        angle: 0,
+        r: 400
+    });
+    sketch.addEntity(magicGravity);
+    sketch.solver.addForce((0, _forces.airDensity)(0.0001));
+    const block = new (0, _immovableCircle.ImmovableCircleEntity)(sketch, {
+        center: new (0, _p5.Vector)(400, 400),
+        r: 50
+    });
+    sketch.addEntity(block);
+    const block2 = new (0, _immovableCircle.ImmovableCircleEntity)(sketch, {
+        center: new (0, _p5.Vector)(300, 600),
+        r: 50,
+        stroke: sketch.p5.color([
+            0,
+            250,
+            0
+        ]),
+        strokeWeight: 2
+    });
+    sketch.addEntity(block2);
+}
+
+},{"../solver/constraints":"fl8E0","../solver/forces":"hFC7C","../entities/magicGravity":"f3R8Z","p5":"7Uk5U","../entities/immovableCircle":"5tcxO","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fl8E0":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "circleConstraint", ()=>circleConstraint);
+parcelHelpers.export(exports, "negativeCircleConstraint", ()=>negativeCircleConstraint);
+parcelHelpers.export(exports, "distance", ()=>distance);
+var _p5 = require("p5");
+function circleConstraint(center, r) {
+    const r2 = r * r;
+    return function(obj) {
+        const diff = (0, _p5.Vector).sub(obj.position, center);
+        const max = r - obj.size / 2;
+        if (diff.mag() > max) {
+            diff.setMag(max);
+            obj.position.set((0, _p5.Vector).add(center, diff));
+        }
+    };
+}
+function negativeCircleConstraint(center, r) {
+    const r2 = r * r;
+    return function(obj) {
+        const diff = (0, _p5.Vector).sub(obj.position, center);
+        const min = r + obj.size / 2;
+        if (diff.mag() < min) {
+            diff.setMag(min);
+            obj.position.set((0, _p5.Vector).add(center, diff));
+        }
+    };
+}
+function distance(obj1, obj2, r) {
+    return function(obj) {
+        if (obj !== obj1 && obj !== obj2) return;
+        const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
+        const distance = between.mag();
+        if (distance < r) {
+            const delta = r - distance;
+            if (delta < 0.001) return;
+            between.normalize();
+            obj1.position.add((0, _p5.Vector).mult(between, delta / 2));
+            obj2.position.add((0, _p5.Vector).mult(between, -delta / 2));
+        }
+        if (distance > r) {
+            const delta = distance - r;
+            if (delta < 0.001) return;
+            between.normalize();
+            obj1.position.sub((0, _p5.Vector).mult(between, delta / 2));
+            obj2.position.sub((0, _p5.Vector).mult(between, -delta / 2));
+        }
+    };
+}
+
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hFC7C":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "gravity", ()=>gravity);
+parcelHelpers.export(exports, "gravityCenter", ()=>gravityCenter);
+parcelHelpers.export(exports, "airDensity", ()=>airDensity);
+var _p5 = require("p5");
+const WORLD_COEFFICIENT = 10000;
+function gravity(value = 9.81) {
+    const force = new (0, _p5.Vector)(0, value / WORLD_COEFFICIENT);
+    return function(obj) {
+        obj.applyForce(force);
+    };
+}
+function gravityCenter(center, value = 9.81) {
+    return function(obj) {
+        const direction = (0, _p5.Vector).sub(obj.position, center);
+        if (direction.magSq() < 0.000000001) return;
+        obj.applyForce(direction.setMag(-value / WORLD_COEFFICIENT));
+    };
+}
+function airDensity(density) {
+    return function(obj) {
+        const velocity = (0, _p5.Vector).sub(obj.position, obj.previousPosition);
+        obj.applyForce(velocity.setMag(-density));
+    };
+}
+
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"f3R8Z":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MagicGravityEntity", ()=>MagicGravityEntity);
+var _entity = require("./entity");
+var _p5 = require("p5");
+var _forces = require("../solver/forces");
+class MagicGravityEntity extends (0, _entity.Entity) {
+    constructor(sketch, config){
+        super(sketch);
+        this.visible = false;
+        this.center = config.center.copy();
+        this.position = new (0, _p5.Vector)();
+        this.r = config.r;
+        this.calculatePosition(config.angle);
+        this.force = (0, _forces.gravityCenter)(this.position, config.force);
+    }
+    calculatePosition(angle) {
+        const heading = this.sketch.p5.createVector(this.r, 0);
+        heading.setHeading(angle / this.sketch.p5.PI);
+        this.position.set((0, _p5.Vector).add(this.center, heading));
+    }
+    add() {
+        this.sketch.solver.addForce(this.force);
+        this.visible = true;
+    }
+    draw() {
+        if (!this.visible) return;
+        // Move Magic Center
+        this.calculatePosition(this.sketch.p5.frameCount * 0.02);
+        // Draw Gravity Point
+        this.sketch.p5.strokeWeight(10);
+        this.sketch.p5.stroke("red");
+        this.sketch.p5.point(this.position);
+    }
+    remove() {
+        this.sketch.solver.removeForce(this.force);
+        this.visible = false;
+    }
+}
+
+},{"./entity":"1vVeB","p5":"7Uk5U","../solver/forces":"hFC7C","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"1vVeB":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Entity", ()=>Entity);
+class Entity {
+    constructor(sketch){
+        this.sketch = sketch;
+    }
+    add() {}
+    draw(debug = false) {}
+    handleKeys() {}
+    remove() {}
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5tcxO":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "ImmovableCircleEntity", ()=>ImmovableCircleEntity);
+var _entity = require("./entity");
+var _constraints = require("../solver/constraints");
+class ImmovableCircleEntity extends (0, _entity.Entity) {
+    constructor(sketch, config){
+        super(sketch);
+        this.visible = false;
+        this.config = config;
+        this.center = config.center.copy();
+        this.r = config.r;
+        this.visible = false;
+        this.constraint = (0, _constraints.negativeCircleConstraint)(this.center, this.r);
+    }
+    add() {
+        this.sketch.solver.addConstraint(this.constraint);
+        this.visible = true;
+    }
+    remove() {
+        this.sketch.solver.removeConstraint(this.constraint);
+    }
+    draw() {
+        super.draw();
+        if (this.config.stroke) this.sketch.p5.stroke(this.config.stroke);
+        if (this.config.fill) this.sketch.p5.fill(this.config.fill);
+        if (this.config.strokeWeight) this.sketch.p5.strokeWeight(this.config.strokeWeight);
+        this.sketch.p5.circle(this.center.x, this.center.y, this.r * 2);
+    }
+}
+
+},{"./entity":"1vVeB","../solver/constraints":"fl8E0","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fxAdD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "PointEntity", ()=>PointEntity);
+var _entity = require("./entity");
+var _objects = require("../solver/objects");
+class PointEntity extends (0, _entity.Entity) {
+    constructor(sketch, config){
+        super(sketch);
+        this.point = new (0, _objects.Point)(config.position, config.size || 5);
+        this.config = config;
+    }
+    add() {
+        super.add();
+        this.sketch.solver.addObject(this.point);
+    }
+    draw(debug) {
+        super.draw(debug);
+        if (this.config.stroke) this.sketch.p5.stroke(this.config.stroke);
+        this.sketch.p5.strokeWeight(this.point.size);
+        this.sketch.p5.point(this.point.position);
+        if (debug) {
+            this.sketch.p5.strokeWeight(1);
+            this.sketch.p5.stroke("#00ff00");
+            this.sketch.p5.noFill();
+            this.sketch.p5.rect(this.point.boundingBox.left, this.point.boundingBox.top, this.point.boundingBox.width, this.point.boundingBox.height);
+        }
+    }
+}
+
+},{"./entity":"1vVeB","../solver/objects":"8fvfl","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8fvfl":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Point", ()=>Point);
+var _p5 = require("p5");
+var _rect = require("../math/rect");
+class Point {
+    constructor(position, size = 5){
+        this.size = 5;
+        this._position = position.copy();
+        this._previousPosition = position.copy();
+        this.acceleration = new (0, _p5.Vector)(0, 0);
+        this.size = size;
+        this.sizeVector = new (0, _p5.Vector)(this.size, this.size);
+        this._boundingBox = new (0, _rect.Rect)(this.position, this.sizeVector);
+    }
+    applyForce(force) {
+        this.acceleration.add(force);
+    }
+    update(time) {
+        let velocity = (0, _p5.Vector).sub(this.position, this.previousPosition);
+        velocity.add(this.acceleration.mult(time * time));
+        this.previousPosition.set(this._position);
+        this._position.add(velocity);
+        this.acceleration.mult(0);
+        if (this._position !== this._boundingBox.position) debugger;
+    }
+    get boundingBox() {
+        return this._boundingBox;
+    }
+    get position() {
+        return this._position;
+    }
+    get previousPosition() {
+        return this._previousPosition;
+    }
+}
+class Box {
+    constructor(position, size){
+        this.position = position;
+        this.size = size;
+    }
+}
+
+},{"p5":"7Uk5U","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["feyvK","9OAhZ"], "9OAhZ", "parcelRequire62ee")
 
 //# sourceMappingURL=index.be1315ec.js.map

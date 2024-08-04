@@ -1,6 +1,5 @@
 import {Point} from "./objects";
 import {Vector} from "p5";
-import {Vec2Math} from "../../../src/render/vector/vec2Math";
 
 const WORLD_COEFFICIENT = 10000;
 

@@ -7,10 +7,22 @@ export function circleConstraint(center: Vector, r: number): ConstraintFunction 
     const r2 = r * r;
     return function (obj: Point) {
         const diff = Vector.sub(obj.position, center);
-        if (diff.magSq() > r2) {
-            diff.setMag(r);
-            obj.position = Vector.add(center, diff);
-            //obj.previousPosition = obj.position.copy();
+        const max = r - obj.size / 2;
+        if (diff.mag() > max) {
+            diff.setMag(max);
+            obj.position.set(Vector.add(center, diff));
+        }
+    }
+}
+
+export function negativeCircleConstraint(center: Vector, r: number): ConstraintFunction {
+    const r2 = r * r;
+    return function (obj: Point) {
+        const diff = Vector.sub(obj.position, center);
+        const min = r + obj.size / 2;
+        if (diff.mag() < min) {
+            diff.setMag(min);
+            obj.position.set(Vector.add(center, diff));
         }
     }
 }

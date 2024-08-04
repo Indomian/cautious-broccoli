@@ -25,6 +25,11 @@
   },
   "dependencies": {
     "@types/p5": "^1.7.6",
+    "jest-environment-jsdom": "^29.7.0",
     "p5": "^1.9.4"
+  },
+  "jest": {
+    "verbose": true,
+    "testEnvironment": "jsdom"
   }
 }
