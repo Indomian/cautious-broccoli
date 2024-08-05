@@ -10,6 +10,7 @@ export class Sketch {
     solver: Solver;
     world: World;
     entities: Entity[];
+    drawDebug: boolean = false;
 
     constructor(p5: P5) {
         this.p5 = p5;
@@ -17,6 +18,8 @@ export class Sketch {
         this.world = new World(this.p5);
         this.solver = new Solver(this);
         this.entities = [];
+
+        this.p5.windowResized = this.windowResized;
     }
 
     addEntity(entity: Entity) {
@@ -30,5 +33,10 @@ export class Sketch {
             this.entities[index].remove();
             this.entities.splice(index, 1);
         }
+    }
+
+    windowResized = () => {
+        this.p5.resizeCanvas(this.p5.windowWidth, this.p5.windowHeight);
+        this.world.viewPortSize.set(this.p5.windowWidth, this.p5.windowHeight);
     }
 }

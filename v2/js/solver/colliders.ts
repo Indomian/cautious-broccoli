@@ -8,7 +8,6 @@ import {Rect} from "../math/rect";
  * @param {Point} obj2
  */
 export function collidePoints(obj1: Point, obj2: Point) {
-
     const between = Vector.sub(obj1.position, obj2.position);
     const distance = between.mag();
     const requiredDistance = (obj1.size + obj2.size) / 2;
@@ -21,8 +20,11 @@ export function collidePoints(obj1: Point, obj2: Point) {
 
         between.normalize();
 
-        obj1.position.add(Vector.mult(between, delta * obj1.size * 0.5 / requiredDistance));
-        obj2.position.add(Vector.mult(between, -delta * obj2.size * 0.5 / requiredDistance));
+        obj1.position.add(Vector.mult(between, delta * obj2.size * 0.5 / requiredDistance));
+        obj2.position.add(Vector.mult(between, -delta * obj1.size * 0.5 / requiredDistance));
+
+        obj1.collided = true;
+        obj2.collided = true;
     }
 }
 

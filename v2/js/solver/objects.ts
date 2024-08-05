@@ -1,6 +1,8 @@
 import {Vector} from "p5";
 import {Rect} from "../math/rect";
 
+const MINIMUM_ACC = 0.0000001;
+
 export class Point {
     _position: Vector;
     _previousPosition: Vector;
@@ -10,6 +12,10 @@ export class Point {
     sizeVector: Vector;
 
     _boundingBox: Rect;
+
+    collided: boolean = false;
+
+    _prevTime: number = 1;
 
     constructor(position: Vector, size: number = 5) {
         this._position = position.copy();
@@ -28,14 +34,13 @@ export class Point {
 
     update(time: number) {
         let velocity = Vector.sub(this.position, this.previousPosition);
-        velocity.add(this.acceleration.mult(time * time));
+        velocity.add(this.acceleration.mult(time));
         this.previousPosition.set(this._position);
         this._position.add(velocity);
         this.acceleration.mult(0);
 
-        if (this._position !== this._boundingBox.position) {
-            debugger
-        }
+        this.collided = false;
+        this._prevTime = time;
     }
 
     get boundingBox(): Rect {

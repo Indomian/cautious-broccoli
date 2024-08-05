@@ -9,8 +9,8 @@ import {QuadTreeSolverSpace} from "./quadTreeSolverSpace";
 import {Sketch} from "../sketch";
 import {Rect} from "../math/rect";
 
-const SOLVER_SUBSTEPS = 2;
-const COLLISION_RANGE = new Vector(40, 40);
+const SOLVER_SUBSTEPS = 4;
+const COLLISION_RANGE = new Vector(80, 80);
 
 export class Solver {
     world: World;
@@ -33,6 +33,13 @@ export class Solver {
 
     addObject(obj: Point) {
         this.objects.push(obj);
+    }
+
+    removeObject(obj: Point) {
+        const index = this.objects.indexOf(obj);
+        if (index !== -1) {
+            this.objects.splice(index, 1);
+        }
     }
 
     addForce(force: ForceFunction) {

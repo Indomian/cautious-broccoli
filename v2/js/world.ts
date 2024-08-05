@@ -18,14 +18,29 @@ export class World {
         this.viewPortDistance = 1;
     }
 
-    moveViewPort(d: Vector);
-    moveViewPort(dx: number, dy: number);
-    moveViewPort(dxord: any, dy?: number){
+    moveViewPort(d: Vector): void;
+    moveViewPort(dx: number, dy: number): void;
+    moveViewPort(dxord: any, dy?: number): void{
         if (dy !== undefined) {
             this.viewPortPosition.add(dxord, dy);
         } else {
-            this.viewPortDistance.add(dxord);
+            this.viewPortPosition.add(dxord);
         }
+    }
+
+    centerViewPort(center: Vector): void;
+    centerViewPort(x: number, y: number): void;
+    centerViewPort(a: any, b?: any): void {
+        let center;
+        if (b !== undefined) {
+            center = new Vector(a, b);
+        } else {
+            center = a;
+        }
+
+        this.viewPortPosition.set(
+            center.copy().mult(-1).add(this.viewPortSize.copy().mult(0.5))
+        );
     }
 
     moveViewPortDistance(d: number) {

@@ -44,6 +44,7 @@ export class PointEntity extends Entity {
             this.sketch.p5.strokeWeight(1);
             this.sketch.p5.stroke('#00ff00');
             this.sketch.p5.noFill();
+            this.sketch.p5.rectMode(this.sketch.p5.CORNER);
             this.sketch.p5.rect(
                 this.point.boundingBox.left,
                 this.point.boundingBox.top,
