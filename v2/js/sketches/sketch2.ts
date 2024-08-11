@@ -1,3 +1,5 @@
+import * as P5 from "p5";
+
 import {Sketch} from "../sketch";
 import {Touch, Touches} from "../touch";
 import {sketch1} from "./sketch1";
@@ -7,9 +9,35 @@ import {RectBoxEntity} from "../entities/rectBox";
 import {ActorEntity} from "../entities/actor";
 import {airDensity, gravity} from "../solver/forces";
 import {NegativeRectBoxEntity} from "../entities/negativeRectBox";
+import {AverageSet} from "../stats/average";
+
+class DeltaTimeStats extends AverageSet {
+    p5: P5;
+    position: Vector;
+
+    constructor(p5: P5, ticks: number = 10, pos: Vector = undefined) {
+        super(ticks);
+        this.p5 = p5;
+        if (!pos) {
+            this.position = new Vector(50, 80);
+        } else {
+            this.position = pos;
+        }
+    }
+
+    tick() {
+        super.tick(this.p5.deltaTime);
+    }
+
+    draw() {
+        this.p5.text(`Delta time: ${this.average}`, this.position.x, this.position.y);
+    }
+}
 
 export class Sketch2 extends Sketch {
-    constructor(p5) {
+    deltaStats: DeltaTimeStats;
+
+    constructor(p5: P5) {
         super(p5);
 
         p5.setup = this.setup;
@@ -21,6 +49,8 @@ export class Sketch2 extends Sketch {
         p5.mouseWheel = this.mouseWheel;
 
         p5.keyPressed = this.keyPressed;
+
+        this.deltaStats = new DeltaTimeStats(p5);
     }
 
     setup = () => {
@@ -40,7 +70,8 @@ export class Sketch2 extends Sketch {
         this.handleMouseIsDown();
 
         // Handle The Solver
-        this.solver.solve(this.p5.deltaTime);
+        // Divide p5 deltaTime by 1000 to have it in seconds
+        this.solver.solve(this.p5.deltaTime / 1000);
 
         // Render Everything
         this.p5.background(220);
@@ -67,6 +98,8 @@ export class Sketch2 extends Sketch {
             this.solver.draw();
         }
 
+        this.deltaStats.tick();
+
         // Debug Info
         this.p5.resetMatrix();
         this.p5.stroke('black');
@@ -77,6 +110,8 @@ export class Sketch2 extends Sketch {
         this.p5.text(`FPS: ${fps}`, 50, 50);
         this.p5.text('Click me to add points', 50, 60);
         this.p5.text(`Total points: ${this.solver.objects.length}`, 50, 70);
+        this.deltaStats.draw();
+        this.p5.text(`Average collisions: ${this.solver.possibleObjectsStats.average}`, 50, 100);
     }
 
     mouseClicked = (event: MouseEvent) => {
@@ -165,11 +200,14 @@ function sketch2(sketch: Sketch) {
         position: new Vector(500, 500),
         size: 40,
         stroke: sketch.p5.color('#FF0000'),
+        jumpForce: new Vector(0, -60000),
+        runForce: new Vector(5000, 0),
+        mass: 2
     });
 
     sketch.addEntity(actor);
 
-    const globalGravity = gravity(9);
+    const globalGravity = gravity(120);
     sketch.solver.addForce(globalGravity);
     sketch.solver.addForce(airDensity(0.0001));
 }

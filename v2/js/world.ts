@@ -55,4 +55,9 @@ export class World {
         }
         console.log(this.viewPortDistance);
     }
+
+    setViewPortDistance(d: number) {
+        this.viewPortDistance = d;
+        console.log(this.viewPortDistance);
+    }
 }

@@ -1,24 +1,28 @@
 import {Entity} from "./entity";
 import {Sketch} from "../sketch";
 import {Color, Vector} from "p5";
-import {Point} from "../solver/objects";
+import {PhysicsPoint, Point} from "../solver/objects";
 
 export interface PointConfiguration {
     position: Vector;
     size?: number;
     stroke?: Color;
+    mass?: number;
+    bounce?: number;
 }
 
 export class PointEntity extends Entity {
-    point: Point;
+    point: PhysicsPoint;
     config: PointConfiguration;
 
     constructor(sketch: Sketch, config: PointConfiguration) {
         super(sketch);
 
-        this.point = new Point(
+        this.point = new PhysicsPoint(
             config.position,
-            config.size || 5
+            config.size || 5,
+            config.mass || 1,
+            config.bounce || 1
         )
 
         this.config = config;

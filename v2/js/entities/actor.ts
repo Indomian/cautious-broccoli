@@ -2,7 +2,7 @@ import {Entity} from "./entity";
 import {Sketch} from "../sketch";
 import {ConstraintFunction, negativeCircleConstraint} from "../solver/constraints";
 import {Vector, Color} from "p5";
-import {Point} from "../solver/objects";
+import {PhysicsPoint, Point} from "../solver/objects";
 
 interface ActorConfiguration {
     position: Vector;
@@ -10,23 +10,34 @@ interface ActorConfiguration {
     fill?: Color;
     stroke?: Color;
     strokeWeight?: number;
+    jumpForce?: Vector;
+    runForce?: Vector;
+    mass?: number;
+    bounce?: number;
 }
 
 export class ActorEntity extends Entity {
-    point: Point;
+    point: PhysicsPoint;
     visible: boolean = false;
     config: ActorConfiguration;
     airBorn: boolean = false;
+    jumpForce: Vector;
+    runForce: Vector;
 
     constructor(sketch: Sketch, config: ActorConfiguration) {
         super(sketch);
 
         this.config = config;
 
-        this.point = new Point(
+        this.point = new PhysicsPoint(
             config.position,
-            config.size
+            config.size,
+            config.mass || 10,
+            config.bounce || 1
         )
+
+        this.jumpForce = config?.jumpForce || new Vector(0, -300);
+        this.runForce = config?.runForce || new Vector(40, 0);
 
         this.visible = false;
     }
@@ -46,6 +57,7 @@ export class ActorEntity extends Entity {
         this.airBorn = !this.point.collided;
 
         this.sketch.world.centerViewPort(this.point.position);
+
 
         if (this.config.stroke) {
             this.sketch.p5.stroke(this.config.stroke);
@@ -76,8 +88,8 @@ export class ActorEntity extends Entity {
     handleKeys() {
         super.handleKeys();
 
-        const jumpForce = new Vector(0, -0.3);
-        const runForce = new Vector(0.01, 0);
+        const jumpForce = this.jumpForce.copy();
+        const runForce = this.runForce.copy();
 
         if (this.sketch.p5.keyIsDown(this.sketch.p5.LEFT_ARROW)) {
             this.point.applyForce(runForce.mult(-1));

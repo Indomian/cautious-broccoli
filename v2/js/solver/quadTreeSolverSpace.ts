@@ -38,7 +38,7 @@ export class QuadTree {
 
     insert(obj: Point): boolean {
         if (!this.boundary.contains(obj.position)) {
-            return;
+            return false;
         }
 
         if (this.objects.length < this.capacity) {
@@ -75,15 +75,14 @@ export class QuadTree {
         this.nodes[QuadTree.SW] = new QuadTree(this.boundary.sw, this.capacity);
     }
 
-    query(range: Rect): Point[] {
-        let result = [];
+    query(range: Rect, result: Point[]): number {
         if (!this.boundary.intersect(range)) {
-            return result
+            return 0;
         }
 
         if (this.objects.length === 0) {
             this.divided = false;
-            return result;
+            return 0;
         }
 
         this.objects.forEach(obj => {
@@ -93,10 +92,10 @@ export class QuadTree {
         });
 
         if (this.divided) {
-            this.nodes.forEach(subTree => subTree.query(range).forEach(obj => result.push(obj)))
+            this.nodes.forEach(subTree => subTree.query(range, result))
         }
 
-        return result;
+        return result.length;
     }
 
     debugRender(p5: P5) {

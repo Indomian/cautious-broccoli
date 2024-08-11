@@ -32599,6 +32599,21 @@ var _rectBox = require("../entities/rectBox");
 var _actor = require("../entities/actor");
 var _forces = require("../solver/forces");
 var _negativeRectBox = require("../entities/negativeRectBox");
+var _average = require("../stats/average");
+class DeltaTimeStats extends (0, _average.AverageSet) {
+    constructor(p5, ticks = 10, pos){
+        super(ticks);
+        this.p5 = p5;
+        if (!pos) this.position = new (0, _p5.Vector)(50, 80);
+        else this.position = pos;
+    }
+    tick() {
+        super.tick(this.p5.deltaTime);
+    }
+    draw() {
+        this.p5.text(`Delta time: ${this.average}`, this.position.x, this.position.y);
+    }
+}
 class Sketch2 extends (0, _sketch.Sketch) {
     constructor(p5){
         super(p5);
@@ -32613,7 +32628,8 @@ class Sketch2 extends (0, _sketch.Sketch) {
             this.handleKeyIsDown();
             this.handleMouseIsDown();
             // Handle The Solver
-            this.solver.solve(this.p5.deltaTime);
+            // Divide p5 deltaTime by 1000 to have it in seconds
+            this.solver.solve(this.p5.deltaTime / 1000);
             // Render Everything
             this.p5.background(220);
             this.p5.fill("white");
@@ -32627,6 +32643,7 @@ class Sketch2 extends (0, _sketch.Sketch) {
             this.p5.rect(0, 0, this.world.width, this.world.height);
             this.entities.forEach((entity)=>entity.draw(this.drawDebug));
             if (this.drawDebug) this.solver.draw();
+            this.deltaStats.tick();
             // Debug Info
             this.p5.resetMatrix();
             this.p5.stroke("black");
@@ -32636,6 +32653,8 @@ class Sketch2 extends (0, _sketch.Sketch) {
             this.p5.text(`FPS: ${fps}`, 50, 50);
             this.p5.text("Click me to add points", 50, 60);
             this.p5.text(`Total points: ${this.solver.objects.length}`, 50, 70);
+            this.deltaStats.draw();
+            this.p5.text(`Average collisions: ${this.solver.possibleObjectsStats.average}`, 50, 100);
         };
         this.mouseClicked = (event)=>{
             console.log(event);
@@ -32681,6 +32700,7 @@ class Sketch2 extends (0, _sketch.Sketch) {
         p5.mousePressed = this.mouseReleased;
         p5.mouseWheel = this.mouseWheel;
         p5.keyPressed = this.keyPressed;
+        this.deltaStats = new DeltaTimeStats(p5);
     }
 }
 function sketch2(sketch) {
@@ -32707,15 +32727,18 @@ function sketch2(sketch) {
     const actor = new (0, _actor.ActorEntity)(sketch, {
         position: new (0, _p5.Vector)(500, 500),
         size: 40,
-        stroke: sketch.p5.color("#FF0000")
+        stroke: sketch.p5.color("#FF0000"),
+        jumpForce: new (0, _p5.Vector)(0, -60000),
+        runForce: new (0, _p5.Vector)(5000, 0),
+        mass: 2
     });
     sketch.addEntity(actor);
-    const globalGravity = (0, _forces.gravity)(9);
+    const globalGravity = (0, _forces.gravity)(120);
     sketch.solver.addForce(globalGravity);
     sketch.solver.addForce((0, _forces.airDensity)(0.0001));
 }
 
-},{"../sketch":"bSrvC","p5":"7Uk5U","../entities/point":"fxAdD","../entities/rectBox":"aEAPu","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../entities/actor":"jmJyJ","../solver/forces":"hFC7C","../entities/negativeRectBox":"bliJ5"}],"bSrvC":[function(require,module,exports) {
+},{"../sketch":"bSrvC","p5":"7Uk5U","../entities/point":"fxAdD","../entities/rectBox":"aEAPu","../entities/actor":"jmJyJ","../solver/forces":"hFC7C","../entities/negativeRectBox":"bliJ5","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../stats/average":"hpU7w"}],"bSrvC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Sketch", ()=>Sketch);
@@ -32839,9 +32862,9 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Solver", ()=>Solver);
 var _p5 = require("p5");
-var _colliders = require("./colliders");
 var _quadTreeSolverSpace = require("./quadTreeSolverSpace");
 var _rect = require("../math/rect");
+var _average = require("../stats/average");
 const SOLVER_SUBSTEPS = 4;
 const COLLISION_RANGE = new (0, _p5.Vector)(80, 80);
 class Solver {
@@ -32852,6 +32875,7 @@ class Solver {
         this.forces = [];
         this.constraints = [];
         this.space = new (0, _quadTreeSolverSpace.QuadTreeSolverSpace)(this.sketch);
+        this.possibleObjectsStats = new (0, _average.AverageSet)();
     }
     addObject(obj) {
         this.objects.push(obj);
@@ -32882,56 +32906,29 @@ class Solver {
     }
     collisions(obj) {
         const range = new (0, _rect.Rect)(obj.position, COLLISION_RANGE);
-        const possibleObjects = this.space.root.query(range);
-        possibleObjects.forEach((anotherObj)=>{
-            if (obj === anotherObj) return;
-            (0, _colliders.collidePoints)(obj, anotherObj);
-        });
+        const possibleObjects = [];
+        if (!this.space.root.query(range, possibleObjects)) return;
+        possibleObjects.forEach((anotherObj)=>obj.collide(anotherObj));
+        this.possibleObjectsStats.tick(possibleObjects.length);
     }
     solve(time) {
-        this.processOptimizations();
         let step = time / SOLVER_SUBSTEPS;
-        for(let i = 0; i < SOLVER_SUBSTEPS; i++)this.objects.forEach((obj)=>{
-            this.forces.forEach((force)=>force(obj));
-            obj.update(step);
-            this.collisions(obj);
-            this.constraints.forEach((constraint)=>constraint(obj));
-        });
+        for(let i = 0; i < SOLVER_SUBSTEPS; i++){
+            this.processOptimizations();
+            this.objects.forEach((obj)=>{
+                this.forces.forEach((force)=>force(obj));
+                obj.update(step);
+                this.collisions(obj);
+                this.constraints.forEach((constraint)=>constraint(obj));
+            });
+        }
     }
     draw() {
         this.space.debugRender();
     }
 }
 
-},{"p5":"7Uk5U","./colliders":"iMYWA","./quadTreeSolverSpace":"ca1ix","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMYWA":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-/**
- * Collision between 2 balls objects
- * @param {Point} obj1
- * @param {Point} obj2
- */ parcelHelpers.export(exports, "collidePoints", ()=>collidePoints);
-parcelHelpers.export(exports, "pointInRange", ()=>pointInRange);
-var _p5 = require("p5");
-function collidePoints(obj1, obj2) {
-    const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
-    const distance = between.mag();
-    const requiredDistance = (obj1.size + obj2.size) / 2;
-    if (distance < requiredDistance) {
-        const delta = requiredDistance - distance;
-        if (delta < 0.001) return;
-        between.normalize();
-        obj1.position.add((0, _p5.Vector).mult(between, delta * obj2.size * 0.5 / requiredDistance));
-        obj2.position.add((0, _p5.Vector).mult(between, -delta * obj1.size * 0.5 / requiredDistance));
-        obj1.collided = true;
-        obj2.collided = true;
-    }
-}
-function pointInRange(obj, range) {
-    return range.contains(obj.position);
-}
-
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ca1ix":[function(require,module,exports) {
+},{"p5":"7Uk5U","./quadTreeSolverSpace":"ca1ix","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../stats/average":"hpU7w"}],"ca1ix":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "QuadTree", ()=>QuadTree);
@@ -32959,7 +32956,7 @@ class QuadTree {
         return this.boundary.diag > this.minimumDiag;
     }
     insert(obj) {
-        if (!this.boundary.contains(obj.position)) return;
+        if (!this.boundary.contains(obj.position)) return false;
         if (this.objects.length < this.capacity) {
             this.objects.push(obj);
             return true;
@@ -32985,18 +32982,17 @@ class QuadTree {
         this.nodes[QuadTree.SE] = new QuadTree(this.boundary.se, this.capacity);
         this.nodes[QuadTree.SW] = new QuadTree(this.boundary.sw, this.capacity);
     }
-    query(range) {
-        let result = [];
-        if (!this.boundary.intersect(range)) return result;
+    query(range, result) {
+        if (!this.boundary.intersect(range)) return 0;
         if (this.objects.length === 0) {
             this.divided = false;
-            return result;
+            return 0;
         }
         this.objects.forEach((obj)=>{
             if ((0, _colliders.pointInRange)(obj, range)) result.push(obj);
         });
-        if (this.divided) this.nodes.forEach((subTree)=>subTree.query(range).forEach((obj)=>result.push(obj)));
-        return result;
+        if (this.divided) this.nodes.forEach((subTree)=>subTree.query(range, result));
+        return result.length;
     }
     debugRender(p5) {
         p5.strokeWeight(1);
@@ -33127,6 +33123,69 @@ class MathException extends Error {
 class MathExceptionRectSizeShouldBePositive extends MathException {
 }
 
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMYWA":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/**
+ * Collision between 2 balls objects
+ * @param {Point} obj1
+ * @param {Point} obj2
+ */ parcelHelpers.export(exports, "collidePoints", ()=>collidePoints);
+parcelHelpers.export(exports, "collidePhysicsPoints", ()=>collidePhysicsPoints);
+parcelHelpers.export(exports, "pointInRange", ()=>pointInRange);
+var _p5 = require("p5");
+function collidePoints(obj1, obj2) {
+    const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
+    const distance = between.mag();
+    const requiredDistance = (obj1.size + obj2.size) / 2;
+    if (distance < requiredDistance) {
+        const delta = requiredDistance - distance;
+        if (delta < 0.001) return;
+        between.normalize();
+        const k = delta * 0.5 / requiredDistance;
+        obj1.position.add((0, _p5.Vector).mult(between, k * obj2.size));
+        obj2.position.add((0, _p5.Vector).mult(between, -k * obj1.size));
+        obj1.collided = true;
+        obj2.collided = true;
+    }
+}
+function collidePhysicsPoints(obj1, obj2) {
+    const between = (0, _p5.Vector).sub(obj1.position, obj2.position);
+    const distance = between.mag();
+    const requiredDistance = (obj1.size + obj2.size) / 2;
+    if (distance < requiredDistance) {
+        const delta = requiredDistance - distance;
+        if (delta < 0.001) return;
+        between.normalize();
+        const k = delta * 0.5 / requiredDistance; // Divide by 2, because later we will use obj.size and it is diameter, not radius
+        obj1.position.add((0, _p5.Vector).mult(between, k * obj2.size * obj2.mass / obj1.mass * obj1.bounce));
+        obj2.position.add((0, _p5.Vector).mult(between, -k * obj1.size * obj1.mass / obj2.mass * obj2.bounce));
+        obj1.collided = true;
+        obj2.collided = true;
+    }
+}
+function pointInRange(obj, range) {
+    return range.contains(obj.position);
+}
+
+},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hpU7w":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "AverageSet", ()=>AverageSet);
+class AverageSet {
+    constructor(ticks = 10){
+        this.stack = [];
+        this.maxTicks = ticks;
+    }
+    tick(value) {
+        this.stack.push(value);
+        if (this.stack.length > this.maxTicks) this.stack.shift();
+    }
+    get average() {
+        return this.stack.reduce((prevValue, currentValue)=>prevValue + currentValue, 0) / this.stack.length;
+    }
+}
+
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7Zbbj":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
@@ -33156,6 +33215,10 @@ class World {
         if (this.viewPortDistance < 0.0001) this.viewPortDistance = 0.0001;
         console.log(this.viewPortDistance);
     }
+    setViewPortDistance(d) {
+        this.viewPortDistance = d;
+        console.log(this.viewPortDistance);
+    }
 }
 
 },{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"fxAdD":[function(require,module,exports) {
@@ -33167,7 +33230,7 @@ var _objects = require("../solver/objects");
 class PointEntity extends (0, _entity.Entity) {
     constructor(sketch, config){
         super(sketch);
-        this.point = new (0, _objects.Point)(config.position, config.size || 5);
+        this.point = new (0, _objects.PhysicsPoint)(config.position, config.size || 5, config.mass || 1, config.bounce || 1);
         this.config = config;
     }
     add() {
@@ -33206,9 +33269,12 @@ class Entity {
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8fvfl":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "MINIMUM_ACC", ()=>MINIMUM_ACC);
 parcelHelpers.export(exports, "Point", ()=>Point);
+parcelHelpers.export(exports, "PhysicsPoint", ()=>PhysicsPoint);
 var _p5 = require("p5");
 var _rect = require("../math/rect");
+var _colliders = require("./colliders");
 const MINIMUM_ACC = 0.0000001;
 class Point {
     constructor(position, size = 5){
@@ -33218,6 +33284,7 @@ class Point {
         this._position = position.copy();
         this._previousPosition = position.copy();
         this.acceleration = new (0, _p5.Vector)(0, 0);
+        this._previousAcceleration = this.acceleration.copy();
         this.size = size;
         this.sizeVector = new (0, _p5.Vector)(this.size, this.size);
         this._boundingBox = new (0, _rect.Rect)(this.position, this.sizeVector);
@@ -33226,13 +33293,18 @@ class Point {
         this.acceleration.add(force);
     }
     update(time) {
-        let velocity = (0, _p5.Vector).sub(this.position, this.previousPosition);
-        velocity.add(this.acceleration.mult(time));
+        let velocity = this.velocity;
         this.previousPosition.set(this._position);
-        this._position.add(velocity);
+        const k = time * time / 2;
+        this._position.add(velocity.x * time + this.acceleration.x * k, velocity.y * time + this.acceleration.y * k);
+        this._previousAcceleration.set(this.acceleration);
         this.acceleration.mult(0);
         this.collided = false;
         this._prevTime = time;
+    }
+    collide(obj) {
+        if (obj === this) return;
+        (0, _colliders.collidePoints)(this, obj);
     }
     get boundingBox() {
         return this._boundingBox;
@@ -33243,6 +33315,27 @@ class Point {
     get previousPosition() {
         return this._previousPosition;
     }
+    get distance() {
+        return (0, _p5.Vector).sub(this.position, this.previousPosition);
+    }
+    get velocity() {
+        if (this._prevTime === 0) return new (0, _p5.Vector)(0, 0);
+        const prevVelocity = this.distance.div(this._prevTime);
+        const prevAcc = this._previousAcceleration.copy().mult(this._prevTime / 2);
+        return prevVelocity.add(prevAcc);
+    }
+}
+class PhysicsPoint extends Point {
+    constructor(position, size = 5, mass = 1, bounce = 1){
+        super(position, size);
+        this.mass = mass;
+        this.bounce = bounce;
+    }
+    collide(obj) {
+        if (this === obj) return;
+        if (obj instanceof PhysicsPoint) (0, _colliders.collidePhysicsPoints)(this, obj);
+        else (0, _colliders.collidePoints)(this, obj);
+    }
 }
 class Box {
     constructor(position, size){
@@ -33251,7 +33344,7 @@ class Box {
     }
 }
 
-},{"p5":"7Uk5U","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"aEAPu":[function(require,module,exports) {
+},{"p5":"7Uk5U","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./colliders":"iMYWA"}],"aEAPu":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "RectBoxEntity", ()=>RectBoxEntity);
@@ -33385,7 +33478,7 @@ function distance(obj1, obj2, r) {
     };
 }
 
-},{"p5":"7Uk5U","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","../math/rect":"goPXA"}],"jmJyJ":[function(require,module,exports) {
+},{"p5":"7Uk5U","../math/rect":"goPXA","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jmJyJ":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "ActorEntity", ()=>ActorEntity);
@@ -33398,7 +33491,9 @@ class ActorEntity extends (0, _entity.Entity) {
         this.visible = false;
         this.airBorn = false;
         this.config = config;
-        this.point = new (0, _objects.Point)(config.position, config.size);
+        this.point = new (0, _objects.PhysicsPoint)(config.position, config.size, config.mass || 10, config.bounce || 1);
+        this.jumpForce = (config === null || config === void 0 ? void 0 : config.jumpForce) || new (0, _p5.Vector)(0, -300);
+        this.runForce = (config === null || config === void 0 ? void 0 : config.runForce) || new (0, _p5.Vector)(40, 0);
         this.visible = false;
     }
     add() {
@@ -33426,8 +33521,8 @@ class ActorEntity extends (0, _entity.Entity) {
     }
     handleKeys() {
         super.handleKeys();
-        const jumpForce = new (0, _p5.Vector)(0, -0.3);
-        const runForce = new (0, _p5.Vector)(0.01, 0);
+        const jumpForce = this.jumpForce.copy();
+        const runForce = this.runForce.copy();
         if (this.sketch.p5.keyIsDown(this.sketch.p5.LEFT_ARROW)) this.point.applyForce(runForce.mult(-1));
         if (this.sketch.p5.keyIsDown(this.sketch.p5.RIGHT_ARROW)) this.point.applyForce(runForce);
         if (this.sketch.p5.keyIsDown(this.sketch.p5.UP_ARROW)) {
@@ -33443,9 +33538,8 @@ parcelHelpers.export(exports, "gravity", ()=>gravity);
 parcelHelpers.export(exports, "gravityCenter", ()=>gravityCenter);
 parcelHelpers.export(exports, "airDensity", ()=>airDensity);
 var _p5 = require("p5");
-const WORLD_COEFFICIENT = 10000;
 function gravity(value = 9.81) {
-    const force = new (0, _p5.Vector)(0, value / WORLD_COEFFICIENT);
+    const force = new (0, _p5.Vector)(0, value);
     return function(obj) {
         obj.applyForce(force);
     };
@@ -33454,13 +33548,13 @@ function gravityCenter(center, value = 9.81) {
     return function(obj) {
         const direction = (0, _p5.Vector).sub(obj.position, center);
         if (direction.magSq() < 0.000000001) return;
-        obj.applyForce(direction.setMag(-value / WORLD_COEFFICIENT));
+        obj.applyForce(direction.setMag(-value));
     };
 }
 function airDensity(density) {
     return function(obj) {
-        const velocity = (0, _p5.Vector).sub(obj.position, obj.previousPosition);
-        obj.applyForce(velocity.setMag(-density));
+        const velocity = obj.velocity;
+        obj.applyForce(velocity.mult(-density));
     };
 }
 

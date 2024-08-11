@@ -8,6 +8,8 @@ import {collidePoints} from "./colliders";
 import {QuadTreeSolverSpace} from "./quadTreeSolverSpace";
 import {Sketch} from "../sketch";
 import {Rect} from "../math/rect";
+import {TimeInSeconds} from "./types";
+import {AverageSet} from "../stats/average";
 
 const SOLVER_SUBSTEPS = 4;
 const COLLISION_RANGE = new Vector(80, 80);
@@ -19,6 +21,7 @@ export class Solver {
     forces: ForceFunction[];
     constraints: ConstraintFunction[];
     space: QuadTreeSolverSpace;
+    possibleObjectsStats: AverageSet;
 
     constructor(sketch: Sketch) {
         this.sketch = sketch;
@@ -28,7 +31,9 @@ export class Solver {
         this.forces = [];
         this.constraints = [];
 
-        this.space = new QuadTreeSolverSpace(this.sketch)
+        this.space = new QuadTreeSolverSpace(this.sketch);
+
+        this.possibleObjectsStats = new AverageSet();
     }
 
     addObject(obj: Point) {
@@ -73,21 +78,19 @@ export class Solver {
 
     collisions(obj: Point) {
         const range = new Rect(obj.position, COLLISION_RANGE);
-        const possibleObjects = this.space.root.query(range);
-        possibleObjects.forEach(anotherObj => {
-            if (obj === anotherObj) {
-                return;
-            }
+        const possibleObjects = [];
+        if (!this.space.root.query(range, possibleObjects)) {
+            return;
+        }
 
-            collidePoints(obj, anotherObj);
-        })
+        possibleObjects.forEach(anotherObj => obj.collide(anotherObj));
+        this.possibleObjectsStats.tick(possibleObjects.length);
     }
 
-    solve(time) {
-        this.processOptimizations();
-
+    solve(time: TimeInSeconds) {
         let step = time / SOLVER_SUBSTEPS;
         for (let i = 0; i < SOLVER_SUBSTEPS; i++) {
+            this.processOptimizations();
             this.objects.forEach(obj => {
                 this.forces.forEach(force => force(obj));
                 obj.update(step);
