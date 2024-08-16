@@ -1,4 +1,3 @@
-import * as P5 from "p5";
 import {Vector} from "p5";
 
 export class World {
@@ -8,7 +7,7 @@ export class World {
     viewPortPosition: Vector;
     viewPortDistance: number;
 
-    constructor(p5: P5) {
+    constructor() {
         this.width = 1000000;
         this.height = 1000000;
 

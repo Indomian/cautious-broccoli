@@ -1,14 +1,11 @@
+import * as P5 from "p5";
 import {Point} from "./objects";
 import {Sketch} from "../sketch";
 
 export class BaseSolverSpace {
-    sketch: Sketch;
-
-    constructor(sketch: Sketch) {
-        this.sketch = sketch;
-    }
+    constructor() {}
 
     clear() {};
     addObject(obj: Point) {};
-    debugRender() {};
+    debugRender(p5: P5) {};
 }

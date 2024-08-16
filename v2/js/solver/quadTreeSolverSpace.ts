@@ -3,7 +3,7 @@ import {BaseSolverSpace} from "./baseSolverSpace";
 import {Sketch} from "../sketch";
 import {Rect} from "../math/rect";
 import {Point} from "./objects";
-import {pointInRange} from "./colliders";
+import {objectInRange, pointInRange} from "./colliders";
 import {Vector} from "p5";
 
 export class QuadTree {
@@ -86,7 +86,7 @@ export class QuadTree {
         }
 
         this.objects.forEach(obj => {
-            if (pointInRange(obj, range)) {
+            if (objectInRange(obj, range)) {
                 result.push(obj);
             }
         });
@@ -121,14 +121,19 @@ export class QuadTree {
     static SW = 3;
 }
 
+export interface QuadTreeSolverSpaceConfig {
+    center: Vector,
+    size: Vector
+}
+
 export class QuadTreeSolverSpace extends BaseSolverSpace {
     root: QuadTree;
 
-    constructor(sketch: Sketch) {
-        super(sketch);
+    constructor(config: QuadTreeSolverSpaceConfig) {
+        super();
 
-        const center: Vector = new Vector(sketch.world.width / 2, sketch.world.height / 2);
-        const size: Vector = new Vector(sketch.world.width, sketch.world.height);
+        const center: Vector = config.center;
+        const size: Vector = config.size;
 
         this.root = new QuadTree(
             new Rect(
@@ -147,7 +152,7 @@ export class QuadTreeSolverSpace extends BaseSolverSpace {
         this.root.insert(obj);
     }
 
-    debugRender() {
-        this.root.debugRender(this.sketch.p5);
+    debugRender(p5: P5) {
+        this.root.debugRender(p5);
     }
 }

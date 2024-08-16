@@ -1,8 +1,10 @@
-import {Entity} from "./entity";
+import {Entity, EntityConfig} from "./entity";
 import {Sketch} from "../sketch";
 import {ConstraintFunction, negativeCircleConstraint} from "../solver/constraints";
 import {Vector, Color} from "p5";
 import {PhysicsPoint, Point} from "../solver/objects";
+import {Rect} from "../math/rect";
+import {COLLISION_RANGE} from "../solver/solver";
 
 interface ActorConfiguration {
     position: Vector;
@@ -17,17 +19,15 @@ interface ActorConfiguration {
 }
 
 export class ActorEntity extends Entity {
+    declare configuration: EntityConfig<ActorConfiguration>;
     point: PhysicsPoint;
     visible: boolean = false;
-    config: ActorConfiguration;
     airBorn: boolean = false;
     jumpForce: Vector;
     runForce: Vector;
 
     constructor(sketch: Sketch, config: ActorConfiguration) {
-        super(sketch);
-
-        this.config = config;
+        super(sketch, config);
 
         this.point = new PhysicsPoint(
             config.position,
@@ -59,8 +59,8 @@ export class ActorEntity extends Entity {
         this.sketch.world.centerViewPort(this.point.position);
 
 
-        if (this.config.stroke) {
-            this.sketch.p5.stroke(this.config.stroke);
+        if (this.configuration.value.stroke) {
+            this.sketch.p5.stroke(this.configuration.value.stroke);
         }
 
         if (this.airBorn) {
@@ -81,6 +81,15 @@ export class ActorEntity extends Entity {
                 this.point.boundingBox.top,
                 this.point.boundingBox.width,
                 this.point.boundingBox.height,
+            );
+
+            this.sketch.p5.stroke('#ff0000');
+            const collisionRange = new Rect(this.point.position, COLLISION_RANGE);
+            this.sketch.p5.rect(
+                collisionRange.left,
+                collisionRange.top,
+                collisionRange.width,
+                collisionRange.height,
             );
         }
     }

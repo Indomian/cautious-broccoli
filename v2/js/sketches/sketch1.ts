@@ -72,7 +72,7 @@ export class Sketch1 extends Sketch {
         this.entities.forEach(entity => entity.draw(this.drawDebug));
 
         if (this.drawDebug) {
-            this.solver.draw();
+            this.solver.draw(this.p5);
         }
 
         // Draw all objects as points

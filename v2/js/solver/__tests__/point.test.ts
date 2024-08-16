@@ -1,6 +1,5 @@
 import {MINIMUM_ACC, Point} from "../objects";
 import {Vector} from "p5";
-import {PointEntity} from "../../entities/point";
 
 describe('Test Point object behaviour and calculation', () => {
     it('Should be inactive if no forces applied', () => {

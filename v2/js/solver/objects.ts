@@ -5,10 +5,16 @@ import {collidePhysicsPoints, collidePoints} from "./colliders";
 
 export const MINIMUM_ACC = 0.0000001;
 
-export class Point {
+abstract class SolverObject {
     _position: Vector;
     _previousPosition: Vector;
 
+    abstract update(time: TimeInSeconds): void;
+    abstract applyForce(force: Vector): void;
+    abstract collide(obj: SolverObject): void;
+}
+
+export class Point extends SolverObject{
     acceleration: Vector;
     _previousAcceleration: Vector;
     size: number = 5;
@@ -21,6 +27,7 @@ export class Point {
     _prevTime: number = 1;
 
     constructor(position: Vector, size: number = 5) {
+        super();
         this._position = position.copy();
         this._previousPosition = position.copy();
 
@@ -89,6 +96,27 @@ export class Point {
     }
 }
 
+export class ImmovablePoint extends Point {
+    applyForce(force: Vector) {}
+
+    update(time: TimeInSeconds) {
+        this._position.set(this._previousPosition);
+        this.collided = false;
+    }
+
+    collide(obj: Point) {
+        if (obj instanceof ImmovablePoint) {
+            return;
+        }
+
+        super.collide(obj);
+    }
+
+    get velocity(): Speed {
+        return new Vector();
+    }
+}
+
 export class PhysicsPoint extends Point {
     mass: number;
     bounce: number;
@@ -113,15 +141,19 @@ export class PhysicsPoint extends Point {
     }
 }
 
-class Box {
-    position: Vector;
-    size: Vector;
+export class ImmovablePhysicsPoint extends PhysicsPoint {
+    applyForce(force: Vector) {}
 
-    constructor(
-        position: Vector,
-        size: Vector
-    ) {
-        this.position = position;
-        this.size = size;
+    update(time: TimeInSeconds) {
+        this._position.set(this._previousPosition);
+        this.collided = false;
+    }
+
+    collide(obj: PhysicsPoint) {
+        if (obj instanceof ImmovablePhysicsPoint || obj instanceof ImmovablePoint) {
+            return;
+        }
+
+        super.collide(obj);
     }
 }

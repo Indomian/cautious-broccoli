@@ -1,10 +1,15 @@
 import {Sketch} from "../sketch";
 
+interface EntityConfiguration {}
+
 export class Entity {
     sketch: Sketch;
+    configuration: EntityConfig<EntityConfiguration>;
+    visible: boolean = false;
 
-    constructor(sketch: Sketch) {
+    constructor(sketch: Sketch, configuration: EntityConfiguration) {
         this.sketch = sketch;
+        this.configuration = new EntityConfig(configuration);
     }
 
     add() {
@@ -20,5 +25,17 @@ export class Entity {
 
     remove() {
 
+    }
+}
+
+export class EntityConfig<Type> {
+    value: Type;
+
+    constructor(config: Type) {
+        this.value = config
+    }
+
+    toJSON() {
+        return JSON.stringify(this.value);
     }
 }

@@ -1,6 +1,6 @@
-import {Entity} from "./entity";
+import {Entity, EntityConfig} from "./entity";
 import {Sketch} from "../sketch";
-import {ConstraintFunction, negativeCircleConstraint, rectConstraint} from "../solver/constraints";
+import {ConstraintFunction, rectConstraint} from "../solver/constraints";
 import {Vector, Color} from "p5";
 
 export interface RectBoxConfiguration {
@@ -12,16 +12,14 @@ export interface RectBoxConfiguration {
 }
 
 export class RectBoxEntity extends Entity {
+    declare configuration: EntityConfig<RectBoxConfiguration>;
     constraint: ConstraintFunction;
     center: Vector;
     size: Vector;
     visible: boolean = false;
-    config: RectBoxConfiguration;
 
     constructor(sketch: Sketch, config: RectBoxConfiguration) {
-        super(sketch);
-
-        this.config = config;
+        super(sketch, config);
 
         this.center = config.center.copy();
         this.size = config.size.copy();
@@ -42,16 +40,16 @@ export class RectBoxEntity extends Entity {
     draw() {
         super.draw();
 
-        if (this.config.stroke) {
-            this.sketch.p5.stroke(this.config.stroke);
+        if (this.configuration.value.stroke) {
+            this.sketch.p5.stroke(this.configuration.value.stroke);
         }
 
-        if (this.config.fill) {
-            this.sketch.p5.fill(this.config.fill);
+        if (this.configuration.value.fill) {
+            this.sketch.p5.fill(this.configuration.value.fill);
         }
 
-        if (this.config.strokeWeight) {
-            this.sketch.p5.strokeWeight(this.config.strokeWeight);
+        if (this.configuration.value.strokeWeight) {
+            this.sketch.p5.strokeWeight(this.configuration.value.strokeWeight);
         }
 
         this.sketch.p5.rectMode(this.sketch.p5.CENTER);

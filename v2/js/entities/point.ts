@@ -1,7 +1,9 @@
-import {Entity} from "./entity";
+import {Entity, EntityConfig} from "./entity";
 import {Sketch} from "../sketch";
 import {Color, Vector} from "p5";
 import {PhysicsPoint, Point} from "../solver/objects";
+import {Rect} from "../math/rect";
+import {COLLISION_RANGE} from "../solver/solver";
 
 export interface PointConfiguration {
     position: Vector;
@@ -12,11 +14,11 @@ export interface PointConfiguration {
 }
 
 export class PointEntity extends Entity {
+    declare configuration: EntityConfig<PointConfiguration>;
     point: PhysicsPoint;
-    config: PointConfiguration;
 
     constructor(sketch: Sketch, config: PointConfiguration) {
-        super(sketch);
+        super(sketch, config);
 
         this.point = new PhysicsPoint(
             config.position,
@@ -24,8 +26,6 @@ export class PointEntity extends Entity {
             config.mass || 1,
             config.bounce || 1
         )
-
-        this.config = config;
     }
 
     add() {
@@ -36,8 +36,8 @@ export class PointEntity extends Entity {
 
     draw(debug) {
         super.draw(debug);
-        if (this.config.stroke) {
-            this.sketch.p5.stroke(this.config.stroke);
+        if (this.configuration.value.stroke) {
+            this.sketch.p5.stroke(this.configuration.value.stroke);
         }
 
         this.sketch.p5.strokeWeight(this.point.size);
@@ -54,6 +54,15 @@ export class PointEntity extends Entity {
                 this.point.boundingBox.top,
                 this.point.boundingBox.width,
                 this.point.boundingBox.height,
+            );
+
+            this.sketch.p5.stroke('#ff0000');
+            const collisionRange = new Rect(this.point.position, COLLISION_RANGE);
+            this.sketch.p5.rect(
+                collisionRange.left,
+                collisionRange.top,
+                collisionRange.width,
+                collisionRange.height,
             );
         }
     }

@@ -1,6 +1,8 @@
 {
     "compilerOptions": {
         "target": "ES2015",
-        "useDefineForClassFields": false
+        "useDefineForClassFields": false,
+        "jsx": "react",
+        "moduleResolution": "NodeNext"
     }
 }

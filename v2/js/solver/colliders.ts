@@ -45,8 +45,19 @@ export function collidePhysicsPoints(obj1: PhysicsPoint, obj2: PhysicsPoint) {
 
         const k = delta * 0.5 / requiredDistance; // Divide by 2, because later we will use obj.size and it is diameter, not radius
 
-        obj1.position.add(Vector.mult(between, k * obj2.size * obj2.mass / obj1.mass * obj1.bounce));
-        obj2.position.add(Vector.mult(between, -k * obj1.size * obj1.mass / obj2.mass * obj2.bounce));
+        const obj1delta = k * obj2.size * obj2.mass / obj1.mass * obj1.bounce;
+
+        obj1.position.add([
+            between.x * obj1delta,
+            between.y * obj1delta
+        ]);
+
+        const obj2delta = -k * obj1.size * obj1.mass / obj2.mass * obj2.bounce;
+
+        obj2.position.add([
+            between.x * obj2delta,
+            between.y * obj2delta
+        ]);
 
         obj1.collided = true;
         obj2.collided = true;
@@ -55,4 +66,8 @@ export function collidePhysicsPoints(obj1: PhysicsPoint, obj2: PhysicsPoint) {
 
 export function pointInRange(obj: Point, range: Rect) {
     return range.contains(obj.position);
+}
+
+export function objectInRange(obj: Point, range: Rect) {
+    return range.intersect(obj.boundingBox);
 }

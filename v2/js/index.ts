@@ -2,6 +2,7 @@
 
 import {Sketch1} from "./sketches/sketch1";
 import {Sketch2} from "./sketches/sketch2";
+import {Sketch3} from "./sketches/sketch3";
 
 
  const sketch = (p5: P5) => {

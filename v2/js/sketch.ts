@@ -15,8 +15,8 @@ export class Sketch {
     constructor(p5: P5) {
         this.p5 = p5;
         this.stats = new Stats();
-        this.world = new World(this.p5);
-        this.solver = new Solver(this);
+        this.world = new World();
+        this.solver = new Solver(this.world);
         this.entities = [];
 
         this.p5.windowResized = this.windowResized;

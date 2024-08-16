@@ -1,37 +1,36 @@
+import * as P5 from "p5";
 import {World} from "../world";
 import {Point} from "./objects";
 import {Vector} from "p5";
 import {ForceFunction} from "./forces";
 import {ConstraintFunction} from "./constraints";
-import * as constants from "constants";
-import {collidePoints} from "./colliders";
 import {QuadTreeSolverSpace} from "./quadTreeSolverSpace";
-import {Sketch} from "../sketch";
 import {Rect} from "../math/rect";
 import {TimeInSeconds} from "./types";
 import {AverageSet} from "../stats/average";
 
 const SOLVER_SUBSTEPS = 4;
-const COLLISION_RANGE = new Vector(80, 80);
+export const COLLISION_RANGE = new Vector(80, 80);
 
 export class Solver {
     world: World;
-    sketch: Sketch;
     objects: Point[];
     forces: ForceFunction[];
     constraints: ConstraintFunction[];
     space: QuadTreeSolverSpace;
     possibleObjectsStats: AverageSet;
 
-    constructor(sketch: Sketch) {
-        this.sketch = sketch;
-        this.world = sketch.world;
+    constructor(world: World) {
+        this.world = world;
 
         this.objects = [];
         this.forces = [];
         this.constraints = [];
 
-        this.space = new QuadTreeSolverSpace(this.sketch);
+        this.space = new QuadTreeSolverSpace({
+            center: new Vector(this.world.width / 2, this.world.height / 2),
+            size: new Vector(this.world.width, this.world.height)
+        });
 
         this.possibleObjectsStats = new AverageSet();
     }
@@ -100,7 +99,7 @@ export class Solver {
         }
     }
 
-    draw() {
-        this.space.debugRender();
+    draw(p5: P5) {
+        this.space.debugRender(p5);
     }
 }

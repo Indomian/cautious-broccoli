@@ -1,4 +1,4 @@
-import {Entity} from "./entity";
+import {Entity, EntityConfig} from "./entity";
 import {Sketch} from "../sketch";
 import {Vector} from "p5";
 import {ForceFunction, gravityCenter} from "../solver/forces";
@@ -11,6 +11,7 @@ export interface MagicGravityConfiguration {
 }
 
 export class MagicGravityEntity extends Entity {
+    declare configuration: EntityConfig<MagicGravityConfiguration>;
     visible: boolean = false;
     center: Vector;
     position: Vector;
@@ -18,7 +19,7 @@ export class MagicGravityEntity extends Entity {
     force: ForceFunction;
 
     constructor(sketch: Sketch, config: MagicGravityConfiguration) {
-        super(sketch);
+        super(sketch, config);
 
         this.center = config.center.copy();
         this.position = new Vector();
